@@ -83,8 +83,16 @@ export default function AdminOrderDetail() {
       if (error) throw error;
 
       // Disparar notificação se aplicável
-      if (status === "ready" || status === "out_for_delivery") {
-        const event = status === "ready" ? "order_ready" : "order_dispatched";
+      const notifyEvents: Record<string, string> = {
+        "ready": "order_ready",
+        "out_for_delivery": "order_dispatched",
+        "delivered": "order_delivered",
+        "picked_up": "order_picked_up",
+        "cancelled": "order_cancelled",
+      };
+      
+      const event = notifyEvents[status];
+      if (event) {
         supabase.functions.invoke("send-notification", {
           body: { event, order_id: orderId },
         }).catch(err => console.error("Notification trigger error:", err));
@@ -131,6 +139,11 @@ export default function AdminOrderDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-order", store?.id, orderId] });
       toast.success("Código de rastreio salvo!");
+      
+      // Notificar cliente
+      supabase.functions.invoke("send-notification", {
+        body: { event: "tracking_added", order_id: orderId },
+      }).catch(err => console.error("Notification trigger error:", err));
     },
     onError: () => toast.error("Erro ao salvar código de rastreio"),
   });

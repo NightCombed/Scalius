@@ -31,7 +31,7 @@ import { EmptyState } from "@/components/store/EmptyState";
 import { cn } from "@/lib/utils";
 
 const baseSchema = z.object({
-  postal_code: z.string().trim().regex(/^\d{5}-?\d{3}$/, "CEP inválido"),
+  postal_code: z.string().trim().optional().or(z.literal("")),
   delivery_type: z.enum(["delivery", "pickup", "national_shipping", ""]),
   name: z.string().trim().min(2, "Informe seu nome").max(100),
   phone: z
@@ -62,6 +62,9 @@ const baseSchema = z.object({
 
 const checkoutSchema = baseSchema.superRefine((data, ctx) => {
   if (data.delivery_type === "delivery" || data.delivery_type === "national_shipping") {
+    if (!data.postal_code || !/^\d{5}-?\d{3}$/.test(data.postal_code)) {
+      ctx.addIssue({ code: "custom", path: ["postal_code"], message: "CEP inválido" });
+    }
     if (!data.number || data.number.length < 1) {
       ctx.addIssue({ code: "custom", path: ["number"], message: "Informe o número" });
     }
@@ -788,6 +791,7 @@ function PublicCheckoutInner() {
                 onClick={() => {
                   setShippingIntent("pickup");
                   form.setValue("delivery_type", "pickup");
+                  form.setValue("postal_code", "");
                   form.clearErrors("postal_code");
                   setCepValidated(false);
                 }}

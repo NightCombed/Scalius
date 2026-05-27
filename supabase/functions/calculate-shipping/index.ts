@@ -39,6 +39,25 @@ Deno.serve(async (req: Request) => {
       return c;
     };
 
+    const compactObject = (obj: Record<string, any>) =>
+      Object.fromEntries(
+        Object.entries(obj).filter(([, value]) =>
+          value !== undefined && value !== null && value !== ""
+        )
+      );
+
+    const formatApiError = (result: any, fallback: string) => {
+      const source = result?.errors ?? result?.error;
+      if (source && typeof source === "object") {
+        const messages = Object.entries(source).flatMap(([field, value]) => {
+          const list = Array.isArray(value) ? value : [value];
+          return list.map((message) => `${field}: ${String(message)}`);
+        });
+        if (messages.length > 0) return messages.join(" | ");
+      }
+      return result?.message || result?.error || fallback;
+    };
+
     const includeInsurance = settings.melhorenvio_insurance === true;
     const markup = parseNum(settings.shipping_markup_percent) || 0;
 
@@ -139,6 +158,12 @@ Deno.serve(async (req: Request) => {
         .single();
 
       if (orderError || !order) throw new Error("Order not found");
+      if (order.delivery_type !== "national_shipping") {
+        throw new Error("Este pedido não é de frete nacional.");
+      }
+      if (!order.shipping_service_id) {
+        throw new Error("Serviço de frete do Melhor Envio não encontrado no pedido.");
+      }
 
       // ── Product dimensions ──────────────────────────────────────────────────
       const productIds = order.order_items.map((it: any) => it.product_id);
@@ -182,12 +207,23 @@ Deno.serve(async (req: Request) => {
       if (!senderEmail)  throw new Error("E-mail do remetente não configurado. Acesse Configurações → Frete Nacional.");
       if (!senderDocRaw) throw new Error("CPF/CNPJ do remetente não configurado. Acesse Configurações → Frete Nacional.");
       if (!senderCep)    throw new Error("CEP de origem não configurado. Acesse Configurações → Frete Nacional.");
+      if (!senderName)   throw new Error("Nome do remetente não configurado. Acesse Configurações → Frete Nacional.");
+      if (!senderPhone)  throw new Error("Telefone do remetente não configurado. Acesse Configurações → Frete Nacional.");
+      if (!senderAddr || !senderNumber || !senderDistr || !senderCity || !senderState) {
+        throw new Error("Endereço completo do remetente não configurado. Acesse Configurações → Frete Nacional.");
+      }
 
       // ── Recipient (to) ──────────────────────────────────────────────────────
       const recipientDocRaw = (order.customer_document || "").replace(/\D/g, "");
       const recipientEmail  = order.customer_email || "";
 
       if (!recipientDocRaw) throw new Error("CPF/CNPJ do destinatário não informado no pedido.");
+      if (!order.customer_name || !order.customer_phone) {
+        throw new Error("Nome ou telefone do destinatário não informado no pedido.");
+      }
+      if (!order.address_street || !order.address_neighborhood || !order.address_city || !order.address_state || !order.national_shipping_cep) {
+        throw new Error("Endereço completo do destinatário não informado no pedido.");
+      }
 
       // ── Document rules (per Melhor Envio API docs):
       // PF → apenas `document` (CPF), `company_document` = ""
@@ -212,7 +248,6 @@ Deno.serve(async (req: Request) => {
         own_hand:        settings.label_own_hand ?? false,
         reverse:         false,
         non_commercial:  !isNfe,  // true = DC-e automática; false = NF-e (requer invoice.key)
-        platform:        "Scalius",
         reminder:        `Pedido #${order.id?.slice(0, 8) ?? ""}`,
         tags: [{
           tag: order.id ?? "",
@@ -224,16 +259,16 @@ Deno.serve(async (req: Request) => {
 
       // ── Final payload — matches Melhor Envio OpenAPI schema exactly ──────────
       const payload: any = {
-        service: order.shipping_service_id,
-        from: {
+        service: Number(order.shipping_service_id),
+        from: compactObject({
           name:             senderName,
           email:            senderEmail,
           phone:            senderPhone,
           // PF: document = CPF, company_document = ""
           // PJ: document = "", company_document = CNPJ
-          document:         senderIsCnpj ? "" : senderDocRaw,
-          company_document: senderIsCnpj ? senderDocRaw : "",
-          state_register:   "",  // empty for non-commercial
+          document:         senderIsCnpj ? undefined : senderDocRaw,
+          company_document: senderIsCnpj ? senderDocRaw : undefined,
+          state_register:   senderIsCnpj ? "ISENTO" : undefined,
           address:          senderAddr,
           complement:       senderCompl,
           number:           senderNumber,
@@ -242,13 +277,13 @@ Deno.serve(async (req: Request) => {
           country_id:       "BR",  // REQUIRED per schema
           postal_code:      senderCep,
           state_abbr:       senderState,
-        },
-        to: {
+        }),
+        to: compactObject({
           name:             order.customer_name,
           email:            recipientEmail,
           phone:            cleanPhone(order.customer_phone || ""),
-          document:         recipientIsCnpj ? "" : recipientDocRaw,
-          company_document: recipientIsCnpj ? recipientDocRaw : "",
+          document:         recipientIsCnpj ? undefined : recipientDocRaw,
+          company_document: recipientIsCnpj ? recipientDocRaw : undefined,
           state_register:   "ISENTO",
           address:          order.address_street       || "",
           complement:       order.address_complement   || "",
@@ -258,7 +293,7 @@ Deno.serve(async (req: Request) => {
           country_id:       "BR",
           postal_code:      (order.national_shipping_cep || "").replace(/\D/g, ""),
           state_abbr:       order.address_state        || "",
-        },
+        }),
         products: order.order_items.map((it: any) => ({
           name:          it.product_name,
           quantity:      String(it.quantity),
@@ -268,7 +303,7 @@ Deno.serve(async (req: Request) => {
           height: Math.ceil(Math.max(1, totalHeight)),
           width:  Math.ceil(Math.max(1, maxWidth)),
           length: Math.ceil(Math.max(1, maxLength)),
-          weight: Math.max(0.1, totalWeight),
+          weight: Number(Math.max(0.1, totalWeight).toFixed(3)),
         }],
         options,
       };
@@ -309,12 +344,21 @@ Deno.serve(async (req: Request) => {
       const result = await response.json();
 
       if (!response.ok) {
-        const errMsg = result.message
-          || (result.errors ? JSON.stringify(result.errors) : null)
-          || `HTTP ${response.status}`;
+        const errMsg = formatApiError(result, `HTTP ${response.status}`);
         return new Response(
           JSON.stringify({ error: errMsg, details: result, debug_payload: payload }),
           { status: response.status, headers: { "Content-Type": "application/json", ...getCorsHeaders() } }
+        );
+      }
+
+      if (!result?.id) {
+        return new Response(
+          JSON.stringify({
+            error: "Melhor Envio respondeu sem ID do item no carrinho.",
+            details: result,
+            debug_payload: payload,
+          }),
+          { status: 502, headers: { "Content-Type": "application/json", ...getCorsHeaders() } }
         );
       }
 

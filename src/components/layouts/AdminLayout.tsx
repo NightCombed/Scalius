@@ -121,7 +121,7 @@ function triggerVisualAlert(storeName: string) {
     if (flashInterval) {
       clearInterval(flashInterval);
       flashInterval = null;
-      document.title = `${storeName} | Painel Admin | FlorFlow`;
+      document.title = `${storeName} | Painel Admin | Scalius Vitrine`;
     }
     const existingOverlay = document.getElementById("sale-flash-overlay");
     if (existingOverlay) {
@@ -148,7 +148,7 @@ export default function AdminLayout() {
 
   useEffect(() => {
     const storeName = settings?.display_name || activeStore?.name || "Admin";
-    document.title = `${storeName} | Painel Admin | FlorFlow`;
+    document.title = `${storeName} | Painel Admin | Scalius Vitrine`;
   }, [settings?.display_name, activeStore?.name]);
 
   useEffect(() => {
@@ -273,10 +273,7 @@ export default function AdminLayout() {
         {/* Drawer Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-border">
           <div className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground shrink-0">
-              <Flower2 className="h-4 w-4" />
-            </span>
-            <span className="font-serif text-lg font-semibold">FlorFlow</span>
+            <img src="/scaliusvitrine-logo.png" alt="Scalius Vitrine" className="h-8 object-contain" />
           </div>
           <button
             onClick={() => setDrawerOpen(false)}
@@ -356,12 +353,7 @@ export default function AdminLayout() {
 
           {/* Logo — mobile only, centered */}
           <div className="md:hidden flex-1 flex justify-center">
-            <div className="flex items-center gap-2">
-              <span className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground shrink-0">
-                <Flower2 className="h-4 w-4" />
-              </span>
-              <span className="font-serif text-lg font-semibold">FlorFlow</span>
-            </div>
+            <img src="/scaliusvitrine-logo.png" alt="Scalius Vitrine" className="h-8 object-contain" />
           </div>
 
           {/* Desktop: store name */}

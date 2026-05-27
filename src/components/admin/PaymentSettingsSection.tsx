@@ -441,7 +441,7 @@ export function PaymentSettingsSection({
             <ul className="space-y-1 text-xs list-disc pl-4 text-blue-700 dark:text-blue-400">
               <li>Ao finalizar o pedido, o cliente vê um QR Code Pix exclusivo gerado pelo Mercado Pago.</li>
               <li>O pagamento é confirmado <strong>automaticamente</strong> em segundos — sem confirmação manual.</li>
-              <li>Taxa de <strong>0,99% por transação</strong>, sem mensalidade.</li>
+              <li>Taxa de <strong>0,99% por transação</strong> (esta taxa é cobrada diretamente pelo próprio <strong>Mercado Pago</strong>; a <strong>Scalius não cobra nenhuma comissão ou taxa</strong> sobre as suas vendas).</li>
               <li>Os tokens OAuth são armazenados <strong>criptografados</strong> — nunca expostos ao frontend.</li>
             </ul>
           </div>

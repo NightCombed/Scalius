@@ -22,29 +22,34 @@ export function AdminSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-2 px-2 py-2">
-          <span className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground shrink-0">
-            <Flower2 className="h-4 w-4" />
-          </span>
-          {!collapsed && <span className="font-serif text-lg font-semibold">FlorFlow</span>}
+      <SidebarHeader className="border-none pb-0">
+        <div className="flex items-center gap-2 px-2 pt-4 pb-1">
+          {collapsed ? (
+            <img src="/scalius-icon.png" alt="Scalius" className="h-8 w-8 object-contain" />
+          ) : (
+            <img src="/scaliusvitrine-logo.png" alt="Scalius Vitrine" className="h-8 object-contain" />
+          )}
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Loja</SidebarGroupLabel>
+        <SidebarGroup className="pt-1">
+          {!collapsed && (
+            <SidebarGroupLabel className="px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50 mb-1">
+              Loja
+            </SidebarGroupLabel>
+          )}
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild className="h-10 text-[15px] font-medium transition-all duration-200">
                     <NavLink
                       to={item.url}
                       end={item.end}
-                      className="hover:bg-sidebar-accent"
-                      activeClassName="bg-sidebar-accent text-primary font-medium"
+                      className="hover:bg-sidebar-accent flex items-center gap-3 px-3.5"
+                      activeClassName="bg-sidebar-accent text-primary font-semibold"
                     >
-                      <item.icon className="h-4 w-4 shrink-0" />
+                      <item.icon className="h-[18px] w-[18px] shrink-0" />
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>

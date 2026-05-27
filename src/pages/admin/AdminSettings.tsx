@@ -1222,17 +1222,37 @@ export default function AdminSettings() {
                     </div>
                   </div>
 
-                  <div className="bg-sky-50 dark:bg-sky-950/20 p-4 rounded-lg text-sm text-sky-800 dark:text-sky-400 border border-sky-200 dark:border-sky-800 flex gap-3 mt-4">
-                    <span className="text-lg">📦</span>
-                    <div className="space-y-1">
-                      <p className="font-semibold text-sky-900 dark:text-sky-200">Como calculamos pedidos com vários itens?</p>
-                      <p>Para economizar no frete para o seu cliente, o sistema tenta colocar todos os itens em uma <strong>Caixa Única</strong> usando a regra de empilhamento:</p>
-                      <ul className="list-disc pl-5 mt-1 space-y-0.5">
-                        <li><strong>Peso:</strong> É a soma de todos os itens.</li>
-                        <li><strong>Largura e Comprimento:</strong> Usa-se a maior medida entre os itens da compra.</li>
-                        <li><strong>Altura:</strong> É a soma das alturas (como se estivessem empilhados).</li>
-                      </ul>
-                      <p className="text-xs mt-2 italic">Isso garante que o frete cobrado seja suficiente para cobrir o volume de todos os produtos juntos, evitando que você pague a diferença do próprio bolso.</p>
+                  <div className="bg-sky-50 dark:bg-sky-950/20 p-5 rounded-xl text-sm text-sky-800 dark:text-sky-400 border border-sky-200 dark:border-sky-800 space-y-4 mt-4">
+                    <div className="flex gap-2.5 items-center">
+                      <span className="text-xl">📦</span>
+                      <h4 className="font-semibold text-sky-900 dark:text-sky-200 text-base">Guia Completo: Como funciona o Cálculo de Frete com Vários Itens</h4>
+                    </div>
+                    
+                    <div className="grid md:grid-cols-2 gap-4 pt-1">
+                      <div className="space-y-2">
+                        <h5 className="font-semibold text-sky-900 dark:text-sky-300">📐 Lógica de Empacotamento (Regra do Empilhamento)</h5>
+                        <p className="text-xs leading-relaxed">Para economizar no frete para o seu cliente final, o sistema simula o envio de todos os itens em uma <strong>Caixa Única</strong> seguindo esta regra:</p>
+                        <ul className="list-disc pl-5 text-xs space-y-1">
+                          <li><strong>Peso:</strong> É a soma do peso de todos os itens da compra.</li>
+                          <li><strong>Largura e Comprimento:</strong> Usa-se a maior medida encontrada entre os itens comprados.</li>
+                          <li><strong>Altura:</strong> É a soma das alturas individuais dos itens (empilhamento vertical).</li>
+                        </ul>
+                        <p className="text-[11px] text-sky-700/90 dark:text-sky-400/90 italic">Esta lógica garante que o frete cobrado sempre cubra o volume total, evitando prejuízos para a sua loja.</p>
+                      </div>
+
+                      <div className="space-y-2 border-t md:border-t-0 md:border-l border-sky-200 dark:border-sky-800 pt-3 md:pt-0 md:pl-4">
+                        <h5 className="font-semibold text-sky-900 dark:text-sky-300">💡 Dicas Práticas e Recomendações</h5>
+                        <ul className="space-y-2 text-xs">
+                          <li>
+                            <strong>1. Cadastre medidas em cada produto:</strong> 
+                            <span className="block text-[11px] text-sky-700/80 dark:text-sky-400/80">Entre no cadastro individual de seus produtos e preencha suas dimensões reais. A falta disso força o uso desta caixa "padrão", o que pode inflar o preço do frete ou dar prejuízo.</span>
+                          </li>
+                          <li>
+                            <strong>2. Cuidado com alturas excessivas:</strong> 
+                            <span className="block text-[11px] text-sky-700/80 dark:text-sky-400/80">Os Correios aceitam limite máximo de 100cm por lado e a soma de todos os lados não pode passar de 200cm. Evite cadastrar alturas superestimadas nos produtos para não inviabilizar o frete no checkout do cliente.</span>
+                          </li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
 
@@ -1324,9 +1344,33 @@ export default function AdminSettings() {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <h3 className="font-medium text-sm">Coordenadas da loja</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Usadas para calcular frete por distância. Clique em "Obter coordenadas" para preencher automaticamente a partir do endereço.
-                  </p>
+                  <div className="text-xs text-muted-foreground mt-0.5 space-y-1">
+                    <p>Usadas para calcular frete por distância. Clique em "Obter coordenadas" para preencher automaticamente a partir do endereço.</p>
+                    <div className="text-[11px] text-amber-600 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/30 bg-amber-500/5 p-3 rounded-md mt-1.5 leading-relaxed space-y-2">
+                      <p>
+                        💡 <strong>Dica se a busca automática falhar:</strong> Se o endereço não for localizado automaticamente, você pode obter as coordenadas direto no 
+                        <a href="https://www.google.com/maps" target="_blank" rel="noreferrer" className="text-primary hover:underline font-semibold mx-1">Google Maps</a>:
+                      </p>
+                      <div className="grid sm:grid-cols-2 gap-3 pt-2 border-t border-amber-200/20 dark:border-amber-900/20">
+                        <div className="space-y-1">
+                          <strong className="block text-amber-900 dark:text-amber-200 text-xs">💻 No Computador:</strong>
+                          <ul className="list-disc pl-4 space-y-0.5 text-[10.5px]">
+                            <li>Abra o Google Maps no navegador.</li>
+                            <li>Clique com o <strong>botão direito</strong> no local exato do mapa.</li>
+                            <li>Clique em cima dos números da Latitude e Longitude na caixa que aparecer para <strong>copiá-los</strong>.</li>
+                          </ul>
+                        </div>
+                        <div className="space-y-1">
+                          <strong className="block text-amber-900 dark:text-amber-200 text-xs">📱 No Celular ou Tablet:</strong>
+                          <ul className="list-disc pl-4 space-y-0.5 text-[10.5px]">
+                            <li>Abra o aplicativo do Google Maps.</li>
+                            <li><strong>Toque e segure</strong> (toque longo) no ponto exato da loja para soltar um alfinete vermelho.</li>
+                            <li>A cópia da Latitude e Longitude aparecerá formatada na <strong>caixa de pesquisa no topo da tela</strong>.</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <Button
                   type="button"
@@ -1353,7 +1397,7 @@ export default function AdminSettings() {
                         form.setValue("latitude", result.lat.toFixed(8), { shouldDirty: true });
                         form.setValue("longitude", result.lon.toFixed(8), { shouldDirty: true });
                         toast.success("Coordenadas obtidas!", {
-                          description: `${result.lat.toFixed(6)}, ${result.lon.toFixed(6)}`,
+                          description: `Localizado: ${result.display_name} (${result.lat.toFixed(5)}, ${result.lon.toFixed(5)})`,
                         });
                       } else {
                         toast.error("Endereço não encontrado", {

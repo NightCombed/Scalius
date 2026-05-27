@@ -8,8 +8,8 @@ export default function SuperAdminLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <header className="h-14 border-b border-border bg-gradient-botanical text-primary-foreground flex items-center px-4 gap-3">
-        <Link to="/super-admin" className="flex items-center gap-2 font-serif text-lg">
-          <Flower2 className="h-5 w-5" /> FlorFlow · Super Admin
+        <Link to="/super-admin" className="flex items-center gap-2 text-sm font-semibold tracking-wide">
+          <img src="/scalius-icon.png" alt="Scalius" className="h-5 w-5 object-contain invert brightness-200" /> Scalius Vitrine · Super Admin
         </Link>
         <div className="flex-1" />
         <span className="text-sm opacity-90">{user?.full_name}</span>
