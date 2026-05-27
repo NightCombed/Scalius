@@ -16,6 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { ShippingRule, DeliveryZone, DistancePricing } from "@/types/database";
 import { calculateDistance, calculateDeliveryFee, geocodeAddress, getRoutingData } from "@/lib/distance";
+import { getStoreLink } from "@/lib/tenant";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -685,24 +686,24 @@ function PublicCheckoutInner() {
             // Fallback: go to confirmation page showing manual info
             toast.warning("Não foi possível gerar o QR Code automático. Verifique o resumo do pedido.");
             clear();
-            navigate(`/loja/${store!.slug}/pedido/${result.order_id}`);
+            navigate(getStoreLink(`/pedido/${result.order_id}`, store!.slug));
             return;
           }
 
           // Redirect to the dedicated payment page
           clear();
-          navigate(`/loja/${store!.slug}/pagar/${result.order_id}`);
+          navigate(getStoreLink(`/pagar/${result.order_id}`, store!.slug));
         } catch (pixErr: any) {
           toast.dismiss("pix-gen");
           toast.warning("Erro ao gerar QR Code. Redirecionando para o pedido.");
           clear();
-          navigate(`/loja/${store!.slug}/pedido/${result.order_id}`);
+          navigate(getStoreLink(`/pedido/${result.order_id}`, store!.slug));
         }
       } else {
         // Manual Pix flow — show confirmation with pix key
         toast.success("Pedido enviado!", { description: "Em breve a floricultura entrará em contato." });
         clear();
-        navigate(`/loja/${store!.slug}/pedido/${result.order_id}`);
+        navigate(getStoreLink(`/pedido/${result.order_id}`, store!.slug));
       }
     } catch (err: any) {
       toast.error("Erro inesperado", { description: err?.message ?? "Tente novamente." });
@@ -717,7 +718,7 @@ function PublicCheckoutInner() {
   if (items.length === 0) {
     return (
       <div className="container py-12">
-        <EmptyState title="Seu carrinho está vazio" description="Adicione produtos antes de finalizar o pedido." action={<Button asChild><Link to={`/loja/${store.slug}/produtos`}>Ver produtos</Link></Button>} />
+        <EmptyState title="Seu carrinho está vazio" description="Adicione produtos antes de finalizar o pedido." action={<Button asChild><Link to={getStoreLink("", store.slug)}>Ver produtos</Link></Button>} />
       </div>
     );
   }

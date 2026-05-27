@@ -41,3 +41,13 @@ export function resolveTenantSlug(): string | null {
 
   return candidate;
 }
+
+export function getStoreLink(path: string, slug: string): string {
+  const cleanPath = path.startsWith("/") ? path.slice(1) : path;
+  const isSubdomain = !!resolveTenantSlug();
+  
+  if (isSubdomain) {
+    return `/${cleanPath}`;
+  }
+  return `/loja/${slug}/${cleanPath}`;
+}

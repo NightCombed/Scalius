@@ -9,6 +9,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { formatBRL } from "@/lib/mockData";
 import { QuantityStepper } from "./QuantityStepper";
+import { getStoreLink } from "@/lib/tenant";
 
 interface Props {
   open: boolean;
@@ -37,7 +38,7 @@ export function CartDrawer({ open, onOpenChange }: Props) {
               </div>
               <p className="text-muted-foreground">Seu carrinho está vazio.</p>
               <Button asChild onClick={close}>
-                <Link to={`/loja/${store.slug}/produtos`}>Ver produtos</Link>
+                <Link to={getStoreLink("", store.slug)}>Ver produtos</Link>
               </Button>
             </div>
           </div>
@@ -89,10 +90,10 @@ export function CartDrawer({ open, onOpenChange }: Props) {
               </div>
               <div className="grid grid-cols-2 gap-2 w-full">
                 <Button variant="outline" asChild onClick={close}>
-                  <Link to={`/loja/${store.slug}/carrinho`}>Ver carrinho</Link>
+                  <Link to={getStoreLink("carrinho", store.slug)}>Ver carrinho</Link>
                 </Button>
                 <Button asChild onClick={close}>
-                  <Link to={`/loja/${store.slug}/checkout`}>Finalizar</Link>
+                  <Link to={getStoreLink("checkout", store.slug)}>Finalizar</Link>
                 </Button>
               </div>
             </SheetFooter>

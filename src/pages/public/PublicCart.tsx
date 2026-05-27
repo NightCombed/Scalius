@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { QuantityStepper } from "@/components/store/QuantityStepper";
 import { EmptyState } from "@/components/store/EmptyState";
+import { getStoreLink } from "@/lib/tenant";
 
 export default function PublicCart() {
   const { store } = useTenant();
@@ -25,7 +26,7 @@ export default function PublicCart() {
           description="Que tal escolher um buquê especial?"
           action={
             <Button asChild>
-              <Link to={`/loja/${store.slug}/produtos`}>Ver produtos</Link>
+              <Link to={getStoreLink("", store.slug)}>Ver produtos</Link>
             </Button>
           }
         />
@@ -104,7 +105,7 @@ export default function PublicCart() {
               <span className="font-serif text-2xl text-primary">{formatBRL(subtotalCents)}</span>
             </div>
             <Button size="lg" className="w-full" asChild>
-              <Link to={`/loja/${store.slug}/checkout`}>Ir para o checkout</Link>
+              <Link to={getStoreLink("checkout", store.slug)}>Ir para o checkout</Link>
             </Button>
             <Button
               size="lg"

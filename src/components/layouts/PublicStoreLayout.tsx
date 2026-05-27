@@ -10,6 +10,7 @@ import { CartDrawer } from "@/components/store/CartDrawer";
 import { WhatsAppButton } from "@/components/store/WhatsAppButton";
 import { CustomerNavButton } from "@/components/store/CustomerNavButton";
 import { cn } from "@/lib/utils";
+import { getStoreLink } from "@/lib/tenant";
 
 function PublicStoreShell() {
   const { store, settings, isLoading } = useTenant();
@@ -79,7 +80,7 @@ function PublicStoreShell() {
 
 
   const navItems = [
-    { to: `/loja/${store.slug}`, label: "Início", end: true },
+    { to: getStoreLink("", store.slug), label: "Início", end: true },
   ];
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -96,7 +97,7 @@ function PublicStoreShell() {
     <div className="min-h-screen flex flex-col bg-gradient-soft">
       <header className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-30">
         <div className="container flex h-16 items-center justify-between gap-3">
-          <Link to={`/loja/${store.slug}`} className="flex items-center gap-2 min-w-0">
+          <Link to={getStoreLink("", store.slug)} className="flex items-center gap-2 min-w-0">
             {settings?.logo_url ? (
               <img
                 src={settings.logo_url}

@@ -7,6 +7,7 @@ import { getProductImage } from "@/lib/utils";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import type { Product } from "@/types/database";
+import { getStoreLink } from "@/lib/tenant";
 
 interface Props {
   product: Product;
@@ -35,7 +36,7 @@ export function ProductCard({ product, storeSlug }: Props) {
 
   return (
     <Link
-      to={`/loja/${storeSlug}/produto/${product.id}`}
+      to={getStoreLink(`/produto/${product.id}`, storeSlug)}
       className="group flex flex-col rounded-xl border border-border bg-card overflow-hidden shadow-soft hover:shadow-elegant transition-all relative h-full"
     >
       <div className="aspect-[4/3] bg-gradient-soft grid place-items-center overflow-hidden relative">

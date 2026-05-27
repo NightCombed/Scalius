@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import type { Product, ProductVariantGroup, ProductVariantOption } from "@/types/database";
 import { getProductImages } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { getStoreLink } from "@/lib/tenant";
 
 export default function PublicProductDetail() {
     const { store } = useTenant();
@@ -186,7 +187,7 @@ export default function PublicProductDetail() {
             return;
         }
         handleAdd();
-        navigate(`/loja/${store!.slug}/checkout`);
+        navigate(getStoreLink("checkout", store!.slug));
     };
 
     if (!store || loadingProduct) {
@@ -205,7 +206,7 @@ export default function PublicProductDetail() {
                     description="Este produto pode ter sido removido ou está indisponível."
                     action={
                         <Button asChild>
-                            <Link to={`/loja/${store.slug}`}>Voltar ao catálogo</Link>
+                            <Link to={getStoreLink("", store.slug)}>Voltar ao catálogo</Link>
                         </Button>
                     }
                 />
