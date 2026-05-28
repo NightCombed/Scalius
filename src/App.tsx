@@ -91,6 +91,8 @@ const App = () => {
                     <Route path="minha-conta" element={<PublicMyAccount />} />
                   </Route>
 
+                  <Route path="/login" element={<Login />} />
+
                   {/* Store admin accessible on subdomain */}
                   <Route
                     path="/admin"
