@@ -198,11 +198,6 @@ const Index = () => {
                     <img src="/admin_print.png" alt="Scalius Dashboard" className="main-screenshot" />
                   </div>
                 </div>
-                <div className="stack-mobile">
-                  <div className="iphone-frame">
-                    <img src="/store_print.png" alt="Scalius Storefront" className="mobile-screenshot" />
-                  </div>
-                </div>
               </div>
             </div>
           </div>
