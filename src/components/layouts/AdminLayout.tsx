@@ -273,7 +273,7 @@ export default function AdminLayout() {
         {/* Drawer Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-border">
           <div className="flex items-center gap-2">
-            <img src="/scaliusvitrine-logo.png" alt="Scalius Vitrine" className="h-8 object-contain" />
+            <img src="/scalius-logo-dark.png" alt="Scalius Vitrine" className="h-7 object-contain" />
           </div>
           <button
             onClick={() => setDrawerOpen(false)}
@@ -287,7 +287,6 @@ export default function AdminLayout() {
         {activeStore && (
           <div className="px-4 py-3 border-b border-border bg-muted/30">
             <div className="text-sm font-semibold truncate">{activeStore.name}</div>
-            <div className="text-xs text-muted-foreground">/{activeStore.slug}</div>
           </div>
         )}
 
@@ -298,7 +297,6 @@ export default function AdminLayout() {
             { title: "Produtos", url: "/admin/produtos", icon: Package },
             { title: "Categorias", url: "/admin/categorias", icon: Tag },
             { title: "Pedidos", url: "/admin/pedidos", icon: ShoppingBag },
-            { title: "Clientes", url: "/admin/clientes", icon: Users },
             { title: "Entregas e frete", url: "/admin/entregas", icon: Truck },
             { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
           ].map((item) => (
@@ -353,15 +351,12 @@ export default function AdminLayout() {
 
           {/* Logo — mobile only, centered */}
           <div className="md:hidden flex-1 flex justify-center">
-            <img src="/scaliusvitrine-logo.png" alt="Scalius Vitrine" className="h-8 object-contain" />
+            <img src="/scalius-logo-dark.png" alt="Scalius Vitrine" className="h-7 object-contain" />
           </div>
 
           {/* Desktop: store name */}
           <div className="hidden md:flex flex-1 min-w-0 flex-col">
             <div className="text-sm font-medium truncate">{activeStore?.name ?? "Painel"}</div>
-            {activeStore && (
-              <div className="text-xs text-muted-foreground truncate">/{activeStore.slug}</div>
-            )}
           </div>
 
           {/* Right actions */}

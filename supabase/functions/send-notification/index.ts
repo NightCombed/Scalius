@@ -125,7 +125,19 @@ serve(async (req) => {
       throw new Error("Store settings error: " + settingsError.message);
     }
 
-    console.log("[send-notification] Store notification_email:", settings?.notification_email, "prefs:", JSON.stringify(settings?.notification_preferences));
+    // Get store plan
+    const { data: storeData, error: storeError } = await supabase
+      .from("stores")
+      .select("plan")
+      .eq("id", storeId)
+      .single();
+
+    if (storeError) {
+      console.error("[send-notification] Error fetching store plan:", storeError.message);
+    }
+
+    const storePlan = storeData?.plan ?? "essencial";
+    console.log("[send-notification] Store notification_email:", settings?.notification_email, "plan:", storePlan, "prefs:", JSON.stringify(settings?.notification_preferences));
 
     // 3. Get customer info
     let customer = null;
@@ -402,6 +414,21 @@ serve(async (req) => {
 
       // --- SEND TO CUSTOMER ---
       if (sendToCustomer && customerEmail) {
+        if (storePlan !== "pro") {
+          console.log(`[send-notification] Blocked customer email notification for event '${event}' because store plan is '${storePlan}' (Pro required).`);
+          await logNotification({
+            store_id: storeId,
+            order_id: orderId,
+            event_type: event,
+            channel: "email",
+            recipient_type: "customer",
+            status: "failed",
+            error_message: "Bloqueado: E-mails automáticos para clientes exigem o Plano Pro.",
+            metadata: { email: customerEmail, plan: storePlan },
+          });
+          continue;
+        }
+
         let emailSubject = `Atualização do seu pedido - Scalius`;
         let title = `Atualização do Pedido`;
         let message = `Seu pedido teve uma atualização.`;

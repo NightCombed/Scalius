@@ -11,7 +11,6 @@ const items = [
   { title: "Produtos", url: "/admin/produtos", icon: Package },
   { title: "Categorias", url: "/admin/categorias", icon: Tag },
   { title: "Pedidos", url: "/admin/pedidos", icon: ShoppingBag },
-  { title: "Clientes", url: "/admin/clientes", icon: Users },
   { title: "Entregas e frete", url: "/admin/entregas", icon: Truck },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
 ];
@@ -23,11 +22,11 @@ export function AdminSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-none pb-0">
-        <div className="flex items-center gap-2 px-2 pt-4 pb-1">
+        <div className="flex items-center gap-2 pl-4 pr-2 pt-4 pb-1">
           {collapsed ? (
             <img src="/scalius-icon.png" alt="Scalius" className="h-8 w-8 object-contain" />
           ) : (
-            <img src="/scaliusvitrine-logo.png" alt="Scalius Vitrine" className="h-8 object-contain" />
+            <img src="/scalius-logo-dark.png" alt="Scalius Vitrine" className="h-7 object-contain" />
           )}
         </div>
       </SidebarHeader>

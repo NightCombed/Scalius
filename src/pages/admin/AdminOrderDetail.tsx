@@ -10,6 +10,8 @@ import { ArrowLeft, Phone, MapPin, Copy, MessageCircle, Truck, Store as StoreIco
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { ProGate } from "@/components/ui/ProGate";
+import { usePlan } from "@/hooks/usePlan";
 
 const STATUS_BADGE: Record<string, string> = {
   pending:          "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
@@ -28,6 +30,7 @@ export default function AdminOrderDetail() {
   const store = useActiveStore();
   const { orderId = "" } = useParams<{ orderId: string }>();
   const queryClient = useQueryClient();
+  const { plan } = usePlan();
   const [trackingCode, setTrackingCode] = useState("");
   const [invoiceKey, setInvoiceKey]     = useState("");
   const [invoiceMode, setInvoiceMode]   = useState<"dce" | "nfe">("dce");
@@ -845,31 +848,33 @@ export default function AdminOrderDetail() {
                     )}
                   </div>
 
-                  {!(order as any).melhorenvio_order_id ? (
-                    <Button 
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2 font-medium"
-                      onClick={() => sendToMelhorEnvioCart.mutate()}
-                      disabled={sendToMelhorEnvioCart.isPending}
-                    >
-                      {sendToMelhorEnvioCart.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <ShoppingCart className="h-4 w-4" />
-                      )}
-                      Enviar para Melhor Envio (Carrinho)
-                    </Button>
-                  ) : (
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-2 text-xs text-emerald-600 font-medium bg-emerald-50 p-2 rounded-md border border-emerald-100">
-                        <Check className="h-3 w-3" /> Já enviado ao carrinho do Melhor Envio
-                      </div>
-                      <Button asChild variant="outline" size="sm" className="text-xs h-8">
-                        <a href="https://melhorenvio.com.br/carrinho" target="_blank" rel="noreferrer">
-                          <ExternalLink className="h-3 w-3 mr-1" /> Ir para o site do Melhor Envio
-                        </a>
+                  <ProGate feature="melhorenvio_label" plan={plan} variant="inline" className="mb-2">
+                    {!(order as any).melhorenvio_order_id ? (
+                      <Button 
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2 font-medium"
+                        onClick={() => sendToMelhorEnvioCart.mutate()}
+                        disabled={sendToMelhorEnvioCart.isPending}
+                      >
+                        {sendToMelhorEnvioCart.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <ShoppingCart className="h-4 w-4" />
+                        )}
+                        Enviar para Melhor Envio (Carrinho)
                       </Button>
-                    </div>
-                  )}
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2 text-xs text-emerald-600 font-medium bg-emerald-50 p-2 rounded-md border border-emerald-100">
+                          <Check className="h-3 w-3" /> Já enviado ao carrinho do Melhor Envio
+                        </div>
+                        <Button asChild variant="outline" size="sm" className="text-xs h-8">
+                          <a href="https://melhorenvio.com.br/carrinho" target="_blank" rel="noreferrer">
+                            <ExternalLink className="h-3 w-3 mr-1" /> Ir para o site do Melhor Envio
+                          </a>
+                        </Button>
+                      </div>
+                    )}
+                  </ProGate>
 
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-muted-foreground">Código de Rastreio (Melhor Envio)</label>

@@ -12,6 +12,8 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
+import TermsOfService from "./pages/legal/TermsOfService";
 
 import PublicStoreLayout from "@/components/layouts/PublicStoreLayout";
 import PublicStoreHome from "@/pages/public/PublicStoreHome";
@@ -92,6 +94,8 @@ const App = () => {
                   </Route>
 
                   <Route path="/login" element={<Login />} />
+                  <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
+                  <Route path="/termos-de-servico" element={<TermsOfService />} />
 
                   {/* Store admin accessible on subdomain */}
                   <Route
@@ -118,6 +122,8 @@ const App = () => {
                   {/* Main domain: marketing website & onboarding */}
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
+                  <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
+                  <Route path="/termos-de-servico" element={<TermsOfService />} />
 
                   {/* Fallback route-based storefront for easy testing/sharing */}
                   <Route

@@ -14,6 +14,8 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { ProGate } from "@/components/ui/ProGate";
+import { usePlan } from "@/hooks/usePlan";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -70,6 +72,7 @@ export function NotificationsSettingsSection({ storeId }: Props) {
   const queryClient = useQueryClient();
   const form = useFormContext();
   const prefs = form.watch();
+  const { plan } = usePlan();
   
   const [testingWebhook, setTestingWebhook] = useState(false);
 
@@ -363,65 +366,65 @@ export function NotificationsSettingsSection({ storeId }: Props) {
             <Send className="h-4 w-4" /> Para o cliente (E-mail transacional)
           </h3>
 
-          <div className="rounded-lg border border-border bg-background p-4 divide-y divide-border">
-            <div className="pb-3 flex justify-between items-center">
-              <p className="text-xs text-muted-foreground">
-                Seu cliente recebe e-mails automáticos acompanhando o fluxo do pedido.
-              </p>
+          <ProGate feature="customer_emails" plan={plan}>
+            <div className="rounded-lg border border-border bg-background p-4 divide-y divide-border">
+              <div className="pb-3 flex justify-between items-center">
+                <p className="text-xs text-muted-foreground">
+                  Seu cliente recebe e-mails automáticos acompanhando o fluxo do pedido.
+                </p>
+              </div>
+              
+              <ToggleRow
+                id="customer-new-order"
+                label="Pedido recebido"
+                description="Confirmação de recebimento (aguardando pagamento)."
+                checked={prefs.customer_new_order}
+                onCheckedChange={(v) => set("customer_new_order", v)}
+              />
+              <ToggleRow
+                id="customer-payment-confirmed"
+                label="Pagamento confirmado"
+                checked={prefs.customer_payment_confirmed}
+                onCheckedChange={(v) => set("customer_payment_confirmed", v)}
+              />
+              <ToggleRow
+                id="customer-order-ready"
+                label="Pedido pronto / aguardando retirada"
+                checked={prefs.customer_order_ready}
+                onCheckedChange={(v) => set("customer_order_ready", v)}
+              />
+              <ToggleRow
+                id="customer-order-dispatched"
+                label="Saiu para entrega"
+                checked={prefs.customer_order_dispatched}
+                onCheckedChange={(v) => set("customer_order_dispatched", v)}
+              />
+              <ToggleRow
+                id="customer-tracking-added"
+                label="Código de rastreio adicionado (Correios)"
+                checked={prefs.customer_tracking_added}
+                onCheckedChange={(v) => set("customer_tracking_added", v)}
+              />
+              <ToggleRow
+                id="customer-order-delivered"
+                label="Pedido entregue"
+                checked={prefs.customer_order_delivered}
+                onCheckedChange={(v) => set("customer_order_delivered", v)}
+              />
+              <ToggleRow
+                id="customer-order-picked-up"
+                label="Pedido retirado na loja"
+                checked={prefs.customer_order_picked_up}
+                onCheckedChange={(v) => set("customer_order_picked_up", v)}
+              />
+              <ToggleRow
+                id="customer-order-cancelled"
+                label="Pedido cancelado"
+                checked={prefs.customer_order_cancelled}
+                onCheckedChange={(v) => set("customer_order_cancelled", v)}
+              />
             </div>
-            
-            <ToggleRow
-              id="customer-new-order"
-              label="Pedido recebido"
-              description="Confirmação de recebimento (aguardando pagamento). Disponível no Plano Pro."
-              checked={prefs.customer_new_order}
-              onCheckedChange={(v) => set("customer_new_order", v)}
-            />
-            <ToggleRow
-              id="customer-payment-confirmed"
-              label="Pagamento confirmado"
-              checked={prefs.customer_payment_confirmed}
-              onCheckedChange={(v) => set("customer_payment_confirmed", v)}
-            />
-            <ToggleRow
-              id="customer-order-ready"
-              label="Pedido pronto / aguardando retirada"
-              checked={prefs.customer_order_ready}
-              onCheckedChange={(v) => set("customer_order_ready", v)}
-            />
-            <ToggleRow
-              id="customer-order-dispatched"
-              label="Saiu para entrega"
-              checked={prefs.customer_order_dispatched}
-              onCheckedChange={(v) => set("customer_order_dispatched", v)}
-            />
-            <ToggleRow
-              id="customer-tracking-added"
-              label="Código de rastreio adicionado (Correios)"
-              checked={prefs.customer_tracking_added}
-              onCheckedChange={(v) => set("customer_tracking_added", v)}
-            />
-            <ToggleRow
-              id="customer-order-delivered"
-              label="Pedido entregue"
-              description="Agradecimento após a entrega. Disponível no Plano Pro."
-              checked={prefs.customer_order_delivered}
-              onCheckedChange={(v) => set("customer_order_delivered", v)}
-            />
-            <ToggleRow
-              id="customer-order-picked-up"
-              label="Pedido retirado na loja"
-              description="Agradecimento após a retirada. Disponível no Plano Pro."
-              checked={prefs.customer_order_picked_up}
-              onCheckedChange={(v) => set("customer_order_picked_up", v)}
-            />
-            <ToggleRow
-              id="customer-order-cancelled"
-              label="Pedido cancelado"
-              checked={prefs.customer_order_cancelled}
-              onCheckedChange={(v) => set("customer_order_cancelled", v)}
-            />
-          </div>
+          </ProGate>
         </div>
 
 

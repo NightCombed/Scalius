@@ -97,7 +97,7 @@ function PublicStoreShell() {
     <div className="min-h-screen flex flex-col bg-gradient-soft">
       <header className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-30">
         <div className="container flex h-16 items-center justify-between gap-3">
-          <Link to={getStoreLink("", store.slug)} className="flex items-center gap-2 min-w-0">
+          <Link to={getStoreLink("", store.slug)} className="flex items-center gap-2 min-w-0 md:flex-1 md:justify-start">
             {settings?.logo_url ? (
               <img
                 src={settings.logo_url}
@@ -114,7 +114,7 @@ function PublicStoreShell() {
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-7 text-sm">
+          <nav className="hidden md:flex items-center gap-7 text-sm justify-center">
             {navItems.map((it) => (
               <NavLink key={it.to} to={it.to} end={it.end} className={navLinkClass}>
                 {it.label}
@@ -123,7 +123,7 @@ function PublicStoreShell() {
             <a href="#contato" className="hover:text-primary transition-colors">Contato</a>
           </nav>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 md:flex-1 md:justify-end">
             <CustomerNavButton storeId={store.id} storeSlug={store.slug} />
             <CartIconButton onClick={() => setCartOpen(true)} />
 
@@ -193,16 +193,19 @@ function PublicStoreShell() {
           </div>
           <div className="md:text-right text-muted-foreground">
             Feito por <Link to="/" className="text-primary">Scalius</Link>
+            <div className="mt-2 flex flex-wrap gap-3 md:justify-end">
+              <Link to="/politica-de-privacidade" className="hover:text-primary">
+                Política de Privacidade
+              </Link>
+              <Link to="/termos-de-servico" className="hover:text-primary">
+                Termos de Serviço
+              </Link>
+            </div>
           </div>
         </div>
       </footer>
 
       <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />
-      <WhatsAppButton
-        phone={settings?.whatsapp}
-        message={contactMessage}
-        variant="floating"
-      />
     </div>
   );
 }

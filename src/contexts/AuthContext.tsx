@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle(),
       supabase
         .from("store_members")
-        .select("role, store:stores(id, slug, name, status, created_at)")
+        .select("role, store:stores(id, slug, name, status, plan, created_at)")
         .eq("user_id", authUser.id),
     ]);
 
@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const rows = (membersRes.data ?? []) as Array<{
       role: string;
-      store: { id: string; slug: string; name: string; status: string; created_at: string } | null;
+      store: { id: string; slug: string; name: string; status: string; plan: string; created_at: string } | null;
     }>;
     setMemberships(
       rows
@@ -107,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             slug: r.store!.slug,
             name: r.store!.name,
             status: r.store!.status as Store["status"],
+            plan: (r.store!.plan ?? "essencial") as Store["plan"],
             created_at: r.store!.created_at,
           },
           role: r.role as StoreRole,

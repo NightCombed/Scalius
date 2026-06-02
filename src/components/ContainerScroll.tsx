@@ -62,9 +62,6 @@ export const ContainerScroll: React.FC<ContainerScrollProps> = ({ titleComponent
     { clamp: true }
   );
 
-  // Badge "Rolar para navegar" some após começar a rolar imagem
-  const badgeOpacity = useTransform(scrollYProgress, [0.30, 0.42], [0.9, 0], { clamp: true });
-
   return (
     <div
       ref={containerRef}
@@ -74,9 +71,11 @@ export const ContainerScroll: React.FC<ContainerScrollProps> = ({ titleComponent
       {/* Cabeçalho da seção */}
       <motion.div
         style={{ translateY }}
-        className="max-w-4xl mx-auto text-center mb-10 md:mb-14 px-4"
+        className="max-w-4xl mx-auto mb-10 md:mb-14 px-4"
       >
-        {titleComponent}
+        <div style={{ textAlign: 'center', width: '100%' }}>
+          {titleComponent}
+        </div>
       </motion.div>
 
       {/* Mockup do iPhone 3D */}
@@ -113,14 +112,6 @@ export const ContainerScroll: React.FC<ContainerScrollProps> = ({ titleComponent
             />
           </div>
 
-          {/* Badge "Rolar para navegar" */}
-          <motion.div
-            style={{ opacity: badgeOpacity }}
-            className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/75 backdrop-blur-md px-4 py-2 rounded-full flex items-center gap-2 text-white text-xs font-semibold shadow-lg z-25 border border-white/10 whitespace-nowrap"
-          >
-            <span className="w-2 h-2 rounded-full bg-[#FF5E00] animate-pulse"></span>
-            Rolar página para navegar
-          </motion.div>
         </div>
       </motion.div>
     </div>

@@ -47,6 +47,7 @@ export interface MercadoPagoOAuthData {
 
 export type PlatformRole = "super_admin"; // global Scalius Vitrine staff
 export type StoreRole = "owner" | "manager" | "staff";
+export type PlanId = "essencial" | "pro";
 
 export interface PlatformUser {
   id: UUID;
@@ -62,6 +63,7 @@ export interface Store {
   name: string;
   custom_domain?: string | null;
   status: "active" | "trial" | "suspended";
+  plan: PlanId;              // subscription plan — 'essencial' | 'pro'
   created_at: ISODate;
 }
 
