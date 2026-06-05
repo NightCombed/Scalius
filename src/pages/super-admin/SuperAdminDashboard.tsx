@@ -38,6 +38,7 @@ interface StoreRow {
   status: StoreStatus;
   plan: PlanId;
   created_at: string;
+  updated_at: string | null;
 }
 
 interface MemberRow {
@@ -70,6 +71,46 @@ const ROLE_LABELS: Record<string, string> = {
   admin:   "Gerente",
   staff:   "Colaborador",
 };
+
+const TRIAL_DAYS = 14;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function pluralizeDays(value: number) {
+  return value === 1 ? "1 dia" : `${value} dias`;
+}
+
+function getTrialCounter(store: StoreRow) {
+  if (store.status !== "trial") return null;
+
+  const reference = store.updated_at || store.created_at;
+  const startedAt = new Date(reference);
+  if (Number.isNaN(startedAt.getTime())) return null;
+
+  const now = new Date();
+  const elapsedDays = Math.floor((now.getTime() - startedAt.getTime()) / DAY_MS);
+  const remainingDays = TRIAL_DAYS - elapsedDays;
+  const endsAt = new Date(startedAt.getTime() + TRIAL_DAYS * DAY_MS);
+  const formattedEndDate = endsAt.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
+  if (remainingDays > 0) {
+    return {
+      expired: false,
+      label: `${pluralizeDays(remainingDays)} restantes`,
+      detail: `Trial acabará dia ${formattedEndDate}`,
+    };
+  }
+
+  const overdueDays = Math.abs(remainingDays);
+  return {
+    expired: true,
+    label: overdueDays === 0 ? "vence hoje" : `${pluralizeDays(overdueDays)} após trial`,
+    detail: `Trial acabou dia ${formattedEndDate}`,
+  };
+}
 
 // ─── Create / Edit Store Dialog ─────────────────────────────────────────────
 
@@ -104,16 +145,29 @@ function StoreDialog({ open, onClose, initial, onSaved }: StoreDialogProps) {
     setSaving(true);
     try {
       if (isEdit) {
+        const statusChanged = initial!.status !== status;
         const { error } = await supabase
           .from("stores")
-          .update({ name: name.trim(), slug: slug.trim(), status, plan } as any)
+          .update({
+            name: name.trim(),
+            slug: slug.trim(),
+            status,
+            plan,
+            ...(statusChanged ? { updated_at: new Date().toISOString() } : {}),
+          } as any)
           .eq("id", initial!.id);
         if (error) throw error;
         toast.success("Loja atualizada com sucesso");
       } else {
         const { error } = await supabase
           .from("stores")
-          .insert({ name: name.trim(), slug: slug.trim(), status, plan } as any);
+          .insert({
+            name: name.trim(),
+            slug: slug.trim(),
+            status,
+            plan,
+            updated_at: new Date().toISOString(),
+          } as any);
         if (error) throw error;
         toast.success(`Loja "${name}" criada com sucesso!`);
       }
@@ -465,7 +519,7 @@ export default function SuperAdminDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("stores")
-        .select("id, name, slug, status, plan, created_at")
+        .select("id, name, slug, status, plan, created_at, updated_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as StoreRow[];
@@ -565,7 +619,10 @@ export default function SuperAdminDashboard() {
   // ── Mutation: update status ───────────────────────────────────────────────
   const updateStatus = useMutation({
     mutationFn: async ({ storeId, status }: { storeId: string; status: StoreStatus }) => {
-      const { error } = await supabase.from("stores").update({ status } as any).eq("id", storeId);
+      const { error } = await supabase
+        .from("stores")
+        .update({ status, updated_at: new Date().toISOString() } as any)
+        .eq("id", storeId);
       if (error) throw error;
     },
     onSuccess: (_, { status }) => {
@@ -660,6 +717,7 @@ export default function SuperAdminDashboard() {
               const c = counts[store.id] ?? { orders: 0, members: 0 };
               const statusCfg = STATUS_CONFIG[store.status] ?? STATUS_CONFIG.suspended;
               const StatusIcon = statusCfg.icon;
+              const trialCounter = getTrialCounter(store);
 
               return (
                 <div
@@ -680,7 +738,7 @@ export default function SuperAdminDashboard() {
                   </div>
 
                   {/* Status dropdown */}
-                  <div>
+                  <div className="space-y-1.5">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button
@@ -714,6 +772,20 @@ export default function SuperAdminDashboard() {
                         })}
                       </DropdownMenuContent>
                     </DropdownMenu>
+                    {trialCounter && (
+                      <div
+                        className={cn(
+                          "inline-flex max-w-full flex-col rounded-md border px-2 py-1 text-[11px] leading-tight",
+                          trialCounter.expired
+                            ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300"
+                            : "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300"
+                        )}
+                        title={trialCounter.detail}
+                      >
+                        <span className="font-semibold">{trialCounter.label}</span>
+                        <span className="text-[10px] opacity-75">{trialCounter.detail}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Plan badge + dropdown */}
