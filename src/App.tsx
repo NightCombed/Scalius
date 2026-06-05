@@ -11,6 +11,7 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import SetPassword from "./pages/SetPassword";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
 import TermsOfService from "./pages/legal/TermsOfService";
@@ -94,6 +95,7 @@ const App = () => {
                   </Route>
 
                   <Route path="/login" element={<Login />} />
+                  <Route path="/set-password" element={<SetPassword />} />
                   <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
                   <Route path="/termos-de-servico" element={<TermsOfService />} />
 
@@ -122,6 +124,7 @@ const App = () => {
                   {/* Main domain: marketing website & onboarding */}
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
+                  <Route path="/set-password" element={<SetPassword />} />
                   <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
                   <Route path="/termos-de-servico" element={<TermsOfService />} />
 
