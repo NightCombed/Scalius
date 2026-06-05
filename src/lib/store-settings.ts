@@ -29,6 +29,7 @@ export function mapStoreSettings(data: any): StoreSettings {
     pix_key: data.pix_key,
     requires_payment_proof: data.requires_payment_proof ?? false,
     show_out_of_stock: data.show_out_of_stock ?? true,
+    show_banner: data.show_banner ?? true,
     latitude: data.latitude ? Number(data.latitude) : null,
     longitude: data.longitude ? Number(data.longitude) : null,
     shipping_mode: data.shipping_mode ?? "regions",

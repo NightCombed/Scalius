@@ -43,9 +43,15 @@ function ToggleRow({
 // ─── Log status badge ─────────────────────────────────────────────────────────
 
 const LOG_STATUS: Record<string, string> = {
-  sent:    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
-  failed:  "bg-red-100    text-red-700    dark:bg-red-900/30    dark:text-red-300",
-  pending: "bg-amber-100  text-amber-700  dark:bg-amber-900/30  dark:text-amber-300",
+  success:      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+  sent:         "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+  failed:       "bg-red-100    text-red-700    dark:bg-red-900/30    dark:text-red-300",
+  error:        "bg-red-100    text-red-700    dark:bg-red-900/30    dark:text-red-300",
+  pending:      "bg-amber-100  text-amber-700  dark:bg-amber-900/30  dark:text-amber-300",
+  rate_limited: "bg-amber-100  text-amber-700  dark:bg-amber-900/30  dark:text-amber-300",
+  suppressed:   "bg-zinc-100   text-zinc-700   dark:bg-zinc-900/30   dark:text-zinc-300",
+  bounced:      "bg-red-100    text-red-700    dark:bg-red-900/30    dark:text-red-300",
+  complained:   "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
 };
 
 const EVENT_LABELS: Record<string, string> = {
@@ -482,14 +488,47 @@ export function NotificationsSettingsSection({ storeId }: Props) {
                       {log.recipient_type === "store" ? "Loja" : "Cliente"}
                     </td>
                     <td className="px-2 py-2.5">
-                      <span className={`inline-flex text-xs px-2 py-0.5 rounded-full font-medium ${LOG_STATUS[log.status] ?? ""}`}>
-                        {log.status}
-                      </span>
-                      {log.error_message && (
-                        <p className="text-xs text-red-500 mt-0.5 truncate max-w-[200px]" title={log.error_message}>
-                          {log.error_message}
-                        </p>
-                      )}
+                      {(() => {
+                        let displayStatus = log.status;
+                        let displayError = log.error_message;
+
+                        // Sanitize for tenants (hide rate limit yellow badge / details)
+                        if (log.status === "rate_limited") {
+                          displayStatus = "failed";
+                        }
+                        if (displayError && (
+                          displayError.includes("rate_limited") || 
+                          displayError.includes("429") || 
+                          displayError.includes("quota") ||
+                          displayError.includes("Rate limit")
+                        )) {
+                          displayError = "Falha temporária no envio de e-mails. A equipe de suporte técnica já foi notificada.";
+                        }
+
+                        // Map status to portuguese user-friendly label
+                        const statusLabels: Record<string, string> = {
+                          success: "Enviado",
+                          sent: "Enviado",
+                          failed: "Falha",
+                          error: "Falha",
+                          suppressed: "Bloqueado (Lista Negra)",
+                          bounced: "Retornado",
+                          complained: "Spam",
+                        };
+
+                        return (
+                          <>
+                            <span className={`inline-flex text-xs px-2 py-0.5 rounded-full font-medium ${LOG_STATUS[displayStatus] ?? ""}`}>
+                              {statusLabels[displayStatus] ?? displayStatus}
+                            </span>
+                            {displayError && (
+                              <p className="text-xs text-red-500 mt-0.5 truncate max-w-[200px]" title={displayError}>
+                                {displayError}
+                              </p>
+                            )}
+                          </>
+                        );
+                      })()}
                     </td>
                     <td className="px-2 py-2.5 text-muted-foreground text-right whitespace-nowrap">
                       {format(new Date(log.created_at), "d MMM, HH:mm", { locale: ptBR })}

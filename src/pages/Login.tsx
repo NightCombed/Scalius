@@ -56,7 +56,7 @@ export default function Login() {
       <div className="hidden lg:block bg-gradient-botanical relative overflow-hidden">
         <div className="absolute inset-0 grid place-items-center text-primary-foreground p-12">
           <div className="max-w-md space-y-4">
-            <img src="/scaliusvitrine-logo.png" alt="Scalius" className="h-10 object-contain invert brightness-200" />
+            <img src="/scalius-logo-dark.png" alt="Scalius" className="h-10 object-contain brightness-0 invert" />
             <h2 className="font-serif text-4xl leading-tight">Cuide da sua loja, nós cuidamos do resto.</h2>
             <p className="opacity-90">Plataforma multi-tenant de e-commerce. Sua marca no próximo nível.</p>
           </div>
@@ -65,7 +65,7 @@ export default function Login() {
       <div className="grid place-items-center p-6">
         <div className="w-full max-w-sm space-y-6">
           <Link to="/" className="flex items-center gap-2 mb-2">
-            <img src="/scaliusvitrine-logo.png" alt="Scalius" className="h-8 object-contain" />
+            <img src="/scalius-logo-dark.png" alt="Scalius" className="h-8 object-contain" />
           </Link>
 
           <Tabs defaultValue="signin" className="w-full">

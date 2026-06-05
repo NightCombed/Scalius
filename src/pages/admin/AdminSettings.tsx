@@ -48,6 +48,7 @@ const schema = z.object({
   pix_key: z.string().trim().max(140).optional().or(z.literal("")),
   requires_payment_proof: z.boolean().default(false),
   show_out_of_stock: z.boolean().default(true),
+  show_banner: z.boolean().default(true),
   latitude: z.string().trim().optional().or(z.literal("")),
   longitude: z.string().trim().optional().or(z.literal("")),
   
@@ -154,6 +155,7 @@ export default function AdminSettings() {
       pix_key: "",
       requires_payment_proof: false,
       show_out_of_stock: true,
+      show_banner: true,
       latitude: "",
       longitude: "",
       national_shipping_enabled: false,
@@ -247,6 +249,7 @@ export default function AdminSettings() {
       pix_key: settings.pix_key ?? "",
       requires_payment_proof: settings.requires_payment_proof ?? false,
       show_out_of_stock: settings.show_out_of_stock ?? true,
+      show_banner: settings.show_banner ?? true,
       latitude: settings.latitude ? String(settings.latitude) : "",
       longitude: settings.longitude ? String(settings.longitude) : "",
       national_shipping_enabled: settings.national_shipping_enabled ?? false,
@@ -335,6 +338,7 @@ export default function AdminSettings() {
           pix_key: values.payment_provider === "manual" ? (values.pix_key || null) : null,
           requires_payment_proof: values.payment_provider === "manual" ? values.requires_payment_proof : false,
           show_out_of_stock: values.show_out_of_stock,
+          show_banner: values.show_banner,
           latitude: values.latitude ? parseFloat(values.latitude) : null,
           longitude: values.longitude ? parseFloat(values.longitude) : null,
           national_shipping_enabled: values.national_shipping_enabled,
@@ -504,6 +508,27 @@ export default function AdminSettings() {
                     Opcional. Aparece no topo da página inicial (160-200px de altura).
                   </FormDescription>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="show_banner"
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between gap-4 rounded-lg border border-border p-4">
+                  <div>
+                    <FormLabel className="font-medium">Exibir área de banner</FormLabel>
+                    <FormDescription className="text-xs mt-0.5">
+                      Se desativado, o banner e o espaço reservado a ele são completamente ocultados na vitrine.
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
                 </FormItem>
               )}
             />

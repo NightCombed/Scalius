@@ -163,20 +163,44 @@ serve(async (req) => {
 
     console.log("[send-notification] storeEmail:", storeEmail);
 
-    // Helper to send email via our SES edge function
+    // Helper to send email via our send-email-ses edge function (backed by Resend)
     const sendViaSES = async (to: string, subject: string, html: string, fromName: string, replyTo?: string) => {
       console.log("[send-notification] Sending email to:", to, "subject:", subject);
-      // Pass service role key so the internal call is authorized (avoids 401)
+
       const { data, error } = await supabase.functions.invoke('send-email-ses', {
         body: { to, subject, html, fromName, replyTo },
         headers: {
           Authorization: `Bearer ${supabaseServiceRoleKey || supabaseAnonKey}`,
         },
       });
+
+      // Supabase-level / network error (includes HTTP 429 from the edge function)
       if (error) {
-        console.error("[send-notification] sendViaSES error:", error);
-        throw error;
+        const errMsg: string = (error as any).message || String(error);
+        const isRateLimit = errMsg.includes("429") || errMsg.toLowerCase().includes("rate");
+        console.error("[send-notification] sendViaSES invoke error (isRateLimit:", isRateLimit, "):", errMsg);
+        const enriched: any = new Error(isRateLimit ? `rate_limited: ${errMsg}` : errMsg);
+        enriched.isRateLimit = isRateLimit;
+        enriched.isSuppressed = false;
+        throw enriched;
       }
+
+      // Business-level: e-mail suprimido (bounced/complained) — não consumiu quota
+      if (data?.suppressed === true) {
+        console.warn("[send-notification] Email suppressed:", to, "reason:", data.reason);
+        const enriched: any = new Error(`suppressed: ${data.error || "Email address suppressed"}`);
+        enriched.isSuppressed = true;
+        enriched.isRateLimit = false;
+        enriched.suppressionReason = data.reason;
+        enriched.suppressedEmails = data.suppressedEmails;
+        throw enriched;
+      }
+
+      // Business-level: falha de envio não tipada
+      if (!data?.success) {
+        throw new Error(data?.error || "Email send failed with unknown error");
+      }
+
       console.log("[send-notification] sendViaSES success:", JSON.stringify(data));
       return data;
     };
@@ -385,7 +409,6 @@ serve(async (req) => {
         try {
           const result = await sendViaSES(storeEmail, emailSubject, html, storeName);
           responses.push({ event, to: "store", type: "email", result });
-          
           await logNotification({
             store_id: storeId,
             order_id: orderId,
@@ -396,16 +419,20 @@ serve(async (req) => {
             metadata: { email: storeEmail, result },
           });
         } catch (err: any) {
-          console.error(`[send-notification] Store Email Error [${event}]:`, err);
+          // Determina o status granular para facilitar filtragem na notification_logs
+          let logStatus = "error";
+          if (err.isRateLimit) logStatus = "rate_limited";
+          else if (err.isSuppressed) logStatus = "suppressed";
+          console.error(`[send-notification] Store Email Error [${event}] status=${logStatus}:`, err.message);
           await logNotification({
             store_id: storeId,
             order_id: orderId,
             event_type: event,
             channel: "email",
             recipient_type: "store",
-            status: "error",
+            status: logStatus,
             error_message: err.message,
-            metadata: { email: storeEmail },
+            metadata: { email: storeEmail, ...(err.isSuppressed ? { suppression_reason: err.suppressionReason } : {}) },
           });
         }
       } else if (sendToStore && !storeEmail) {
@@ -470,7 +497,6 @@ serve(async (req) => {
         try {
           const result = await sendViaSES(customerEmail, emailSubject, html, storeName, storeEmail || undefined);
           responses.push({ event, to: "customer", type: "email", result });
-          
           await logNotification({
             store_id: storeId,
             order_id: orderId,
@@ -481,16 +507,20 @@ serve(async (req) => {
             metadata: { email: customerEmail, result },
           });
         } catch (err: any) {
-          console.error(`[send-notification] Customer Email Error [${event}]:`, err);
+          // Determina o status granular para facilitar filtragem na notification_logs
+          let logStatus = "error";
+          if (err.isRateLimit) logStatus = "rate_limited";
+          else if (err.isSuppressed) logStatus = "suppressed";
+          console.error(`[send-notification] Customer Email Error [${event}] status=${logStatus}:`, err.message);
           await logNotification({
             store_id: storeId,
             order_id: orderId,
             event_type: event,
             channel: "email",
             recipient_type: "customer",
-            status: "error",
+            status: logStatus,
             error_message: err.message,
-            metadata: { email: customerEmail },
+            metadata: { email: customerEmail, ...(err.isSuppressed ? { suppression_reason: err.suppressionReason } : {}) },
           });
         }
       }

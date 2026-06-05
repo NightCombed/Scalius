@@ -159,26 +159,30 @@ export default function PublicStoreHome() {
   const address = settings?.address;
   const openingHours = settings?.opening_hours;
 
+  const showBanner = settings?.show_banner !== false;
+
   return (
     <>
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <header className="relative bg-background">
-        {/* Banner Section */}
-        <div className="w-full h-[140px] md:h-[200px] overflow-hidden bg-secondary/30">
-          {settings?.banner_url ? (
-            <img 
-              src={settings.banner_url} 
-              alt="Banner da loja" 
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-secondary/50" />
-          )}
-        </div>
+        {/* Banner Section — hidden when show_banner is false */}
+        {showBanner && (
+          <div className="w-full h-[140px] md:h-[200px] overflow-hidden bg-secondary/30">
+            {settings?.banner_url ? (
+              <img
+                src={settings.banner_url}
+                alt="Banner da loja"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-secondary/50" />
+            )}
+          </div>
+        )}
 
         <div className="container relative">
-          {/* Profile/Logo cutout */}
-          <div className="absolute -top-10 md:-top-12 left-4 md:left-8">
+          {/* Profile/Logo cutout — shifts up over banner when visible, sits at top otherwise */}
+          <div className={showBanner ? "absolute -top-10 md:-top-12 left-4 md:left-8" : "pt-6 pb-2"}>
             <div className="w-[80px] h-[80px] md:w-[100px] md:h-[100px] rounded-full border-4 border-background bg-background shadow-lg overflow-hidden flex items-center justify-center">
               {settings?.logo_url ? (
                 <img 
@@ -194,8 +198,8 @@ export default function PublicStoreHome() {
             </div>
           </div>
 
-          {/* Content area */}
-          <div className="pt-12 md:pt-16 pb-8 space-y-4">
+          {/* Content area — when banner is visible the logo is absolutely positioned so we need top padding to clear it */}
+          <div className={showBanner ? "pt-12 md:pt-16 pb-8 space-y-4" : "pb-8 space-y-4"}>
             <div className="space-y-1">
               <h1 className="text-2xl md:text-[28px] font-medium text-foreground leading-tight">
                 {displayName}

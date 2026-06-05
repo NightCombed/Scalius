@@ -2,36 +2,465 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Store, Sparkles, Users, ShoppingBag, Check, ChevronDown } from "lucide-react";
+import {
+  Loader2, Store, Sparkles, Users, ShoppingBag, Check, ChevronDown,
+  Plus, Pencil, X, UserPlus, Trash2, ExternalLink, Copy, RefreshCw,
+  CheckCircle2, AlertCircle, Clock, Mail, AlertTriangle,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+} from "@/components/ui/sheet";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { PLAN_LABEL, PLAN_BADGE_CLASSES, type PlanId } from "@/lib/plan";
+import { cn } from "@/lib/utils";
+
+// ─── Types ─────────────────────────────────────────────────────────────────
+
+type StoreStatus = "active" | "trial" | "suspended";
 
 interface StoreRow {
   id: string;
   name: string;
   slug: string;
-  status: string;
+  status: StoreStatus;
   plan: PlanId;
   created_at: string;
-  _product_count?: number;
-  _order_count?: number;
-  _member_count?: number;
 }
+
+interface MemberRow {
+  id: string;
+  user_id: string;
+  role: string;
+  created_at: string;
+  profile: { full_name: string | null; email: string | null } | null;
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+const STATUS_CONFIG: Record<StoreStatus, { label: string; className: string; icon: React.ElementType }> = {
+  active:    { label: "Ativa",     className: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300", icon: CheckCircle2 },
+  trial:     { label: "Trial",     className: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",   icon: Clock },
+  suspended: { label: "Suspensa",  className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",           icon: AlertCircle },
+};
+
+const ROLE_LABELS: Record<string, string> = {
+  owner:   "Dono",
+  admin:   "Gerente",
+  staff:   "Colaborador",
+};
+
+// ─── Create / Edit Store Dialog ─────────────────────────────────────────────
+
+interface StoreDialogProps {
+  open: boolean;
+  onClose: () => void;
+  initial?: StoreRow | null;
+  onSaved: () => void;
+}
+
+function StoreDialog({ open, onClose, initial, onSaved }: StoreDialogProps) {
+  const isEdit = !!initial;
+  const [name, setName] = useState(initial?.name ?? "");
+  const [slug, setSlug] = useState(initial?.slug ?? "");
+  const [slugEdited, setSlugEdited] = useState(isEdit);
+  const [status, setStatus] = useState<StoreStatus>(initial?.status ?? "trial");
+  const [plan, setPlan] = useState<PlanId>(initial?.plan ?? "essencial");
+  const [saving, setSaving] = useState(false);
+
+  // Auto-generate slug from name when not manually edited
+  function handleNameChange(v: string) {
+    setName(v);
+    if (!slugEdited) setSlug(slugify(v));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim() || !slug.trim()) {
+      toast.error("Nome e slug são obrigatórios");
+      return;
+    }
+    setSaving(true);
+    try {
+      if (isEdit) {
+        const { error } = await supabase
+          .from("stores")
+          .update({ name: name.trim(), slug: slug.trim(), status, plan } as any)
+          .eq("id", initial!.id);
+        if (error) throw error;
+        toast.success("Loja atualizada com sucesso");
+      } else {
+        const { error } = await supabase
+          .from("stores")
+          .insert({ name: name.trim(), slug: slug.trim(), status, plan } as any);
+        if (error) throw error;
+        toast.success(`Loja "${name}" criada com sucesso!`);
+      }
+      onSaved();
+      onClose();
+    } catch (err: any) {
+      toast.error("Erro ao salvar loja", { description: err.message });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleOpenChange(v: boolean) {
+    if (!v) onClose();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="font-serif text-2xl">
+            {isEdit ? "Editar loja" : "Nova loja"}
+          </DialogTitle>
+          <DialogDescription>
+            {isEdit
+              ? "Atualize os dados da loja."
+              : "Preencha os dados para criar uma nova loja na plataforma."}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+          {/* Nome */}
+          <div className="space-y-1.5">
+            <Label htmlFor="store-name">Nome da loja *</Label>
+            <Input
+              id="store-name"
+              placeholder="Ex: Rosa Bela Floricultura"
+              value={name}
+              onChange={(e) => handleNameChange(e.target.value)}
+              required
+            />
+          </div>
+
+          {/* Slug */}
+          <div className="space-y-1.5">
+            <Label htmlFor="store-slug">Slug (subdomínio) *</Label>
+            <div className="flex items-center gap-1">
+              <Input
+                id="store-slug"
+                placeholder="rosa-bela"
+                value={slug}
+                onChange={(e) => { setSlug(e.target.value); setSlugEdited(true); }}
+                className="flex-1"
+                required
+              />
+              <span className="text-xs text-muted-foreground whitespace-nowrap">.scalius.com.br</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Apenas letras minúsculas, números e hífens. Não pode ser alterado facilmente depois.
+            </p>
+          </div>
+
+          {/* Status + Plano */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Status inicial</Label>
+              <Select value={status} onValueChange={(v) => setStatus(v as StoreStatus)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="trial">Trial</SelectItem>
+                  <SelectItem value="active">Ativa</SelectItem>
+                  <SelectItem value="suspended">Suspensa</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Plano</Label>
+              <Select value={plan} onValueChange={(v) => setPlan(v as PlanId)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="essencial">Essencial</SelectItem>
+                  <SelectItem value="pro">Pro ✨</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              {isEdit ? "Salvar alterações" : "Criar loja"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Members Sheet ───────────────────────────────────────────────────────────
+
+interface MembersSheetProps {
+  store: StoreRow | null;
+  onClose: () => void;
+}
+
+function MembersSheet({ store, onClose }: MembersSheetProps) {
+  const queryClient = useQueryClient();
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteName, setInviteName] = useState("");
+  const [inviteRole, setInviteRole] = useState<"owner" | "admin" | "staff">("admin");
+  const [inviting, setInviting] = useState(false);
+
+  const { data: members = [], isLoading: loadingMembers } = useQuery<MemberRow[]>({
+    queryKey: ["store-members", store?.id],
+    queryFn: async () => {
+      if (!store?.id) return [];
+      const { data, error } = await supabase
+        .from("store_members")
+        .select("id, user_id, role, created_at")
+        .eq("store_id", store.id)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+
+      // Fetch profiles separately to get name/email
+      const userIds = (data ?? []).map((m) => m.user_id);
+      let profiles: Record<string, { full_name: string | null; email: string | null }> = {};
+
+      if (userIds.length > 0) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", userIds);
+
+        // Get emails from auth (via admin RPC if available, otherwise use profile only)
+        (profileData ?? []).forEach((p) => {
+          profiles[p.id] = { full_name: p.full_name, email: null };
+        });
+      }
+
+      return (data ?? []).map((m) => ({
+        ...m,
+        profile: profiles[m.user_id] ?? null,
+      }));
+    },
+    enabled: !!store?.id,
+  });
+
+  const removeMember = useMutation({
+    mutationFn: async (memberId: string) => {
+      const { error } = await supabase
+        .from("store_members")
+        .delete()
+        .eq("id", memberId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["store-members", store?.id] });
+      queryClient.invalidateQueries({ queryKey: ["super-admin-counts"] });
+      toast.success("Membro removido");
+    },
+    onError: (err: any) => {
+      toast.error("Erro ao remover membro", { description: err.message });
+    },
+  });
+
+  async function handleInvite(e: React.FormEvent) {
+    e.preventDefault();
+    if (!inviteEmail.trim() || !store) return;
+    setInviting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke("invite-store-user", {
+        body: {
+          email: inviteEmail.trim(),
+          full_name: inviteName.trim(),
+          store_id: store.id,
+          role: inviteRole,
+          redirect_url: `https://${store.slug}.scalius.com.br/admin`,
+        },
+      });
+
+      if (res.error) throw new Error(res.error.message);
+      const result = res.data as { ok: boolean; message: string; already_member?: boolean };
+
+      if (!result.ok) throw new Error(result.message || "Erro desconhecido");
+
+      toast.success(result.already_member ? "Usuário vinculado!" : "Convite enviado!", {
+        description: result.message,
+      });
+
+      setInviteEmail("");
+      setInviteName("");
+      queryClient.invalidateQueries({ queryKey: ["store-members", store.id] });
+    } catch (err: any) {
+      toast.error("Erro ao convidar", { description: err.message });
+    } finally {
+      setInviting(false);
+    }
+  }
+
+  const storeUrl = store ? `https://${store.slug}.scalius.com.br` : "";
+
+  return (
+    <Sheet open={!!store} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <SheetContent className="w-full sm:max-w-lg flex flex-col gap-0 p-0">
+        <SheetHeader className="px-6 pt-6 pb-4 border-b border-border">
+          <SheetTitle className="font-serif text-2xl flex items-center gap-2">
+            <Users className="h-5 w-5 text-primary" />
+            Membros — {store?.name}
+          </SheetTitle>
+          <SheetDescription className="flex items-center gap-2">
+            <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{storeUrl}</span>
+            <button
+              onClick={() => { navigator.clipboard.writeText(storeUrl); toast.success("URL copiada!"); }}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </button>
+            <a href={storeUrl} target="_blank" rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors">
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </SheetDescription>
+        </SheetHeader>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Members list */}
+          <section className="space-y-3">
+            <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">
+              Membros atuais
+            </h3>
+            {loadingMembers && (
+              <div className="flex justify-center py-6">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            {!loadingMembers && members.length === 0 && (
+              <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                Nenhum membro ainda. Convide o primeiro lojista abaixo.
+              </div>
+            )}
+            {members.map((m) => (
+              <div
+                key={m.id}
+                className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border bg-card"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium truncate text-sm">
+                    {m.profile?.full_name || "Sem nome"}
+                  </div>
+                  <div className="text-xs text-muted-foreground truncate">
+                    {ROLE_LABELS[m.role] ?? m.role} · ID: {m.user_id.slice(0, 8)}…
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+                  onClick={() => removeMember.mutate(m.id)}
+                  disabled={removeMember.isPending}
+                  title="Remover membro"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </section>
+
+          {/* Invite form */}
+          <section className="space-y-4">
+            <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">
+              Convidar / vincular membro
+            </h3>
+            <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
+              <form onSubmit={handleInvite} className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="invite-email" className="text-sm">E-mail *</Label>
+                  <Input
+                    id="invite-email"
+                    type="email"
+                    placeholder="lojista@exemplo.com"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="invite-name" className="text-sm">Nome completo</Label>
+                  <Input
+                    id="invite-name"
+                    placeholder="Maria da Silva"
+                    value={inviteName}
+                    onChange={(e) => setInviteName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Papel na loja</Label>
+                  <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as typeof inviteRole)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="owner">Dono (acesso total)</SelectItem>
+                      <SelectItem value="admin">Gerente</SelectItem>
+                      <SelectItem value="staff">Colaborador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button type="submit" className="w-full gap-2" disabled={inviting}>
+                  {inviting
+                    ? <><Loader2 className="h-4 w-4 animate-spin" /> Convidando…</>
+                    : <><UserPlus className="h-4 w-4" /> Convidar e vincular</>
+                  }
+                </Button>
+              </form>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Se o e-mail já tiver conta no Scalius, apenas será vinculado à loja.
+                Caso contrário, receberá um e-mail de convite para definir a senha.
+              </p>
+            </div>
+          </section>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+// ─── Main Dashboard ──────────────────────────────────────────────────────────
 
 export default function SuperAdminDashboard() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // ── Fetch all stores ────────────────────────────────────────────────────────
-  const { data: stores = [], isLoading } = useQuery<StoreRow[]>({
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editStore, setEditStore] = useState<StoreRow | null>(null);
+  const [membersStore, setMembersStore] = useState<StoreRow | null>(null);
+
+  // ── Fetch all stores ─────────────────────────────────────────────────────
+  const { data: stores = [], isLoading, error: storesError } = useQuery<StoreRow[]>({
     queryKey: ["super-admin-stores"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -43,100 +472,141 @@ export default function SuperAdminDashboard() {
     },
   });
 
-  // ── Fetch counts in a single join ───────────────────────────────────────────
+  // ── Fetch counts ──────────────────────────────────────────────────────────
   const { data: counts = {} } = useQuery<Record<string, { orders: number; members: number }>>({
     queryKey: ["super-admin-counts", stores.map((s) => s.id).join(",")],
     queryFn: async () => {
       if (stores.length === 0) return {};
       const storeIds = stores.map((s) => s.id);
-
       const [ordersRes, membersRes] = await Promise.all([
-        supabase
-          .from("orders")
-          .select("store_id")
-          .in("store_id", storeIds),
-        supabase
-          .from("store_members")
-          .select("store_id")
-          .in("store_id", storeIds),
+        supabase.from("orders").select("store_id").in("store_id", storeIds),
+        supabase.from("store_members").select("store_id").in("store_id", storeIds),
       ]);
-
       const result: Record<string, { orders: number; members: number }> = {};
-      for (const sid of storeIds) {
-        result[sid] = { orders: 0, members: 0 };
-      }
-      for (const row of ordersRes.data ?? []) {
-        if (result[row.store_id]) result[row.store_id].orders++;
-      }
-      for (const row of membersRes.data ?? []) {
-        if (result[row.store_id]) result[row.store_id].members++;
-      }
+      for (const sid of storeIds) result[sid] = { orders: 0, members: 0 };
+      for (const row of ordersRes.data ?? []) { if (result[row.store_id]) result[row.store_id].orders++; }
+      for (const row of membersRes.data ?? []) { if (result[row.store_id]) result[row.store_id].members++; }
       return result;
     },
     enabled: stores.length > 0,
   });
 
-  // ── Mutation to update a store's plan ───────────────────────────────────────
+  // ── Fetch Email Quota & Stats ─────────────────────────────────────────────
+  const { data: emailStats = { todayCount: 0, byStore: {}, logs: [] }, isLoading: loadingEmailStats } = useQuery({
+    queryKey: ["super-admin-email-stats"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("notification_logs")
+        .select("id, store_id, status, error_message, created_at, recipient_type, event_type")
+        .eq("channel", "email")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      let todayCount = 0;
+      const byStore: Record<string, { today: number; total: number; success: number; rateLimited: number; suppressed: number; error: number }> = {};
+
+      for (const log of data || []) {
+        const logDate = new Date(log.created_at);
+        const isToday = logDate >= today;
+
+        if (isToday) {
+          todayCount++;
+        }
+
+        const sid = log.store_id;
+        if (sid) {
+          if (!byStore[sid]) {
+            byStore[sid] = { today: 0, total: 0, success: 0, rateLimited: 0, suppressed: 0, error: 0 };
+          }
+
+          byStore[sid].total++;
+          if (isToday) {
+            byStore[sid].today++;
+          }
+
+          if (log.status === "success" || log.status === "sent") {
+            byStore[sid].success++;
+          } else if (log.status === "rate_limited") {
+            byStore[sid].rateLimited++;
+          } else if (log.status === "suppressed") {
+            byStore[sid].suppressed++;
+          } else {
+            byStore[sid].error++;
+          }
+        }
+      }
+
+      return {
+        todayCount,
+        byStore,
+        logs: data || [],
+      };
+    },
+    refetchInterval: 30_000,
+  });
+
+  // ── Mutation: update plan ─────────────────────────────────────────────────
   const updatePlan = useMutation({
     mutationFn: async ({ storeId, plan }: { storeId: string; plan: PlanId }) => {
-      const { error } = await supabase
-        .from("stores")
-        .update({ plan } as any)
-        .eq("id", storeId);
+      const { error } = await supabase.from("stores").update({ plan } as any).eq("id", storeId);
       if (error) throw error;
     },
     onSuccess: (_, { plan }) => {
       queryClient.invalidateQueries({ queryKey: ["super-admin-stores"] });
       toast.success(`Plano atualizado para ${PLAN_LABEL[plan]}`);
     },
-    onError: (err: any) => {
-      toast.error("Erro ao atualizar plano", { description: err.message });
-    },
+    onError: (err: any) => toast.error("Erro ao atualizar plano", { description: err.message }),
   });
 
-  // ── Status badge helper ─────────────────────────────────────────────────────
-  const statusClass = (status: string) => {
-    if (status === "active") return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300";
-    if (status === "trial") return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300";
-    return "bg-muted text-muted-foreground";
-  };
+  // ── Mutation: update status ───────────────────────────────────────────────
+  const updateStatus = useMutation({
+    mutationFn: async ({ storeId, status }: { storeId: string; status: StoreStatus }) => {
+      const { error } = await supabase.from("stores").update({ status } as any).eq("id", storeId);
+      if (error) throw error;
+    },
+    onSuccess: (_, { status }) => {
+      queryClient.invalidateQueries({ queryKey: ["super-admin-stores"] });
+      toast.success(`Status atualizado para ${STATUS_CONFIG[status].label}`);
+    },
+    onError: (err: any) => toast.error("Erro ao atualizar status", { description: err.message }),
+  });
 
-  const statusLabel: Record<string, string> = {
-    active: "Ativa",
-    trial: "Trial",
-    suspended: "Suspensa",
-  };
+  // ── Summary cards ─────────────────────────────────────────────────────────
+  const summaryCards = [
+    { label: "Lojas totais",    value: stores.length,                                          icon: Store,        color: "text-primary" },
+    { label: "Ativas",          value: stores.filter((s) => s.status === "active").length,     icon: CheckCircle2, color: "text-emerald-600" },
+    { label: "Trial",           value: stores.filter((s) => s.status === "trial").length,      icon: Clock,        color: "text-amber-600" },
+    { label: "Plano Pro",       value: stores.filter((s) => s.plan === "pro").length,          icon: Sparkles,     color: "text-violet-600" },
+    { label: "Total de pedidos", value: Object.values(counts).reduce((a, c) => a + c.orders, 0), icon: ShoppingBag, color: "text-primary" },
+  ];
 
   return (
-    <div className="space-y-8 max-w-6xl">
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <header className="space-y-1">
-        <h1 className="font-serif text-3xl mb-1">Plataforma Scalius</h1>
-        <p className="text-muted-foreground">
-          Olá, <strong>{user?.full_name}</strong>. Gerencie todas as lojas e planos da plataforma.
-        </p>
+    <div className="space-y-8 max-w-7xl">
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <header className="flex items-end justify-between gap-4 flex-wrap">
+        <div className="space-y-1">
+          <h1 className="font-serif text-3xl">Plataforma Scalius</h1>
+          <p className="text-muted-foreground">
+            Olá, <strong>{user?.full_name}</strong>. Gerencie todas as lojas e lojistas da plataforma.
+          </p>
+        </div>
+        <Button onClick={() => setCreateOpen(true)} className="gap-2 shrink-0">
+          <Plus className="h-4 w-4" /> Nova loja
+        </Button>
       </header>
 
-      {/* ── Summary cards ──────────────────────────────────────────────────── */}
+      {/* ── Summary cards ──────────────────────────────────────────────── */}
       {!isLoading && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {[
-            { label: "Lojas totais", value: stores.length, icon: Store },
-            { label: "Plano Pro", value: stores.filter((s) => s.plan === "pro").length, icon: Sparkles },
-            { label: "Plano Essencial", value: stores.filter((s) => s.plan === "essencial").length, icon: Store },
-            {
-              label: "Total de pedidos",
-              value: Object.values(counts).reduce((acc, c) => acc + c.orders, 0),
-              icon: ShoppingBag,
-            },
-          ].map(({ label, value, icon: Icon }) => (
-            <div
-              key={label}
-              className="rounded-xl border border-border bg-card p-4 space-y-2 shadow-soft"
-            >
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          {summaryCards.map(({ label, value, icon: Icon, color }) => (
+            <div key={label} className="rounded-xl border border-border bg-card p-4 space-y-2 shadow-soft">
               <div className="flex items-center justify-between">
                 <p className="text-xs text-muted-foreground font-medium">{label}</p>
-                <Icon className="h-4 w-4 text-muted-foreground" />
+                <Icon className={cn("h-4 w-4", color)} />
               </div>
               <p className="font-serif text-2xl">{value}</p>
             </div>
@@ -144,102 +614,129 @@ export default function SuperAdminDashboard() {
         </div>
       )}
 
-      {/* ── Stores table ───────────────────────────────────────────────────── */}
+      {/* ── Stores table ───────────────────────────────────────────────── */}
       <div className="rounded-xl border border-border bg-card overflow-hidden shadow-soft">
         <header className="p-5 border-b border-border flex items-center justify-between">
-          <h2 className="font-serif text-xl">Lojas</h2>
-          {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+          <h2 className="font-serif text-xl">Lojas cadastradas</h2>
+          <div className="flex items-center gap-2">
+            {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+            <Button variant="ghost" size="icon" onClick={() => queryClient.invalidateQueries({ queryKey: ["super-admin-stores"] })} title="Recarregar">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
         </header>
 
         {isLoading ? (
           <div className="p-12 flex justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
+        ) : storesError ? (
+          <div className="p-12 text-center text-destructive">
+            <AlertCircle className="h-10 w-10 mx-auto mb-3" />
+            <p className="font-semibold">Erro ao carregar lojas</p>
+            <p className="text-sm text-muted-foreground">{(storesError as Error).message}</p>
+          </div>
         ) : stores.length === 0 ? (
-          <div className="p-12 text-center text-muted-foreground text-sm">
-            Nenhuma loja cadastrada ainda.
+          <div className="p-12 text-center">
+            <Store className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+            <p className="text-muted-foreground text-sm">Nenhuma loja cadastrada ainda.</p>
+            <Button className="mt-4 gap-2" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4" /> Criar primeira loja
+            </Button>
           </div>
         ) : (
           <div className="divide-y divide-border">
             {/* Table header */}
-            <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 px-5 py-2.5 text-xs text-muted-foreground uppercase tracking-wider font-medium border-b border-border bg-muted/30">
+            <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 px-5 py-2.5 text-xs text-muted-foreground uppercase tracking-wider font-medium border-b border-border bg-muted/30">
               <span>Loja</span>
               <span>Status</span>
               <span>Plano</span>
               <span className="flex items-center gap-1"><Users className="h-3 w-3" /> Membros</span>
               <span className="flex items-center gap-1"><ShoppingBag className="h-3 w-3" /> Pedidos</span>
-              <span>Ação</span>
+              <span>Ações</span>
             </div>
 
             {stores.map((store) => {
               const c = counts[store.id] ?? { orders: 0, members: 0 };
-              const isPro = store.plan === "pro";
+              const statusCfg = STATUS_CONFIG[store.status] ?? STATUS_CONFIG.suspended;
+              const StatusIcon = statusCfg.icon;
 
               return (
                 <div
                   key={store.id}
-                  className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-3 md:gap-4 items-center px-5 py-4 hover:bg-muted/20 transition-colors"
+                  className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-3 lg:gap-4 items-center px-5 py-4 hover:bg-muted/20 transition-colors"
                 >
                   {/* Name / slug */}
                   <div className="min-w-0">
                     <div className="font-medium truncate">{store.name}</div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {store.slug}.scalius.com.br
-                    </div>
-                  </div>
-
-                  {/* Status */}
-                  <div>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusClass(store.status)}`}
+                    <a
+                      href={`https://${store.slug}.scalius.com.br`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-muted-foreground hover:text-primary transition-colors truncate flex items-center gap-1"
                     >
-                      {statusLabel[store.status] ?? store.status}
-                    </span>
+                      {store.slug}.scalius.com.br <ExternalLink className="h-3 w-3 shrink-0" />
+                    </a>
                   </div>
 
-                  {/* Plan badge */}
-                  <div>
-                    <span
-                      className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full font-semibold ${PLAN_BADGE_CLASSES[store.plan]}`}
-                    >
-                      {isPro && <Sparkles className="h-3 w-3" />}
-                      {PLAN_LABEL[store.plan]}
-                    </span>
-                  </div>
-
-                  {/* Members */}
-                  <div className="text-sm">
-                    <span className="text-muted-foreground md:hidden">Membros: </span>
-                    {c.members}
-                  </div>
-
-                  {/* Orders */}
-                  <div className="text-sm">
-                    <span className="text-muted-foreground md:hidden">Pedidos: </span>
-                    {c.orders}
-                  </div>
-
-                  {/* Plan change dropdown */}
+                  {/* Status dropdown */}
                   <div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 gap-1.5 text-xs"
+                        <button
+                          className={cn(
+                            "text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity",
+                            statusCfg.className
+                          )}
+                          disabled={updateStatus.isPending}
+                        >
+                          <StatusIcon className="h-3 w-3" />
+                          {statusCfg.label}
+                          <ChevronDown className="h-3 w-3 ml-0.5" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-40">
+                        {(Object.keys(STATUS_CONFIG) as StoreStatus[]).map((s) => {
+                          const cfg = STATUS_CONFIG[s];
+                          const Ic = cfg.icon;
+                          return (
+                            <DropdownMenuItem
+                              key={s}
+                              onClick={() => updateStatus.mutate({ storeId: store.id, status: s })}
+                              disabled={store.status === s}
+                              className="flex items-center gap-2"
+                            >
+                              <Ic className="h-3.5 w-3.5" />
+                              {cfg.label}
+                              {store.status === s && <Check className="h-3.5 w-3.5 ml-auto text-primary" />}
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  {/* Plan badge + dropdown */}
+                  <div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          className={cn(
+                            "inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold cursor-pointer hover:opacity-80 transition-opacity",
+                            PLAN_BADGE_CLASSES[store.plan]
+                          )}
                           disabled={updatePlan.isPending}
                         >
-                          Mudar plano
-                          <ChevronDown className="h-3 w-3" />
-                        </Button>
+                          {store.plan === "pro" && <Sparkles className="h-3 w-3" />}
+                          {PLAN_LABEL[store.plan]}
+                          <ChevronDown className="h-3 w-3 ml-0.5" />
+                        </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-44">
+                      <DropdownMenuContent align="start" className="w-44">
                         {(["essencial", "pro"] as PlanId[]).map((p) => (
                           <DropdownMenuItem
                             key={p}
-                            onClick={() =>
-                              updatePlan.mutate({ storeId: store.id, plan: p })
-                            }
+                            onClick={() => updatePlan.mutate({ storeId: store.id, plan: p })}
                             disabled={store.plan === p}
                             className="flex items-center justify-between"
                           >
@@ -253,6 +750,45 @@ export default function SuperAdminDashboard() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
+
+                  {/* Members */}
+                  <div className="text-sm">
+                    <span className="text-muted-foreground lg:hidden">Membros: </span>
+                    <button
+                      onClick={() => setMembersStore(store)}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      {c.members} {c.members === 1 ? "membro" : "membros"}
+                    </button>
+                  </div>
+
+                  {/* Orders */}
+                  <div className="text-sm">
+                    <span className="text-muted-foreground lg:hidden">Pedidos: </span>
+                    {c.orders}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 text-xs"
+                      onClick={() => setMembersStore(store)}
+                    >
+                      <Users className="h-3.5 w-3.5" />
+                      <span className="hidden xl:inline">Membros</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setEditStore(store)}
+                      title="Editar loja"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
               );
             })}
@@ -260,7 +796,144 @@ export default function SuperAdminDashboard() {
         )}
       </div>
 
-      {/* ── Plan legend ─────────────────────────────────────────────────────── */}
+      {/* ── Email Quota Section (Super-Admin eyes only) ────────────────────── */}
+      <section className="rounded-xl border border-border bg-card p-6 space-y-6 shadow-soft">
+        <header className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="space-y-1">
+            <h2 className="font-serif text-xl flex items-center gap-2">
+              <Mail className="h-5 w-5 text-primary animate-pulse" />
+              Consumo de Quota de E-mails (Resend)
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Monitoramento em tempo real do limite diário do plano Free (100 e-mails/dia).
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300 gap-1.5 py-1 px-2.5">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              Teto: 100 envios/dia
+            </Badge>
+          </div>
+        </header>
+
+        {loadingEmailStats ? (
+          <div className="py-8 flex justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left/Center: Quota progress bar and stats */}
+            <div className="lg:col-span-1 rounded-lg border border-border bg-muted/20 p-5 flex flex-col justify-between space-y-4">
+              <div className="space-y-3">
+                <div className="flex justify-between items-end">
+                  <span className="text-sm font-medium">Consumo de Hoje</span>
+                  <span className="text-xl font-serif font-bold">
+                    {emailStats.todayCount} <span className="text-xs text-muted-foreground font-sans">/ 100 e-mails</span>
+                  </span>
+                </div>
+                
+                {/* Progress bar */}
+                <div className="h-3 w-full bg-secondary rounded-full overflow-hidden">
+                  <div 
+                    className={cn(
+                      "h-full rounded-full transition-all duration-500",
+                      emailStats.todayCount >= 90 ? "bg-red-500" :
+                      emailStats.todayCount >= 70 ? "bg-amber-500" : "bg-primary"
+                    )}
+                    style={{ width: `${Math.min(100, (emailStats.todayCount / 100) * 100)}%` }}
+                  />
+                </div>
+                
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {emailStats.todayCount >= 100 ? (
+                    <span className="text-red-500 font-semibold flex items-center gap-1">
+                      ⚠️ Limite atingido! Próximos e-mails serão bloqueados até a meia-noite (UTC).
+                    </span>
+                  ) : emailStats.todayCount >= 80 ? (
+                    <span className="text-amber-600 font-semibold">
+                      ⚠️ Próximo do limite diário. Prepare-se para fazer upgrade manual no painel do Resend!
+                    </span>
+                  ) : (
+                    "Margem de quota diária segura. Monitorando disparos das lojas."
+                  )}
+                </p>
+              </div>
+
+              <div className="border-t border-border pt-4 grid grid-cols-2 gap-4 text-center">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Total de logs</p>
+                  <p className="font-serif text-lg font-semibold">{emailStats.logs.length}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Status do plano</p>
+                  <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 py-1 px-2 rounded-full inline-block">
+                    Free (Upgrade Manual OK)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Store breakdown */}
+            <div className="lg:col-span-2 rounded-lg border border-border bg-card overflow-hidden">
+              <div className="p-4 border-b border-border bg-muted/10">
+                <h3 className="font-semibold text-sm">Disparos por Loja</h3>
+              </div>
+              <div className="divide-y divide-border max-h-[260px] overflow-y-auto">
+                {stores.length === 0 ? (
+                  <div className="p-6 text-center text-sm text-muted-foreground">Nenhuma loja cadastrada para listar.</div>
+                ) : (
+                  stores.map((s) => {
+                    const stats = emailStats.byStore[s.id] ?? { today: 0, total: 0, success: 0, rateLimited: 0, suppressed: 0, error: 0 };
+                    return (
+                      <div key={s.id} className="flex items-center justify-between gap-4 p-3 hover:bg-muted/10 transition-colors text-sm">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate">{s.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{s.slug}.scalius.com.br</p>
+                        </div>
+                        
+                        <div className="flex items-center gap-4 text-right shrink-0">
+                          <div>
+                            <p className="font-semibold">{stats.today} hoje</p>
+                            <p className="text-xs text-muted-foreground">{stats.total} total</p>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            {stats.success > 0 && (
+                              <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50 text-[10px] px-1.5 py-0">
+                                {stats.success} OK
+                              </Badge>
+                            )}
+                            {stats.rateLimited > 0 && (
+                              <Badge variant="secondary" className="bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50 text-[10px] px-1.5 py-0">
+                                {stats.rateLimited} Limite
+                              </Badge>
+                            )}
+                            {stats.suppressed > 0 && (
+                              <Badge variant="secondary" className="bg-zinc-50 text-zinc-700 dark:bg-zinc-950/20 dark:text-zinc-400 border border-zinc-100 dark:border-zinc-900/50 text-[10px] px-1.5 py-0">
+                                {stats.suppressed} Bloq.
+                              </Badge>
+                            )}
+                            {stats.error > 0 && (
+                              <Badge variant="secondary" className="bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400 border border-red-100 dark:border-red-900/50 text-[10px] px-1.5 py-0">
+                                {stats.error} Erro
+                              </Badge>
+                            )}
+                            {stats.total === 0 && (
+                              <span className="text-xs text-muted-foreground italic px-2">Sem disparos</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* ── Plan feature legend ─────────────────────────────────────────── */}
       <section className="rounded-xl border border-border bg-card p-6 space-y-4 shadow-soft">
         <h2 className="font-serif text-xl">Comparativo de planos</h2>
         <div className="overflow-x-auto">
@@ -284,22 +957,14 @@ export default function SuperAdminDashboard() {
                   <td className="py-3 pr-6 font-medium">{feature as string}</td>
                   <td className="py-3 px-4 text-center">
                     {typeof essencial === "boolean" ? (
-                      essencial ? (
-                        <Check className="h-4 w-4 text-emerald-500 mx-auto" />
-                      ) : (
-                        <span className="text-muted-foreground text-xs">—</span>
-                      )
+                      essencial ? <Check className="h-4 w-4 text-emerald-500 mx-auto" /> : <span className="text-muted-foreground text-xs">—</span>
                     ) : (
                       <span className="text-sm font-medium">{essencial}</span>
                     )}
                   </td>
                   <td className="py-3 px-4 text-center">
                     {typeof pro === "boolean" ? (
-                      pro ? (
-                        <Check className="h-4 w-4 text-emerald-500 mx-auto" />
-                      ) : (
-                        <span className="text-muted-foreground text-xs">—</span>
-                      )
+                      pro ? <Check className="h-4 w-4 text-emerald-500 mx-auto" /> : <span className="text-muted-foreground text-xs">—</span>
                     ) : (
                       <span className="text-sm font-semibold text-violet-600 dark:text-violet-400">{pro}</span>
                     )}
@@ -310,6 +975,27 @@ export default function SuperAdminDashboard() {
           </table>
         </div>
       </section>
+
+      {/* ── Dialogs / Sheets ────────────────────────────────────────────── */}
+      <StoreDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onSaved={() => queryClient.invalidateQueries({ queryKey: ["super-admin-stores"] })}
+      />
+
+      {editStore && (
+        <StoreDialog
+          open={!!editStore}
+          onClose={() => setEditStore(null)}
+          initial={editStore}
+          onSaved={() => queryClient.invalidateQueries({ queryKey: ["super-admin-stores"] })}
+        />
+      )}
+
+      <MembersSheet
+        store={membersStore}
+        onClose={() => setMembersStore(null)}
+      />
     </div>
   );
 }

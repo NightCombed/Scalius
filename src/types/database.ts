@@ -46,7 +46,7 @@ export interface MercadoPagoOAuthData {
 /* ---------- Platform-level ---------- */
 
 export type PlatformRole = "super_admin"; // global Scalius staff
-export type StoreRole = "owner" | "manager" | "staff";
+export type StoreRole = "owner" | "admin" | "staff";
 export type PlanId = "essencial" | "pro";
 
 export interface PlatformUser {
@@ -82,6 +82,7 @@ export interface StoreSettings {
   logo_url?: string | null;
   favicon_url?: string | null; // store icon
   banner_url?: string | null;
+  show_banner?: boolean;       // when false, banner area is hidden entirely
   brand_color: string;         // primary HSL "H S% L%"
   secondary_color?: string;    // optional accent HSL
   whatsapp?: string;

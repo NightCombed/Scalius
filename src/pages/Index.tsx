@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import '../scalius-landing.css';
 import { ContainerScroll } from '../components/ContainerScroll';
-import { Rocket } from 'lucide-react';
+import { Rocket, Flame } from 'lucide-react';
 
 const Index = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -127,13 +127,11 @@ const Index = () => {
             <img src="/scalius-logo-dark.png" alt="Scalius" className="h-7 object-contain" />
           </a>
           <div className="nav-links">
-            <a href="#problema">Vantagens</a>
             <a href="#recursos">Recursos</a>
             <a href="#como-funciona">Como Funciona</a>
             <a href="#precos">Planos</a>
           </div>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <a href="#" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-muted)' }}>Login</a>
             <a href="#precos" className="btn btn-primary" style={{ padding: '10px 20px', fontSize: '13px' }}>Criar Loja</a>
           </div>
         </nav>
@@ -144,15 +142,23 @@ const Index = () => {
         <div className="container hero-container">
           {/* Esquerda: Textos e CTA */}
           <div className="hero-content reveal">
-            <div className="hero-badge">✦ Escalável para pequenos e grandes negócios</div>
+            <div className="hero-badge" style={{ border: '1px solid rgba(255, 94, 0, 0.15)' }}>
+              <Rocket size={14} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+              Acesso Beta: 50% OFF para os primeiros (Preço travado para sempre!)
+            </div>
             <h1>
               Venda mais com sua loja online completa e{' '}
               <span className="palavra-rotativa" style={{ display: 'inline-block' }}><span className="palavra">independente.</span></span>
             </h1>
             <p>Catálogo, Pix automático, frete inteligente e notificações em tempo real. Tudo em um só lugar, sem depender do WhatsApp.</p>
 
-            <div className="hero-btns">
-              <a href="#precos" className="btn btn-brand">Criar minha loja grátis</a>
+            <div className="hero-cta-group">
+              <div className="hero-btns">
+                <a href="#precos" className="btn btn-brand">Criar minha loja grátis</a>
+              </div>
+              <div className="hero-cta-info">
+                <span className="cta-trial-label">14 dias grátis. Sem cartão de crédito.</span>
+              </div>
             </div>
 
             {/* Integration logos com SVGs reais */}
@@ -468,14 +474,25 @@ const Index = () => {
             <h2>Simples, justo e escalável.</h2>
             <p>Sem taxas abusivas por venda. Assine e tenha previsibilidade financeira.</p>
           </div>
+
+          <div className="pricing-alert-banner reveal" style={{ transitionDelay: '0.05s' }}>
+            <Flame size={20} className="alert-emoji" style={{ color: 'var(--primary)', flexShrink: 0 }} />
+            <p>Assine agora durante o Beta e garanta <strong>50% de desconto com preço travado para sempre</strong>. Restam apenas <strong>7 vagas</strong> com este benefício exclusivo!</p>
+          </div>
           <div className="pricing-grid">
             {/* Essencial */}
             <div className="pricing-card reveal">
               <div>
                 <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Essencial</h3>
-                <div className="pricing-tag">O preço de uma pizza por mês, só que lucrativo.</div>
-                <p style={{ color: 'var(--text-muted)', margin: '16px 0 32px 0', fontSize: '1rem' }}>Para quem está dando o primeiro passo digital com a loja.</p>
-                <div className="price">R$ 89<span>/mês</span></div>
+                <p style={{ color: 'var(--text-muted)', margin: '8px 0 32px 0', fontSize: '1rem' }}>Para quem está dando o primeiro passo digital com a loja.</p>
+                <div className="price-container">
+                  <div className="price-row-header">
+                    <span className="price-old">De R$ 89</span>
+                    <span className="discount-tag">50% OFF</span>
+                  </div>
+                  <div className="price">R$ 44<span>/mês</span></div>
+                  <p className="price-guarantee">Preço travado para sempre enquanto você for cliente.</p>
+                </div>
               </div>
               <ul className="pricing-features">
                 {[
@@ -490,17 +507,26 @@ const Index = () => {
                   <li key={f}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {f}</li>
                 ))}
               </ul>
-              <a href="#" className="btn" style={{ width: '100%', justifyContent: 'center', background: 'white', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}>Assinar Essencial</a>
+              <a href="https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Essencial%20do%20Scalius." target="_blank" rel="noopener noreferrer" className="btn" style={{ width: '100%', justifyContent: 'center', background: 'white', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}>Assinar Essencial</a>
+              <span style={{ display: 'block', textAlign: 'center', fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '12px', fontWeight: 500 }}>
+                14 dias grátis
+              </span>
             </div>
 
             {/* Pro */}
             <div className="pricing-card pro reveal" style={{ transitionDelay: '0.1s' }}>
-              <div className="price-badge">O Poder Completo</div>
+              <div className="price-badge">Mais Popular</div>
               <div>
                 <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Pro</h3>
-                <div className="pricing-tag pricing-tag-pro">O preço de um jantar a dois, só que escala o seu faturamento.</div>
-                <p style={{ color: 'var(--text-muted)', margin: '16px 0 32px 0', fontSize: '1rem' }}>Automação total para escalar sua operação B2B e B2C.</p>
-                <div className="price">R$ 159<span>/mês</span></div>
+                <p style={{ color: 'var(--text-muted)', margin: '8px 0 32px 0', fontSize: '1rem' }}>Automação total para escalar sua operação B2B e B2C.</p>
+                <div className="price-container">
+                  <div className="price-row-header">
+                    <span className="price-old">De R$ 159</span>
+                    <span className="discount-tag">50% OFF</span>
+                  </div>
+                  <div className="price">R$ 79<span>/mês</span></div>
+                  <p className="price-guarantee">Preço travado para sempre enquanto você for cliente.</p>
+                </div>
               </div>
               <ul className="pricing-features">
                 <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong style={{ color: 'var(--primary)' }}>Tudo do Essencial, mais:</strong></li>
@@ -513,8 +539,16 @@ const Index = () => {
                   <li key={f}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>{f}</strong></li>
                 ))}
               </ul>
-              <a href="#" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Assinar Pro</a>
+              <a href="https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Pro%20do%20Scalius." target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Assinar Pro</a>
+              <span style={{ display: 'block', textAlign: 'center', fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '12px', fontWeight: 500 }}>
+                14 dias grátis
+              </span>
             </div>
+          </div>
+          
+          <div className="pricing-disclaimer reveal" style={{ transitionDelay: '0.2s' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>Preço beta válido apenas para os primeiros assinantes. Após o beta, novos clientes pagam o valor cheio.</span>
           </div>
         </div>
       </section>
@@ -528,9 +562,7 @@ const Index = () => {
           <div className="faq-container reveal" style={{ transitionDelay: '0.1s' }}>
             {[
               { q: 'Preciso ter CNPJ para criar minha loja?', a: 'Não! Você pode começar a vender utilizando apenas o seu CPF. Caso seu negócio cresça, você pode alterar para um CNPJ a qualquer momento direto no painel da sua conta integrada do Mercado Pago.' },
-              { q: 'Como funciona o pagamento via Pix?', a: 'A integração é nativa. Quando o cliente finaliza o pedido com Pix, o QR Code é gerado. Assim que ele paga, o sistema reconhece o pagamento automaticamente e muda o status do pedido, sem você precisar checar comprovantes.' },
-              { q: 'Existe limite de vendas ou cobrança de taxa por pedido?', a: 'Nossa plataforma não cobra taxa por transação ou limite de pedidos! Você paga apenas o valor fixo da sua assinatura. As únicas taxas de transação são as cobradas pelo próprio gateway de pagamento (Mercado Pago).' },
-              { q: 'Consigo usar meu próprio domínio (site)?', a: 'Sim, em planos suportados você poderá conectar seu próprio domínio (ex: www.sualoja.com.br) para dar ainda mais credibilidade ao seu negócio.' },
+              { q: 'Existe limite de vendas ou cobrança de taxa por pedido?', a: 'Nossa plataforma não cobra taxa por transação ou limite de pedidos! Você paga apenas o valor fixo da sua assinatura. A única taxa de transação é a cobrada pelo próprio gateway de pagamento (Mercado Pago), que é de apenas 0,99% por Pix.' },
             ].map(({ q, a }) => (
               <div key={q} className="faq-item">
                 <button className="faq-question">{q}<span className="faq-icon">+</span></button>
@@ -543,13 +575,9 @@ const Index = () => {
 
       {/* FOOTER */}
       <footer style={{ background: '#0f1117', color: '#aaa', padding: '40px 24px', textAlign: 'center', fontSize: '14px' }}>
-        <div style={{ marginBottom: '16px' }}>
-          <a href="#" style={{ color: '#fff', fontWeight: 700, fontSize: '18px', textDecoration: 'none' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }}>
-              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
-              <line x1="7" y1="7" x2="7.01" y2="7"></line>
-            </svg>
-            Scalius
+        <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
+          <a href="#">
+            <img src="/scalius-logo.png" alt="Scalius" className="h-7 object-contain" />
           </a>
         </div>
         <p>© {new Date().getFullYear()} Scalius. Todos os direitos reservados.</p>
