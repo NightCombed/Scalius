@@ -85,7 +85,10 @@ serve(async (req) => {
       userId = existingUser.id;
     } else {
       // Invite new user
-      const inviteRedirect = redirect_url || `${supabaseUrl.replace(".supabase.co", "")}.scalius.com.br/admin`;
+      // Use SITE_URL env var or fallback to the production domain.
+      // NOTE: the redirect URL must be listed in Supabase Auth → URL Configuration → Redirect URLs.
+      const siteUrl = Deno.env.get("SITE_URL") || "https://app.scalius.com.br";
+      const inviteRedirect = redirect_url || `${siteUrl}/admin`;
       const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
         redirectTo: inviteRedirect,
         data: { full_name: full_name || "" },
