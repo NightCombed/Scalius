@@ -1,5 +1,5 @@
 /**
- * Scalius Vitrine — Plan definitions and feature gates.
+ * Scalius — Plan definitions and feature gates.
  *
  * The plan is stored on the `stores.plan` column and controlled exclusively
  * by platform super-admins. No automatic billing for now.

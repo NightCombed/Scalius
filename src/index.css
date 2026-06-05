@@ -4,7 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Scalius Vitrine design system — botanical, editorial, soft */
+/* Scalius design system — botanical, editorial, soft */
 @layer base {
   :root {
     --background: 36 33% 97%;

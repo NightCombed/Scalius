@@ -121,7 +121,7 @@ function triggerVisualAlert(storeName: string) {
     if (flashInterval) {
       clearInterval(flashInterval);
       flashInterval = null;
-      document.title = `${storeName} | Painel Admin | Scalius Vitrine`;
+      document.title = `${storeName} | Painel Admin | Scalius`;
     }
     const existingOverlay = document.getElementById("sale-flash-overlay");
     if (existingOverlay) {
@@ -148,7 +148,7 @@ export default function AdminLayout() {
 
   useEffect(() => {
     const storeName = settings?.display_name || activeStore?.name || "Admin";
-    document.title = `${storeName} | Painel Admin | Scalius Vitrine`;
+    document.title = `${storeName} | Painel Admin | Scalius`;
   }, [settings?.display_name, activeStore?.name]);
 
   useEffect(() => {
@@ -273,7 +273,7 @@ export default function AdminLayout() {
         {/* Drawer Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-border">
           <div className="flex items-center gap-2">
-            <img src="/scalius-logo-dark.png" alt="Scalius Vitrine" className="h-7 object-contain" />
+            <img src="/scalius-logo-dark.png" alt="Scalius" className="h-7 object-contain" />
           </div>
           <button
             onClick={() => setDrawerOpen(false)}
@@ -351,7 +351,7 @@ export default function AdminLayout() {
 
           {/* Logo — mobile only, centered */}
           <div className="md:hidden flex-1 flex justify-center">
-            <img src="/scalius-logo-dark.png" alt="Scalius Vitrine" className="h-7 object-contain" />
+            <img src="/scalius-logo-dark.png" alt="Scalius" className="h-7 object-contain" />
           </div>
 
           {/* Desktop: store name */}

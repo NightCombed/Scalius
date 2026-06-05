@@ -65,6 +65,9 @@ export default function AdminOrderDetail() {
     },
     enabled: !!store?.id,
   });
+  const isProPlan = plan === "pro";
+  const isReadyNotificationDisabled = isProPlan && settings?.notification_preferences?.customer_order_ready === false;
+  const isDispatchedNotificationDisabled = isProPlan && settings?.notification_preferences?.customer_order_dispatched === false;
 
   // Sync tracking code state
   useEffect(() => {
@@ -485,7 +488,21 @@ export default function AdminOrderDetail() {
                           : `Olá ${order.customer_name?.split(' ')[0] || ''}, tudo bem? Seu pedido #${order.order_number || order.id.slice(-6).toUpperCase()} teve uma atualização de status: ${ORDER_STATUS_LABEL[order.status as keyof typeof ORDER_STATUS_LABEL] || order.status}.`
                       )}`} target="_blank" rel="noopener noreferrer">
                         <Bell className="h-4 w-4 shrink-0" /> 
-                        <span>{order.delivery_type === "national_shipping" ? "Avisar que está pronto para envio" : "Avisar cliente que está pronto"}</span>
+                        <span className="inline-flex flex-wrap items-center justify-center gap-x-1 leading-tight text-center">
+                          <span>
+                            {order.delivery_type === "national_shipping"
+                              ? "Avisar que está pronto para envio"
+                              : "Avisar cliente que está pronto"}
+                          </span>
+                          <span className="text-[11px] font-normal text-muted-foreground whitespace-nowrap">
+                            {"(Automático no plano Pro)"}
+                          </span>
+                          {isReadyNotificationDisabled && (
+                            <span className="text-[11px] font-normal text-muted-foreground">
+                              Função desativada nas configurações
+                            </span>
+                          )}
+                        </span>
                       </a>
                     </Button>
                   )}
@@ -552,7 +569,21 @@ export default function AdminOrderDetail() {
                           : `Olá ${order.customer_name?.split(' ')[0] || ''}, tudo bem? Seu pedido #${order.order_number || order.id.slice(-6).toUpperCase()} teve uma atualização de status: ${ORDER_STATUS_LABEL[order.status as keyof typeof ORDER_STATUS_LABEL] || order.status}.`
                       )}`} target="_blank" rel="noopener noreferrer">
                         <Bell className="h-4 w-4 shrink-0" /> 
-                        <span>{order.delivery_type === "national_shipping" ? "Avisar que foi despachado" : "Avisar que saiu para entrega"}</span>
+                        <span className="inline-flex flex-wrap items-center justify-center gap-x-1 leading-tight text-center">
+                          <span>
+                            {order.delivery_type === "national_shipping"
+                              ? "Avisar que foi despachado"
+                              : "Avisar que saiu para entrega"}
+                          </span>
+                          <span className="text-[11px] font-normal text-muted-foreground whitespace-nowrap">
+                            {"(Automático no plano Pro)"}
+                          </span>
+                          {isDispatchedNotificationDisabled && (
+                            <span className="text-[11px] font-normal text-muted-foreground">
+                              Função desativada nas configurações
+                            </span>
+                          )}
+                        </span>
                       </a>
                     </Button>
                   )}

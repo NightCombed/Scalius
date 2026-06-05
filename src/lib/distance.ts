@@ -109,7 +109,7 @@ export async function geocodeAddress(
 ): Promise<GeocodingResult | null> {
   const fetchNominatim = async (url: URL) => {
     const res = await fetch(url.toString(), {
-      headers: { "Accept-Language": "pt-BR", "User-Agent": "ScaliusVitrine/1.0" },
+      headers: { "Accept-Language": "pt-BR", "User-Agent": "Scalius/1.0" },
     });
     if (!res.ok) return null;
     const data = await res.json();

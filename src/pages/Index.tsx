@@ -144,11 +144,10 @@ const Index = () => {
         <div className="container hero-container">
           {/* Esquerda: Textos e CTA */}
           <div className="hero-content reveal">
-            <div className="hero-badge">✦ Plataforma escalável para pequenos e grandes negócios</div>
+            <div className="hero-badge">✦ Escalável para pequenos e grandes negócios</div>
             <h1>
               Venda mais com sua loja online completa e{' '}
-              <br />
-              <span className="palavra-rotativa"><span className="palavra">independente.</span></span>
+              <span className="palavra-rotativa" style={{ display: 'inline-block' }}><span className="palavra">independente.</span></span>
             </h1>
             <p>Catálogo, Pix automático, frete inteligente e notificações em tempo real. Tudo em um só lugar, sem depender do WhatsApp.</p>
 
@@ -308,15 +307,22 @@ const Index = () => {
             <div className="showcase-text">
               <div className="hero-badge" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>Catálogo Sem Limites</div>
               <h2>Seu estoque sempre certo. Nunca mais passe vergonha.</h2>
-              <p>Vendeu a última blusa tamanho G? Ela some da vitrine automaticamente. Nosso motor de variantes rastreia tamanhos e cores e bloqueia a venda do que você não tem em mãos.</p>
+              <p>Vendeu a última blusa tamanho G? Ela some da vitrine automaticamente. Nosso motor de variações rastreia variantes personalizadas e bloqueia a venda do que você não tem em mãos.</p>
               <ul className="showcase-feature-list">
-                {['Produtos e pedidos 100% ilimitados', 'Criação de Variações dinâmicas (Tamanho, Cor, Material)', 'Rastreio e controle de estoque independente por variação', 'Carrinho nativo robusto e Categorias com filtros', 'Upload avançado de imagens por produto'].map(item => (
+                {['Produtos e pedidos 100% ilimitados', 'Criação de Variações dinâmicas (Ex: Tamanho, Cor, Material)', 'Rastreio e controle de estoque independente por variação', 'Produto some ou aparece "Esgotado" automaticamente quando estoque zera', 'Aviso de produtos esgotados e em baixo estoque', 'Upload avançado de imagens por produto', 'Destaque de produtos específicos'].map(item => (
                   <li key={item}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {item}</li>
                 ))}
               </ul>
             </div>
             <div className="showcase-image">
-              <img src="/showcase-catalogo.png" alt="Print da vitrine com catálogo e variações" />
+              <video
+                src="/showcase-catalogo.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                aria-label="Demonstração em vídeo do catálogo com variações"
+              />
             </div>
           </div>
 
@@ -324,10 +330,10 @@ const Index = () => {
           <div className="showcase-row reveal">
             <div className="showcase-text">
               <div className="hero-badge" style={{ background: 'var(--success-light)', color: 'var(--success)' }}>Checkout de Alta Conversão</div>
-              <h2>Como funciona o Pix Automático do Scalius?</h2>
-              <p>1. Cliente fecha a compra na vitrine.<br />2. Sistema gera QR Code na hora.<br />3. Mercado Pago aprova em segundos.<br />4. Você escuta o PLIM e o status atualiza.<br /><strong>Tudo isso sem você dar UM "bom dia".</strong></p>
+              <h2>Como funciona o Pix com baixa Automática do Scalius?</h2>
+              <p>1. Cliente fecha a compra na vitrine.<br />2. Sistema gera QR Code e Copia e Cola na hora.<br />3. Cliente paga e integração Mercado Pago aprova no mesmo instante.<br />4. Você é avisado e o status atualiza para "pago" sozinho.<br /><strong>Tudo isso sem você precisar dar um "bom dia".</strong></p>
               <ul className="showcase-feature-list">
-                {['Integração Oficial Transparente com Mercado Pago', 'Aceita Pix nativo com verificação automática de baixa', 'Opção de Pix Manual (Cliente digita sua chave estática)', 'Mudança de Status do Pedido no exato segundo pago'].map(item => (
+                {['Integração Oficial Transparente com Mercado Pago', 'Aceita Pix nativo com verificação automática de baixa', 'Plano B garantido: Opção de Pix Manual (Cliente manda o comprovante e você atualiza o status manualmente no painel)', 'Mudança de Status instantânea'].map(item => (
                   <li key={item}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {item}</li>
                 ))}
               </ul>
@@ -342,9 +348,9 @@ const Index = () => {
             <div className="showcase-text">
               <div className="hero-badge" style={{ background: '#E0E7FF', color: '#4F46E5' }}>Central Logística</div>
               <h2>Cálculo de Frete Real e Etiqueta em 1 Clique</h2>
-              <p>Chega de ficar cotando PAC ou Sedex para clientes na mão. Sua vitrine já calcula o frete exato conectada na tecnologia do Melhor Envio (Correios e +).</p>
+              <p>Integrado ao Melhor Envio (Envio Nacional). Cliente vê e paga o preço exato do frete no checkout, você gera a etiqueta completa em 1 clique, sem sair da plataforma.</p>
               <ul className="showcase-feature-list">
-                {['Cálculo automático: Correios, Jadlog, Azul Cargo e etc', 'Lógica avançada de "Caixa Única" para múltiplos produtos', 'Geração de Etiqueta com 1 clique (Plano Pro)', 'Entrega local por KM (Dinâmico) ou Taxa Fixa (Bairro)', 'Opção nativa de "Retirada na Loja Física"'].map(item => (
+                {['Cálculo automático: Correios, Jadlog, Azul Cargo e etc', 'Lógica avançada de "Caixa Única" para múltiplos produtos', 'Geração de Etiqueta com 1 clique (Plano Pro)', 'Entrega local por KM, Taxa Fixa por bairro/região ou Motor de cálculo do Scalius (Simula apps de entrega)', 'Opção nativa de "Retirada na Loja Física"'].map(item => (
                   <li key={item}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {item}</li>
                 ))}
               </ul>
@@ -358,10 +364,16 @@ const Index = () => {
           <div className="showcase-row reveal">
             <div className="showcase-text">
               <div className="hero-badge" style={{ background: '#FEF3C7', color: '#D97706' }}>Retenção de Clientes</div>
-              <h2>Portal B2C com Histórico de Compras</h2>
-              <p>Uma loja de verdade possui Login e Senha. Aumente sua recompra dando aos clientes um perfil para acompanhar o status do pedido e os envios passados.</p>
+              <h2>Sua loja tem memória. Cliente volta mais.</h2>
+              <p>Uma loja de verdade tem Login e Senha. Cliente pode criar conta, acompanhar o pedido, e na próxima compra o endereço já está lá. Menos atrito. Mais recompra.</p>
               <ul className="showcase-feature-list">
-                {['Fluxo de Autenticação Segura (Login / Cadastro)', 'Histórico visual de todos os pedidos já feitos pelo cliente', 'Link público de acompanhamento do andamento do pacote', 'Vinculação automática de pedidos anônimos à conta criada', 'Autopreenchimento de endereços em compras futuras'].map(item => (
+                {[
+                  'Login e cadastro direto na vitrine',
+                  'Histórico visual de todos os pedidos já feitos',
+                  'Link público de acompanhamento (sem precisar de login)',
+                  'Cria conta após comprar — dados já preenchidos',
+                  'Autopreenchimento de endereços em compras futuras'
+                ].map(item => (
                   <li key={item}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {item}</li>
                 ))}
               </ul>
@@ -375,16 +387,30 @@ const Index = () => {
           <div className="showcase-row reveal">
             <div className="showcase-text">
               <div className="hero-badge" style={{ background: '#FCE7F3', color: '#DB2777' }}>Operação & Notificações</div>
-              <h2>Centro de Comando "Pulse" e Alertas em Tempo Real</h2>
-              <p>Você nunca mais vai perder um pedido novo. Nosso painel administrativo envia notificações como mágica, além de garantir o controle total sobre a loja.</p>
+              <h2>Centro de Comando e Alertas em Tempo Real</h2>
+              <p>Som de alerta, aba piscando e email automático. Pedido novo entra, você sabe na hora. Mesmo estando longe do painel.</p>
               <ul className="showcase-feature-list">
-                {['Som de Alerta (Caixa Registradora) para novo pedido gerado', 'Aba do navegador pisca visualmente para não perder vendas', 'Emails automáticos para os clientes em cada mudança de status', 'Painel para alterar, cancelar e visualizar pedidos com extrema facilidade', 'Controle de múltiplos usuários (Dono, Gerente, Staff)'].map(item => (
+                {[
+                  'Som de Alerta',
+                  'Aba do navegador pisca visualmente para não perder vendas',
+                  'Emails automáticos de alerta para a loja (novo pedido, pagamento confirmado e cancelamento)',
+                  'Emails automáticos para o cliente em cada etapa do pedido. (Plano Pro)',
+                  'Ative ou desative cada notificação específica individualmente',
+                  'Painel para alterar, cancelar e visualizar pedidos com extrema facilidade'
+                ].map(item => (
                   <li key={item}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#DB2777" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {item}</li>
                 ))}
               </ul>
             </div>
             <div className="showcase-image">
-              <img src="/showcase-pulse.png" alt="Print do centro de comando com alertas em tempo real" />
+              <video
+                src="/showcase-pulse.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                aria-label="Demonstração em vídeo do centro de comando com alertas em tempo real"
+              />
             </div>
           </div>
         </div>
@@ -427,7 +453,7 @@ const Index = () => {
                 <span className="process-step-number">3</span>
                 <h3>Envie do seu jeito.</h3>
                 <div className="process-step-body">
-                  <p>Ative e combine diferentes formas de entrega: retirada física, frete local por KM, região ou motor de cálculo que simula apps de entrega, e a praticidade do envio nacional via Melhor Envio, gerando etiquetas completas com apenas um clique. Notificações automáticas por e-mail avisam você e seu cliente sobre cada passo, se necessário.</p>
+                  <p>Ative e combine diferentes formas de entrega: retirada física, frete local por KM, região ou motor de cálculo que simula apps de entrega, e a praticidade do envio nacional.</p>
                 </div>
               </button>
             </div>
@@ -447,11 +473,20 @@ const Index = () => {
             <div className="pricing-card reveal">
               <div>
                 <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Essencial</h3>
-                <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontSize: '1rem' }}>Para quem está dando o primeiro passo digital com a loja.</p>
+                <div className="pricing-tag">O preço de uma pizza por mês, só que lucrativo.</div>
+                <p style={{ color: 'var(--text-muted)', margin: '16px 0 32px 0', fontSize: '1rem' }}>Para quem está dando o primeiro passo digital com a loja.</p>
                 <div className="price">R$ 89<span>/mês</span></div>
               </div>
               <ul className="pricing-features">
-                {['Produtos e Pedidos Ilimitados', 'Pix Manual e Mercado Pago', 'Área do Cliente e Histórico', 'Etiqueta Melhor Envio (Manual)', '1 Usuário Administrador'].map(f => (
+                {[
+                  'Produtos, Pedidos e Estoque Ilimitados',
+                  'Pix Automático (Mercado Pago) e Pix Manual',
+                  'Cálculo de Frete Nacional Automático e Exato (Correios, Jadlog, Azul Cargo e etc.)',
+                  'Etiqueta Nacional Manual',
+                  'Portal do Cliente com Login, Histórico e Acompanhamento',
+                  'Alertas em tempo real para a loja',
+                  '2 Usuários Administradores',
+                ].map(f => (
                   <li key={f}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {f}</li>
                 ))}
               </ul>
@@ -463,12 +498,18 @@ const Index = () => {
               <div className="price-badge">O Poder Completo</div>
               <div>
                 <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Pro</h3>
-                <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontSize: '1rem' }}>Automação total para escalar sua operação B2B e B2C.</p>
+                <div className="pricing-tag pricing-tag-pro">O preço de um jantar a dois, só que escala o seu faturamento.</div>
+                <p style={{ color: 'var(--text-muted)', margin: '16px 0 32px 0', fontSize: '1rem' }}>Automação total para escalar sua operação B2B e B2C.</p>
                 <div className="price">R$ 159<span>/mês</span></div>
               </div>
               <ul className="pricing-features">
                 <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong style={{ color: 'var(--primary)' }}>Tudo do Essencial, mais:</strong></li>
-                {['Etiqueta em 1-Clique', 'Múltiplos Usuários (Gerente/Staff)', 'E-mails Automáticos para Clientes', 'Sem "Powered by Scalius"'].map(f => (
+                {[
+                  'Etiqueta Nacional em 1 Clique',
+                  'E-mails Automáticos para o Cliente por etapa do pedido',
+                  'Usuários Administradores Ilimitados',
+                  'Sem "Feito com Scalius" no rodapé da loja',
+                ].map(f => (
                   <li key={f}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>{f}</strong></li>
                 ))}
               </ul>
@@ -500,17 +541,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CTA FINAL */}
-      <section className="section" style={{ background: 'var(--bg-surface)', textAlign: 'center' }}>
-        <div className="container">
-          <div className="reveal">
-            <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 3rem)', marginBottom: '16px' }}>Pronto para automatizar sua loja?</h2>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontSize: '1.1rem' }}>Crie sua vitrine digital hoje e comece a vender sem depender do WhatsApp.</p>
-            <a href="#precos" className="btn btn-brand" style={{ fontSize: '1rem', padding: '16px 32px' }}>Criar minha loja grátis</a>
-          </div>
-        </div>
-      </section>
-
       {/* FOOTER */}
       <footer style={{ background: '#0f1117', color: '#aaa', padding: '40px 24px', textAlign: 'center', fontSize: '14px' }}>
         <div style={{ marginBottom: '16px' }}>
@@ -522,7 +552,7 @@ const Index = () => {
             Scalius
           </a>
         </div>
-        <p>© {new Date().getFullYear()} Scalius Vitrine. Todos os direitos reservados.</p>
+        <p>© {new Date().getFullYear()} Scalius. Todos os direitos reservados.</p>
         <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
           <a href="/politica-de-privacidade" style={{ color: '#fff', textDecoration: 'none' }}>Política de Privacidade</a>
           <a href="/termos-de-servico" style={{ color: '#fff', textDecoration: 'none' }}>Termos de Serviço</a>

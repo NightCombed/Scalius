@@ -26,7 +26,7 @@ export function AdminSidebar() {
           {collapsed ? (
             <img src="/scalius-icon.png" alt="Scalius" className="h-8 w-8 object-contain" />
           ) : (
-            <img src="/scalius-logo-dark.png" alt="Scalius Vitrine" className="h-7 object-contain" />
+            <img src="/scalius-logo-dark.png" alt="Scalius" className="h-7 object-contain" />
           )}
         </div>
       </SidebarHeader>

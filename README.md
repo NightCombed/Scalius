@@ -1,10 +1,10 @@
-# Scalius Vitrine
+# Scalius
 
 Sistema SaaS multi-tenant para pedidos online de lojas locais (floriculturas, artesanato, confeitarias, etc).
 
 ## 📋 Sobre o Projeto
 
-Scalius Vitrine permite que pequenas lojas criem sua própria loja online para receber pedidos via WhatsApp, com gestão completa de produtos, categorias, regiões de entrega e pedidos.
+Scalius permite que pequenas lojas criem sua própria loja online para receber pedidos via WhatsApp, com gestão completa de produtos, categorias, regiões de entrega e pedidos.
 
 ### Funcionalidades Principais
 
@@ -257,7 +257,7 @@ Proprietary - Todos os direitos reservados
 
 ## 👤 Autor
 
-**Scalius Vitrine**
+**Scalius**
 - GitHub: [@NightCombed](https://github.com/NightCombed)
 
 ## 🔗 Links

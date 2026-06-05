@@ -5,6 +5,34 @@ import { useActiveStore } from "@/hooks/useActiveStore";
 import { formatBRL, ORDER_STATUS_LABEL } from "@/lib/mockData";
 import { Clock, Package, ShoppingBag, Truck, CheckCircle2, TrendingUp, ArrowRight, AlertTriangle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+const STATUS_BADGE: Record<string, string> = {
+  pending:          "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+  preparing:        "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  ready:            "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300",
+  out_for_delivery: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+  delivered:        "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
+  picked_up:        "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
+  cancelled:        "bg-muted text-muted-foreground",
+  confirmed:        "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  canceled:         "bg-muted text-muted-foreground",
+};
+
+const PAYMENT_BADGE: Record<string, string> = {
+  paid:    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+  pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+};
+
+function getStatusLabel(status: string) {
+  if (status === "confirmed") return "Em preparação";
+  return ORDER_STATUS_LABEL[status as keyof typeof ORDER_STATUS_LABEL] || "Cancelado";
+}
+
+function getPaymentLabel(paymentStatus: string) {
+  return paymentStatus === "paid" ? "Pago" : "Aguardando";
+}
+
 
 export default function AdminDashboard() {
   const store = useActiveStore();
@@ -58,7 +86,7 @@ export default function AdminDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, order_number, customer_name, status, total_cents, created_at")
+        .select("id, order_number, customer_name, status, payment_status, delivery_type, total_cents, created_at")
         .eq("store_id", store!.id)
         .order("created_at", { ascending: false })
         .limit(5);
@@ -227,10 +255,21 @@ export default function AdminDashboard() {
                   to={`/admin/pedidos/${o.id}`}
                   className="p-4 flex items-center justify-between hover:bg-muted/40 transition-colors"
                 >
-                  <div className="min-w-0">
-                    <div className="font-medium truncate">{o.customer_name ?? "Cliente"}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span className="font-medium truncate">{o.customer_name ?? "Cliente"}</span>
+                      <span className={cn("text-[11px] px-2 py-0.5 rounded-full font-normal shrink-0", PAYMENT_BADGE[o.payment_status ?? "pending"])}>
+                        {getPaymentLabel(o.payment_status ?? "pending")}
+                      </span>
+                      <span className={cn("text-[11px] px-2 py-0.5 rounded-full font-normal shrink-0", STATUS_BADGE[o.status])}>
+                        {getStatusLabel(o.status)}
+                      </span>
+                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-normal shrink-0">
+                        {o.delivery_type === "pickup" ? "Retirada" : "Entrega"}
+                      </span>
+                    </div>
                     <div className="text-xs text-muted-foreground truncate">
-                      #{o.order_number || o.id.slice(-6).toUpperCase()} · {ORDER_STATUS_LABEL[o.status as keyof typeof ORDER_STATUS_LABEL]} · {new Date(o.created_at).toLocaleString("pt-BR")}
+                      #{o.order_number || o.id.slice(-6).toUpperCase()} · {new Date(o.created_at).toLocaleString("pt-BR")}
                     </div>
                   </div>
                   <div className="font-medium shrink-0 ml-4">{formatBRL(o.total_cents)}</div>

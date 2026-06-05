@@ -40,6 +40,8 @@ export const storeSettings: StoreSettings[] = [
     silent_hours_enabled: false,
     silent_hours_start: "20:00",
     silent_hours_end: "08:00",
+    category_style: "pill",
+    show_category_images: false,
   },
   {
     store_id: "st_2",
@@ -64,6 +66,8 @@ export const storeSettings: StoreSettings[] = [
     silent_hours_enabled: false,
     silent_hours_start: "20:00",
     silent_hours_end: "08:00",
+    category_style: "pill",
+    show_category_images: false,
   },
 ];
 

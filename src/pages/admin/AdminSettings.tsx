@@ -26,20 +26,20 @@ import { ImageUpload } from "@/components/ui/image-upload";
 import { hexToHsl, hslToHex } from "@/lib/utils";
 import { geocodeAddress, buildAddressString } from "@/lib/distance";
 
-const HSL_REGEX = /^\d{1,3}\s+\d{1,3}%\s+\d{1,3}%$/;
+const HEX_REGEX = /^#[0-9A-Fa-f]{6}$/;
 
 const schema = z.object({
   display_name: z.string().trim().min(2, "Informe o nome da loja").max(80),
   tagline: z.string().trim().max(280).optional().or(z.literal("")),
   whatsapp: z.string().trim().max(30).optional().or(z.literal("")),
-  address_street: z.string().trim().max(120).optional().or(z.literal("")),
+  address_street: z.string().trim().max(300).optional().or(z.literal("")),
   address_number: z.string().trim().max(20).optional().or(z.literal("")),
   address_neighborhood: z.string().trim().max(80).optional().or(z.literal("")),
   address_city: z.string().trim().max(80).optional().or(z.literal("")),
   address_state: z.string().trim().max(40).optional().or(z.literal("")),
   opening_hours: z.string().trim().max(160).optional().or(z.literal("")),
-  brand_color: z.string().trim().regex(HSL_REGEX, "Use o formato H S% L% (ex: 22 100% 50%)"),
-  secondary_color: z.string().trim().regex(HSL_REGEX, "Use o formato H S% L%").optional().or(z.literal("")),
+  brand_color: z.string().trim().regex(HEX_REGEX, "Use o formato hexadecimal (ex: #EA580C)"),
+  secondary_color: z.string().trim().regex(HEX_REGEX, "Use o formato hexadecimal (ex: #000000)").optional().or(z.literal("")),
   logo_url: z.string().trim().url("URL inválida").optional().or(z.literal("")),
   banner_url: z.string().trim().url("URL inválida").optional().or(z.literal("")),
   favicon_url: z.string().trim().url("URL inválida").optional().or(z.literal("")),
@@ -103,6 +103,8 @@ const schema = z.object({
   silent_hours_enabled: z.boolean().default(false),
   silent_hours_start: z.string().regex(/^\d{2}:\d{2}$/, "Formato inválido (ex: 20:00)").default("20:00"),
   silent_hours_end: z.string().regex(/^\d{2}:\d{2}$/, "Formato inválido (ex: 08:00)").default("08:00"),
+  category_style: z.enum(["pill", "compact"]).default("pill"),
+  show_category_images: z.boolean().default(false),
 }).superRefine((data, ctx) => {
   if (data.national_shipping_enabled) {
     if (!data.melhorenvio_token || data.melhorenvio_token.length === 0) {
@@ -142,8 +144,8 @@ export default function AdminSettings() {
       address_city: "",
       address_state: "",
       opening_hours: "",
-      brand_color: "22 100% 50%",
-      secondary_color: "0 0% 0%",
+      brand_color: "#ea580c",
+      secondary_color: "#000000",
       logo_url: "",
       banner_url: "",
       favicon_url: "",
@@ -200,6 +202,8 @@ export default function AdminSettings() {
       silent_hours_enabled: false,
       silent_hours_start: "20:00",
       silent_hours_end: "08:00",
+      category_style: "pill" as const,
+      show_category_images: false,
     },
   });
 
@@ -227,14 +231,14 @@ export default function AdminSettings() {
       display_name: settings.display_name ?? "",
       tagline: settings.tagline ?? "",
       whatsapp: settings.whatsapp ?? "",
-      address_street: settings.address_street ?? "",
-      address_number: settings.address_number ?? "",
-      address_neighborhood: settings.address_neighborhood ?? "",
-      address_city: settings.address_city ?? "",
-      address_state: settings.address_state ?? "",
+      address_street: settings.address ?? "",
+      address_number: "",
+      address_neighborhood: "",
+      address_city: "",
+      address_state: "",
       opening_hours: settings.opening_hours ?? "",
-      brand_color: settings.brand_color ?? "22 100% 50%",
-      secondary_color: settings.secondary_color ?? "0 0% 0%",
+      brand_color: settings.brand_color ? hslToHex(settings.brand_color) : "#ea580c",
+      secondary_color: settings.secondary_color ? hslToHex(settings.secondary_color) : "#000000",
       logo_url: settings.logo_url ?? "",
       banner_url: settings.banner_url ?? "",
       favicon_url: settings.favicon_url ?? "",
@@ -291,6 +295,8 @@ export default function AdminSettings() {
       silent_hours_enabled: settings.silent_hours_enabled ?? false,
       silent_hours_start: settings.silent_hours_start ?? "20:00",
       silent_hours_end: settings.silent_hours_end ?? "08:00",
+      category_style: (settings.category_style as "pill" | "compact") ?? "pill",
+      show_category_images: settings.show_category_images ?? false,
     });
   }, [settings, form]);
 
@@ -314,13 +320,13 @@ export default function AdminSettings() {
           message: values.tagline || null,
           whatsapp_number: values.whatsapp || null,
           address_street: values.address_street || null,
-          address_number: values.address_number || null,
-          address_neighborhood: values.address_neighborhood || null,
-          address_city: values.address_city || null,
-          address_state: values.address_state || null,
+          address_number: null,
+          address_neighborhood: null,
+          address_city: null,
+          address_state: null,
           opening_hours: values.opening_hours || null,
-          primary_color: values.brand_color,
-          secondary_color: values.secondary_color || null,
+          primary_color: hexToHsl(values.brand_color),
+          secondary_color: values.secondary_color ? hexToHsl(values.secondary_color) : null,
           logo_url: values.logo_url || null,
           banner_url: values.banner_url || null,
           favicon_url: values.favicon_url || null,
@@ -379,6 +385,8 @@ export default function AdminSettings() {
           silent_hours_enabled: values.silent_hours_enabled,
           silent_hours_start: values.silent_hours_start,
           silent_hours_end: values.silent_hours_end,
+          category_style: values.category_style,
+          show_category_images: values.show_category_images,
         }, { onConflict: "store_id" });
       if (error) throw error;
       
@@ -398,8 +406,8 @@ export default function AdminSettings() {
   };
 
   const previewStyle = {
-    ["--primary" as any]: watched.brand_color || "22 100% 50%",
-    ...(watched.secondary_color ? { ["--accent" as any]: watched.secondary_color } : {}),
+    ["--primary" as any]: watched.brand_color ? hexToHsl(watched.brand_color) : "22 100% 50%",
+    ...(watched.secondary_color ? { ["--accent" as any]: hexToHsl(watched.secondary_color) } : {}),
   } as React.CSSProperties;
 
 
@@ -489,6 +497,7 @@ export default function AdminSettings() {
                       onChange={field.onChange}
                       placeholder="https://..."
                       aspect={16/4}
+                      showBannerGuides
                     />
                   </FormControl>
                   <FormDescription>
@@ -528,7 +537,7 @@ export default function AdminSettings() {
           <section className="rounded-xl border border-border bg-card p-6 space-y-5 shadow-soft">
             <h2 className="font-serif text-xl">Cores da loja</h2>
             <p className="text-sm text-muted-foreground -mt-2">
-              Use o formato HSL: <code className="text-xs bg-muted px-1.5 py-0.5 rounded">H S% L%</code> (ex: 22 100% 50%).
+              Use o formato Hexadecimal (ex: #EA580C).
             </p>
 
             <div className="grid sm:grid-cols-2 gap-4">
@@ -542,18 +551,18 @@ export default function AdminSettings() {
                       <div className="relative">
                         <div
                           className="h-10 w-10 rounded-md border border-border cursor-pointer shadow-sm hover:ring-2 hover:ring-primary/20 transition-all"
-                          style={{ background: `hsl(${field.value})` }}
+                          style={{ background: field.value || "#ea580c" }}
                           onClick={() => document.getElementById("color-picker-brand")?.click()}
                         />
                         <input
                           id="color-picker-brand"
                           type="color"
                           className="sr-only"
-                          value={hslToHex(field.value)}
-                          onChange={(e) => field.onChange(hexToHsl(e.target.value))}
+                          value={field.value || "#ea580c"}
+                          onChange={(e) => field.onChange(e.target.value)}
                         />
                       </div>
-                      <FormControl><Input placeholder="22 100% 50%" {...field} /></FormControl>
+                      <FormControl><Input placeholder="#EA580C" {...field} /></FormControl>
                     </div>
                     <FormMessage />
                   </FormItem>
@@ -569,18 +578,18 @@ export default function AdminSettings() {
                       <div className="relative">
                         <div
                           className="h-10 w-10 rounded-md border border-border cursor-pointer shadow-sm hover:ring-2 hover:ring-primary/20 transition-all"
-                          style={{ background: field.value ? `hsl(${field.value})` : "transparent" }}
+                          style={{ background: field.value || "transparent" }}
                           onClick={() => document.getElementById("color-picker-secondary")?.click()}
                         />
                         <input
                           id="color-picker-secondary"
                           type="color"
                           className="sr-only"
-                          value={field.value ? hslToHex(field.value) : "#000000"}
-                          onChange={(e) => field.onChange(hexToHsl(e.target.value))}
+                          value={field.value || "#000000"}
+                          onChange={(e) => field.onChange(e.target.value)}
                         />
                       </div>
-                      <FormControl><Input placeholder="16 55% 56%" {...field} /></FormControl>
+                      <FormControl><Input placeholder="#000000" {...field} /></FormControl>
                     </div>
                     <FormMessage />
                   </FormItem>
@@ -601,6 +610,60 @@ export default function AdminSettings() {
                 <Button type="button" size="sm">Botão principal</Button>
                 <Button type="button" size="sm" variant="outline">Secundário</Button>
               </div>
+            </div>
+          </section>
+
+          {/* Layout das categorias */}
+          <section className="rounded-xl border border-border bg-card p-6 space-y-5 shadow-soft">
+            <h2 className="font-serif text-xl">Layout das categorias</h2>
+            <p className="text-sm text-muted-foreground -mt-2">
+              Escolha como as categorias serão exibidas na sua página inicial pública.
+            </p>
+
+            <div className="grid sm:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="category_style"
+                render={({ field }) => (
+                  <FormItem className="space-y-1.5">
+                    <FormLabel>Estilo das Categorias</FormLabel>
+                    <FormControl>
+                      <select
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={field.value}
+                        onChange={field.onChange}
+                      >
+                        <option value="pill">Pills Arredondados (Padrão)</option>
+                        <option value="compact">Quadrados Compactos</option>
+                      </select>
+                    </FormControl>
+                    <FormDescription>
+                      Selecione o estilo visual das abas de categorias.
+                    </FormDescription>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="show_category_images"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between gap-4 rounded-lg border border-border p-4">
+                    <div>
+                      <FormLabel className="font-medium">Exibir foto nas categorias</FormLabel>
+                      <FormDescription className="text-xs mt-0.5">
+                        Se ativo, as categorias exibirão um círculo com foto/mockup em vez da primeira letra.
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
             </div>
           </section>
 
@@ -1278,66 +1341,19 @@ export default function AdminSettings() {
               Exibido no rodapé do site e usado para retirada na loja.
             </p>
 
-            <div className="grid sm:grid-cols-[1fr_120px] gap-4">
-              <FormField
-                control={form.control}
-                name="address_street"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Rua</FormLabel>
-                    <FormControl><Input placeholder="Rua das Acácias" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="address_number"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Número</FormLabel>
-                    <FormControl><Input placeholder="120" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid sm:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="address_neighborhood"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Bairro</FormLabel>
-                    <FormControl><Input placeholder="Pinheiros" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="address_city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cidade</FormLabel>
-                    <FormControl><Input placeholder="São Paulo" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="address_state"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estado</FormLabel>
-                    <FormControl><Input placeholder="SP" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+             <FormField
+              control={form.control}
+              name="address_street"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Endereço</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: Av. Paulista, 1000 - Bela Vista, São Paulo - SP" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Coordenadas (dentro da mesma section de endereço) */}
             <div className="border-t border-border pt-5 space-y-4">

@@ -1,5 +1,5 @@
 /**
- * Scalius Vitrine — Domain types (multi-tenant).
+ * Scalius — Domain types (multi-tenant).
  * Every tenant-scoped entity carries `store_id`.
  * These shapes mirror the planned Supabase schema; swap the mock layer
  * for real queries without changing component contracts.
@@ -45,7 +45,7 @@ export interface MercadoPagoOAuthData {
 
 /* ---------- Platform-level ---------- */
 
-export type PlatformRole = "super_admin"; // global Scalius Vitrine staff
+export type PlatformRole = "super_admin"; // global Scalius staff
 export type StoreRole = "owner" | "manager" | "staff";
 export type PlanId = "essencial" | "pro";
 
@@ -101,6 +101,8 @@ export interface StoreSettings {
   shipping_mode?: "regions" | "distance";  // default: "regions"
   currency: string;            // "BRL"
   timezone: string;            // "America/Sao_Paulo"
+  category_style?: "pill" | "compact";
+  show_category_images?: boolean;
 
   // National Shipping (Melhor Envio)
   national_shipping_enabled?: boolean;

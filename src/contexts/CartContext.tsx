@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTenant } from "@/contexts/TenantContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface CartItem {
   /** Unique key for this line — productId + variant options (allows same product with different variants) */
@@ -72,8 +73,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
             cartKey: it.cartKey ?? buildCartKey(it.productId!, it.variantOptionIds),
           })
         );
+        
         setItems(loadedItems);
         setNotesState(typeof parsed.notes === "string" ? parsed.notes : "");
+
+        // Validate loaded items in the background
+        if (loadedItems.length > 0) {
+          const productIds = loadedItems.map((i) => i.productId);
+          supabase
+            .from("products")
+            .select("id")
+            .in("id", productIds)
+            .eq("is_active", true)
+            .then(({ data, error }) => {
+              if (error) {
+                console.error("Error validating loaded cart items:", error);
+                return;
+              }
+              const activeProductIds = new Set((data || []).map((p) => p.id));
+              setItems((prev) =>
+                prev.filter((i) => {
+                  const wasLoaded = loadedItems.some((li) => li.cartKey === i.cartKey);
+                  if (!wasLoaded) return true; // keep newly added items
+                  return activeProductIds.has(i.productId);
+                })
+              );
+            });
+        }
       } else {
         setItems([]);
         setNotesState("");

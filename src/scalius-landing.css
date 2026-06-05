@@ -247,7 +247,7 @@
       color: var(--text-main);
     }
 
-.scalius-landing-wrapper .hero h1 span{
+.scalius-landing-wrapper .hero h1 .palavra{
       color: var(--primary);
     }
 
@@ -267,12 +267,19 @@
       color: var(--primary);
     }
 
+.scalius-landing-wrapper .inline-flex-wrap{
+      white-space: nowrap;
+      display: inline-block;
+    }
+
 .scalius-landing-wrapper .palavra-rotativa{
       display: inline-block;
       overflow: hidden;
       vertical-align: bottom;
       padding-bottom: 0.15em;
       margin-bottom: -0.15em;
+      white-space: nowrap;
+      min-width: 13ch;
     }
 
 .scalius-landing-wrapper .palavra-rotativa .palavra{
@@ -1001,6 +1008,23 @@
       letter-spacing: -2px;
       margin-bottom: 8px;
       line-height: 1;
+    }
+
+.scalius-landing-wrapper .pricing-tag{
+      display: inline-block;
+      margin-top: 4px;
+      padding: 4px 10px;
+      background: #f1f5f9;
+      color: #64748b;
+      border-radius: var(--radius-pill);
+      font-size: 0.72rem;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+.scalius-landing-wrapper .pricing-tag.pricing-tag-pro{
+      background: var(--primary-light);
+      color: var(--primary);
     }
 
 .scalius-landing-wrapper .price span{

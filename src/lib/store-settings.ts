@@ -34,6 +34,8 @@ export function mapStoreSettings(data: any): StoreSettings {
     shipping_mode: data.shipping_mode ?? "regions",
     currency: "BRL",
     timezone: "America/Sao_Paulo",
+    category_style: data.category_style ?? "pill",
+    show_category_images: data.show_category_images ?? false,
     
     // National Shipping
     national_shipping_enabled: data.national_shipping_enabled ?? false,

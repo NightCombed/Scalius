@@ -99,7 +99,7 @@ Deno.serve(async (req: Request) => {
           "Accept": "application/json",
           "Content-Type": "application/json",
           "Authorization": `Bearer ${settings.melhorenvio_token}`,
-          "User-Agent": "Scalius Vitrine (suporte@scalius.com.br)",
+          "User-Agent": "Scalius (suporte@scalius.com.br)",
         },
         body: JSON.stringify(payload),
       });
@@ -336,7 +336,7 @@ Deno.serve(async (req: Request) => {
           "Accept": "application/json",
           "Content-Type": "application/json",
           "Authorization": `Bearer ${settings.melhorenvio_token}`,
-          "User-Agent": "Scalius Vitrine (suporte@scalius.com.br)",
+          "User-Agent": "Scalius (suporte@scalius.com.br)",
         },
         body: JSON.stringify(payload),
       });

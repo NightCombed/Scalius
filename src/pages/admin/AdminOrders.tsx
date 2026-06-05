@@ -180,11 +180,11 @@ export default function AdminOrders() {
                     </div>
 
                     <div className="flex flex-wrap gap-1.5">
-                      <span className={cn("text-xs px-2 py-0.5 rounded-full", STATUS_BADGE[order.status])}>
-                        {getStatusLabel(order.status)}
-                      </span>
                       <span className={cn("text-xs px-2 py-0.5 rounded-full", PAYMENT_BADGE[order.payment_status ?? "pending"])}>
                         {getPaymentLabel(order.payment_status ?? "pending")}
+                      </span>
+                      <span className={cn("text-xs px-2 py-0.5 rounded-full", STATUS_BADGE[order.status])}>
+                        {getStatusLabel(order.status)}
                       </span>
                       <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                         {order.delivery_type === "pickup" ? "Retirada" : "Entrega"}
@@ -203,11 +203,11 @@ export default function AdminOrders() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium truncate">{order.customer_name ?? "Cliente"}</span>
-                        <span className={cn("text-xs px-2 py-0.5 rounded-full", STATUS_BADGE[order.status])}>
-                          {getStatusLabel(order.status)}
-                        </span>
                         <span className={cn("text-xs px-2 py-0.5 rounded-full", PAYMENT_BADGE[order.payment_status ?? "pending"])}>
                           {getPaymentLabel(order.payment_status ?? "pending")}
+                        </span>
+                        <span className={cn("text-xs px-2 py-0.5 rounded-full", STATUS_BADGE[order.status])}>
+                          {getStatusLabel(order.status)}
                         </span>
                         <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                           {order.delivery_type === "pickup" ? "Retirada" : "Entrega"}

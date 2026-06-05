@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { Copy, QrCode, RefreshCw, CheckCircle2, Clock, AlertTriangle, Loader2 } from "lucide-react";
+import { Copy, QrCode, RefreshCw, CheckCircle2, Clock, AlertTriangle, Loader2, ShieldCheck } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -220,7 +220,10 @@ export default function PublicPixPayment() {
 
           {/* Info */}
           <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 p-3 text-sm text-blue-800 dark:text-blue-300">
-            <p className="font-medium mb-1">⚡ Confirmação automática</p>
+            <p className="font-medium mb-1 flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 flex-shrink-0" />
+              Confirmação automática
+            </p>
             <p className="text-xs">Assim que o pagamento for identificado, você será redirecionado automaticamente para a confirmação do pedido.</p>
           </div>
         </div>
