@@ -1,9 +1,8 @@
 project_id = "jrmixsvdnejzfxvybmng"
 
 [auth]
-site_url = "https://app.scalius.com.br"
+site_url = "https://scalius.com.br"
 additional_redirect_urls = [
-  "https://app.scalius.com.br/**",
   "https://scalius.com.br/**"
 ]
 
