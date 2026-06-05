@@ -1,1 +1,16 @@
 project_id = "jrmixsvdnejzfxvybmng"
+
+[auth]
+site_url = "https://app.scalius.com.br"
+additional_redirect_urls = [
+  "https://app.scalius.com.br/**",
+  "https://scalius.com.br/**"
+]
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[auth.email]
+max_frequency = "1m0s"
+otp_length = 8
