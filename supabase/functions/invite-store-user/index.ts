@@ -83,37 +83,29 @@ serve(async (req) => {
     const existingUser = existingUsers?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
 
     let userId: string;
-    let wasReinvited = false;
+    let shouldCreateNew = !existingUser;
 
     if (existingUser) {
       userId = existingUser.id;
 
-      // Se o usuário ainda não confirmou o email (estado "invited"), reenvia o convite
+      // Se o usuário ainda não confirmou o email (estado "invited"), deleta para poder reenviar do zero
       const isUnconfirmed = !existingUser.email_confirmed_at;
       if (isUnconfirmed) {
-        const { error: resendErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
-          redirectTo: inviteRedirect,
-          data: { full_name: full_name || existingUser.user_metadata?.full_name || "" },
-        });
-        if (resendErr) {
-          // Supabase pode rejeitar o reenvio em alguns casos — fallback: gera link de recovery
-          console.warn("[invite-store-user] inviteUserByEmail falhou no reenvio, tentando generateLink:", resendErr.message);
-          const { error: linkErr } = await adminClient.auth.admin.generateLink({
-            type: "recovery",
-            email,
-            options: { redirectTo: inviteRedirect },
+        console.log(`[invite-store-user] Deletando usuario nao confirmado ${email} (ID: ${userId}) para reenviar convite.`);
+        const { error: deleteErr } = await adminClient.auth.admin.deleteUser(userId);
+        if (deleteErr) {
+          console.error("[invite-store-user] Erro ao deletar usuario para reenvio:", deleteErr.message);
+          return new Response(JSON.stringify({ error: `Erro ao deletar convite anterior: ${deleteErr.message}` }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
-          if (linkErr) {
-            console.error("[invite-store-user] generateLink também falhou:", linkErr.message);
-          } else {
-            wasReinvited = true;
-          }
-        } else {
-          wasReinvited = true;
         }
+        shouldCreateNew = true;
       }
-    } else {
-      // Usuário novo — convida
+    }
+
+    if (shouldCreateNew) {
+      // Usuário novo ou re-convidado — convida
       const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
         redirectTo: inviteRedirect,
         data: { full_name: full_name || "" },
