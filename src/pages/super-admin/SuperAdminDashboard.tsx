@@ -353,7 +353,7 @@ function MembersSheet({ store, onClose }: MembersSheetProps) {
           full_name: inviteName.trim(),
           store_id: store.id,
           role: inviteRole,
-          redirect_url: `https://${store.slug}.scalius.com.br/admin`,
+          redirect_url: `https://${store.slug}.scalius.com.br/set-password`,
         },
       });
 

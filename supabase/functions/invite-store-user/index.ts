@@ -74,21 +74,46 @@ serve(async (req) => {
     // 3. Use service role admin client
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // Check if user already exists
-    const { data: existingUsers } = await adminClient.auth.admin.listUsers();
-    const existingUser = existingUsers?.users?.find(u => u.email === email);
+    // URL de redirect para set-password
+    const siteUrl = Deno.env.get("SITE_URL") || "https://scalius.com.br";
+    const inviteRedirect = redirect_url || `${siteUrl}/set-password`;
+
+    // Verifica se o usuário já existe buscando pelo email
+    const { data: existingUsers } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+    const existingUser = existingUsers?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
 
     let userId: string;
+    let wasReinvited = false;
 
     if (existingUser) {
-      // User already exists — just link to store
       userId = existingUser.id;
+
+      // Se o usuário ainda não confirmou o email (estado "invited"), reenvia o convite
+      const isUnconfirmed = !existingUser.email_confirmed_at;
+      if (isUnconfirmed) {
+        const { error: resendErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
+          redirectTo: inviteRedirect,
+          data: { full_name: full_name || existingUser.user_metadata?.full_name || "" },
+        });
+        if (resendErr) {
+          // Supabase pode rejeitar o reenvio em alguns casos — fallback: gera link de recovery
+          console.warn("[invite-store-user] inviteUserByEmail falhou no reenvio, tentando generateLink:", resendErr.message);
+          const { error: linkErr } = await adminClient.auth.admin.generateLink({
+            type: "recovery",
+            email,
+            options: { redirectTo: inviteRedirect },
+          });
+          if (linkErr) {
+            console.error("[invite-store-user] generateLink também falhou:", linkErr.message);
+          } else {
+            wasReinvited = true;
+          }
+        } else {
+          wasReinvited = true;
+        }
+      }
     } else {
-      // Invite new user
-      // Use SITE_URL env var or fallback to the production domain.
-      // NOTE: the redirect URL must be listed in Supabase Auth → URL Configuration → Redirect URLs.
-      const siteUrl = Deno.env.get("SITE_URL") || "https://scalius.com.br";
-      const inviteRedirect = redirect_url || `${siteUrl}/set-password`;
+      // Usuário novo — convida
       const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
         redirectTo: inviteRedirect,
         data: { full_name: full_name || "" },
@@ -103,13 +128,14 @@ serve(async (req) => {
 
       userId = inviteData.user.id;
 
-      // Update profile with full_name if provided
+      // Atualiza profile com full_name se fornecido
       if (full_name) {
         await adminClient
           .from("profiles")
           .upsert({ id: userId, full_name, is_super_admin: false }, { onConflict: "id" });
       }
     }
+
 
     // 4. Check if already a member of this store
     const { data: existingMember } = await adminClient
