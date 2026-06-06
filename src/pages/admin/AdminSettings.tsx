@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Save, Store, MapPin, Loader2 } from "lucide-react";
+import { Save, Store, MapPin, Loader2, Users } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useActiveStore } from "@/hooks/useActiveStore";
 import { useMockData } from "@/hooks/useMockData";
@@ -13,6 +13,9 @@ import { useStoreSettings } from "@/hooks/useStoreSettings";
 import type { StoreSettings } from "@/types/database";
 import { PaymentSettingsSection } from "@/components/admin/PaymentSettingsSection";
 import { NotificationsSettingsSection } from "@/components/admin/NotificationsSettingsSection";
+import { RoleGuard } from "@/components/auth/RoleGuard";
+import { ActiveSessionsSection } from "@/components/admin/ActiveSessionsSection";
+import { useStoreRole } from "@/hooks/useStoreRole";
 
 
 import { Button } from "@/components/ui/button";
@@ -106,6 +109,7 @@ const schema = z.object({
   silent_hours_end: z.string().regex(/^\d{2}:\d{2}$/, "Formato inválido (ex: 08:00)").default("08:00"),
   category_style: z.enum(["pill", "compact"]).default("pill"),
   show_category_images: z.boolean().default(false),
+  show_revenue_to_staff: z.boolean().default(true),
 }).superRefine((data, ctx) => {
   if (data.national_shipping_enabled) {
     if (!data.melhorenvio_token || data.melhorenvio_token.length === 0) {
@@ -130,6 +134,7 @@ export default function AdminSettings() {
   const [saving, setSaving] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const queryClient = useQueryClient();
+  const { isOwner, isManager } = useStoreRole();
 
   const { data: settings = null, isLoading } = useStoreSettings(store?.id);
 
@@ -206,6 +211,7 @@ export default function AdminSettings() {
       silent_hours_end: "08:00",
       category_style: "pill" as const,
       show_category_images: false,
+      show_revenue_to_staff: true,
     },
   });
 
@@ -300,6 +306,7 @@ export default function AdminSettings() {
       silent_hours_end: settings.silent_hours_end ?? "08:00",
       category_style: (settings.category_style as "pill" | "compact") ?? "pill",
       show_category_images: settings.show_category_images ?? false,
+      show_revenue_to_staff: settings.show_revenue_to_staff ?? true,
     });
   }, [settings, form]);
 
@@ -391,6 +398,7 @@ export default function AdminSettings() {
           silent_hours_end: values.silent_hours_end,
           category_style: values.category_style,
           show_category_images: values.show_category_images,
+          show_revenue_to_staff: values.show_revenue_to_staff,
         }, { onConflict: "store_id" });
       if (error) throw error;
       
@@ -416,7 +424,8 @@ export default function AdminSettings() {
 
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <RoleGuard permission="manage_settings">
+      <div className="max-w-4xl space-y-6">
       <div>
         <h1 className="font-serif text-3xl">Configurações da loja</h1>
         <p className="text-muted-foreground mt-1">
@@ -1490,6 +1499,48 @@ export default function AdminSettings() {
           {/* Notificações */}
           <NotificationsSettingsSection storeId={store.id} />
 
+          {/* Equipe e Sessões (visível apenas para Gerentes/Donos) */}
+          {isManager && (
+            <section className="rounded-xl border border-border bg-card p-6 space-y-6 shadow-soft">
+              <h2 className="font-serif text-xl flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary" />
+                Equipe & Segurança
+              </h2>
+
+              {/* Permissões de Equipe */}
+              <div className="space-y-4">
+                <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">
+                  Permissões da Equipe
+                </h3>
+                <FormField
+                  control={form.control}
+                  name="show_revenue_to_staff"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between gap-4 rounded-lg border border-border p-4">
+                      <div>
+                        <FormLabel className="font-medium">Exibir faturamento para Colaboradores</FormLabel>
+                        <FormDescription className="text-xs mt-0.5">
+                          Se ativado, usuários com papel Colaborador podem ver o faturamento e métricas financeiras no dashboard. Se desativado, estes dados ficam ocultos.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Controle de Dispositivos */}
+              <div className="pt-6 border-t border-border">
+                <ActiveSessionsSection storeId={store.id} plan={store.plan} />
+              </div>
+            </section>
+          )}
+
           <div className="flex items-center justify-end gap-3 sticky bottom-0 bg-background/80 backdrop-blur py-3">
             <Button type="submit" disabled={saving} size="lg">
               <Save className="h-4 w-4" /> {saving ? "Salvando..." : "Salvar configurações"}
@@ -1497,6 +1548,7 @@ export default function AdminSettings() {
           </div>
         </form>
       </Form>
-    </div>
+      </div>
+    </RoleGuard>
   );
 }

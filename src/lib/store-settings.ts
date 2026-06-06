@@ -78,6 +78,9 @@ export function mapStoreSettings(data: any): StoreSettings {
     notification_email: data.notification_email || null,
     notification_preferences: data.notification_preferences || null,
 
+    // Team & Permissions
+    show_revenue_to_staff: data.show_revenue_to_staff ?? true,
+
     // Sound Notifications
     sound_enabled: data.sound_enabled ?? true,
     sound_volume: data.sound_volume ?? "normal",

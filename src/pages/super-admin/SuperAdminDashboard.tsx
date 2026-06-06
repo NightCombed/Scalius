@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Loader2, Store, Sparkles, Users, ShoppingBag, Check, ChevronDown,
   Plus, Pencil, X, UserPlus, Trash2, ExternalLink, Copy, RefreshCw,
-  CheckCircle2, AlertCircle, Clock, Mail, AlertTriangle,
+  CheckCircle2, AlertCircle, Clock, Mail, AlertTriangle, Send, HardDrive,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,7 @@ interface MemberRow {
   user_id: string;
   role: string;
   created_at: string;
+  invite_pending: boolean;  // true = auth.users exists but email_confirmed_at is null
   profile: { full_name: string | null; email: string | null } | null;
 }
 
@@ -284,9 +285,9 @@ interface MembersSheetProps {
 function MembersSheet({ store, onClose }: MembersSheetProps) {
   const queryClient = useQueryClient();
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteName, setInviteName] = useState("");
   const [inviteRole, setInviteRole] = useState<"owner" | "admin" | "staff">("admin");
   const [inviting, setInviting] = useState(false);
+  const [resendingId, setResendingId] = useState<string | null>(null);
 
   const { data: members = [], isLoading: loadingMembers } = useQuery<MemberRow[]>({
     queryKey: ["store-members", store?.id],
@@ -299,9 +300,21 @@ function MembersSheet({ store, onClose }: MembersSheetProps) {
         .order("created_at", { ascending: true });
       if (error) throw error;
 
-      // Fetch profiles separately to get name/email
       const userIds = (data ?? []).map((m) => m.user_id);
       let profiles: Record<string, { full_name: string | null; email: string | null }> = {};
+
+      // Buscar via Edge Function para obter email_confirmed_at também
+      let pendingSet = new Set<string>();
+      try {
+        const pendingRes = await supabase.functions.invoke("get-members-status", {
+          body: { user_ids: userIds },
+        });
+        if (!pendingRes.error && pendingRes.data?.pending) {
+          pendingSet = new Set<string>(pendingRes.data.pending as string[]);
+        }
+      } catch (_) {
+        // silently ignore if function not available
+      }
 
       if (userIds.length > 0) {
         const { data: profileData } = await supabase
@@ -309,7 +322,6 @@ function MembersSheet({ store, onClose }: MembersSheetProps) {
           .select("id, full_name")
           .in("id", userIds);
 
-        // Get emails from auth (via admin RPC if available, otherwise use profile only)
         (profileData ?? []).forEach((p) => {
           profiles[p.id] = { full_name: p.full_name, email: null };
         });
@@ -317,6 +329,7 @@ function MembersSheet({ store, onClose }: MembersSheetProps) {
 
       return (data ?? []).map((m) => ({
         ...m,
+        invite_pending: pendingSet.has(m.user_id),
         profile: profiles[m.user_id] ?? null,
       }));
     },
@@ -341,16 +354,56 @@ function MembersSheet({ store, onClose }: MembersSheetProps) {
     },
   });
 
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({ memberId, role }: { memberId: string; role: string }) => {
+      const { error } = await supabase
+        .from("store_members")
+        .update({ role } as any)
+        .eq("id", memberId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["store-members", store?.id] });
+      toast.success("Cargo atualizado com sucesso");
+    },
+    onError: (err: any) => {
+      toast.error("Erro ao atualizar cargo", { description: err.message });
+    },
+  });
+
+  async function handleResendInvite(member: MemberRow) {
+    if (!store) return;
+    setResendingId(member.user_id);
+    try {
+      const res = await supabase.functions.invoke("resend-invite", {
+        body: {
+          user_id: member.user_id,
+          store_slug: store.slug,
+        },
+      });
+
+      if (res.error) throw new Error(res.error.message);
+      const result = res.data as { ok: boolean; message: string };
+
+      if (!result.ok) throw new Error(result.message || "Erro ao reenviar convite");
+
+      toast.success("Convite reenviado!", { description: result.message });
+      queryClient.invalidateQueries({ queryKey: ["store-members", store.id] });
+    } catch (err: any) {
+      toast.error("Erro ao reenviar convite", { description: err.message });
+    } finally {
+      setResendingId(null);
+    }
+  }
+
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
     if (!inviteEmail.trim() || !store) return;
     setInviting(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
       const res = await supabase.functions.invoke("invite-store-user", {
         body: {
           email: inviteEmail.trim(),
-          full_name: inviteName.trim(),
           store_id: store.id,
           role: inviteRole,
           redirect_url: `https://${store.slug}.scalius.com.br/set-password`,
@@ -358,16 +411,19 @@ function MembersSheet({ store, onClose }: MembersSheetProps) {
       });
 
       if (res.error) throw new Error(res.error.message);
-      const result = res.data as { ok: boolean; message: string; already_member?: boolean };
+      const result = res.data as { ok: boolean; message: string; already_member?: boolean; is_new_user?: boolean };
 
       if (!result.ok) throw new Error(result.message || "Erro desconhecido");
 
-      toast.success(result.already_member ? "Usuário vinculado!" : "Convite enviado!", {
-        description: result.message,
-      });
+      if (result.already_member) {
+        toast.success("Já é membro!", { description: result.message });
+      } else if (result.is_new_user) {
+        toast.success("Convite enviado!", { description: "Um e-mail de convite foi enviado para o usuário definir sua senha." });
+      } else {
+        toast.success("Usuário vinculado!", { description: result.message });
+      }
 
       setInviteEmail("");
-      setInviteName("");
       queryClient.invalidateQueries({ queryKey: ["store-members", store.id] });
     } catch (err: any) {
       toast.error("Erro ao convidar", { description: err.message });
@@ -420,26 +476,70 @@ function MembersSheet({ store, onClose }: MembersSheetProps) {
             {members.map((m) => (
               <div
                 key={m.id}
-                className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border bg-card"
+                className={cn(
+                  "flex items-center justify-between gap-3 p-3 rounded-lg border bg-card",
+                  m.invite_pending
+                    ? "border-amber-200 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-950/10"
+                    : "border-border"
+                )}
               >
                 <div className="min-w-0 flex-1">
-                  <div className="font-medium truncate text-sm">
+                  <div className="font-medium truncate text-sm flex items-center gap-2">
                     {m.profile?.full_name || "Sem nome"}
+                    {m.invite_pending && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 shrink-0">
+                        <Clock className="h-2.5 w-2.5" />
+                        Pendente
+                      </span>
+                    )}
                   </div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {ROLE_LABELS[m.role] ?? m.role} · ID: {m.user_id.slice(0, 8)}…
+                  <div className="text-xs text-muted-foreground truncate flex items-center gap-2 mt-1">
+                    <Select
+                      value={m.role}
+                      onValueChange={(newRole) => {
+                        updateRoleMutation.mutate({ memberId: m.id, role: newRole });
+                      }}
+                      disabled={updateRoleMutation.isPending}
+                    >
+                      <SelectTrigger className="h-6 w-28 text-[11px] px-2 py-0 bg-transparent border-slate-200 dark:border-slate-800">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="owner">Dono</SelectItem>
+                        <SelectItem value="admin">Gerente</SelectItem>
+                        <SelectItem value="staff">Colaborador</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <span className="shrink-0">· ID: {m.user_id.slice(0, 8)}…</span>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
-                  onClick={() => removeMember.mutate(m.id)}
-                  disabled={removeMember.isPending}
-                  title="Remover membro"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-1 shrink-0">
+                  {m.invite_pending && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/20"
+                      onClick={() => handleResendInvite(m)}
+                      disabled={resendingId === m.user_id}
+                      title="Reenviar convite"
+                    >
+                      {resendingId === m.user_id
+                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                        : <Send className="h-4 w-4" />
+                      }
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    onClick={() => removeMember.mutate(m.id)}
+                    disabled={removeMember.isPending}
+                    title="Remover membro"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             ))}
           </section>
@@ -463,15 +563,6 @@ function MembersSheet({ store, onClose }: MembersSheetProps) {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="invite-name" className="text-sm">Nome completo</Label>
-                  <Input
-                    id="invite-name"
-                    placeholder="Maria da Silva"
-                    value={inviteName}
-                    onChange={(e) => setInviteName(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1.5">
                   <Label className="text-sm">Papel na loja</Label>
                   <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as typeof inviteRole)}>
                     <SelectTrigger>
@@ -486,14 +577,14 @@ function MembersSheet({ store, onClose }: MembersSheetProps) {
                 </div>
                 <Button type="submit" className="w-full gap-2" disabled={inviting}>
                   {inviting
-                    ? <><Loader2 className="h-4 w-4 animate-spin" /> Convidando…</>
-                    : <><UserPlus className="h-4 w-4" /> Convidar e vincular</>
+                    ? <><Loader2 className="h-4 w-4 animate-spin" /> Vinculando…</>
+                    : <><UserPlus className="h-4 w-4" /> Vincular / Convidar</>
                   }
                 </Button>
               </form>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Se o e-mail já tiver conta no Scalius, apenas será vinculado à loja.
-                Caso contrário, receberá um e-mail de convite para definir a senha.
+                Se o e-mail já tiver conta ativa no Scalius, é vinculado <strong>sem enviar e-mail</strong>.
+                Caso contrário, receberá um convite por e-mail para definir a senha.
               </p>
             </div>
           </section>
@@ -640,6 +731,66 @@ export default function SuperAdminDashboard() {
     { label: "Plano Pro",       value: stores.filter((s) => s.plan === "pro").length,          icon: Sparkles,     color: "text-violet-600" },
     { label: "Total de pedidos", value: Object.values(counts).reduce((a, c) => a + c.orders, 0), icon: ShoppingBag, color: "text-primary" },
   ];
+
+  // ── Storage Sweep States & Handlers ───────────────────────────────────────
+  const [sweepLoading, setSweepLoading] = useState(false);
+  const [sweepResult, setSweepResult] = useState<{
+    orphans: { bucket: string; path: string; size: number }[];
+    totalSize: number;
+    totalCount: number;
+  } | null>(null);
+  const [cleanResult, setCleanResult] = useState<{
+    deleted: number;
+    freedBytes: number;
+  } | null>(null);
+  const [cleanConfirmOpen, setCleanConfirmOpen] = useState(false);
+
+  async function handleScanStorage() {
+    setSweepLoading(true);
+    setCleanResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("storage-sweep", {
+        body: { action: "scan" },
+      });
+      if (error) throw new Error(error.message);
+      setSweepResult(data);
+      toast.success("Varredura concluída", {
+        description: `Encontrados ${data.totalCount} arquivos órfãos (${formatBytes(data.totalSize)}).`,
+      });
+    } catch (err: any) {
+      toast.error("Erro na varredura", { description: err.message });
+    } finally {
+      setSweepLoading(false);
+    }
+  }
+
+  async function handleCleanStorage() {
+    setSweepLoading(true);
+    setCleanConfirmOpen(false);
+    try {
+      const { data, error } = await supabase.functions.invoke("storage-sweep", {
+        body: { action: "clean" },
+      });
+      if (error) throw new Error(error.message);
+      setCleanResult(data);
+      setSweepResult(null);
+      toast.success("Limpeza concluída!", {
+        description: `Removidos ${data.deleted} arquivos, liberando ${formatBytes(data.freedBytes)}.`,
+      });
+    } catch (err: any) {
+      toast.error("Erro na limpeza", { description: err.message });
+    } finally {
+      setSweepLoading(false);
+    }
+  }
+
+  function formatBytes(bytes: number) {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  }
 
   return (
     <div className="space-y-8 max-w-7xl">
@@ -1005,6 +1156,101 @@ export default function SuperAdminDashboard() {
         )}
       </section>
 
+      {/* ── Storage Sweep Section (Super-Admin eyes only) ─────────────────── */}
+      <section className="rounded-xl border border-border bg-card p-6 space-y-6 shadow-soft">
+        <div className="space-y-1">
+          <h2 className="font-serif text-xl flex items-center gap-2">
+            <HardDrive className="h-5 w-5 text-primary" />
+            Manutenção de Storage
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Verifique e elimine arquivos de imagens órfãos (de produtos, categorias ou logos deletados) que continuam ocupando espaço nos buckets.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <Button
+            onClick={handleScanStorage}
+            disabled={sweepLoading}
+            variant="outline"
+            className="gap-2"
+          >
+            {sweepLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            Varrer Storage
+          </Button>
+
+          {sweepResult && sweepResult.totalCount > 0 && (
+            <Button
+              onClick={() => setCleanConfirmOpen(true)}
+              disabled={sweepLoading}
+              variant="destructive"
+              className="gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              Limpar {sweepResult.totalCount} Arquivos Órfãos
+            </Button>
+          )}
+        </div>
+
+        {sweepResult && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-1">
+                <span className="text-xs text-muted-foreground font-medium">Arquivos Órfãos</span>
+                <p className="font-serif text-2xl font-bold text-amber-600 dark:text-amber-500">
+                  {sweepResult.totalCount}
+                </p>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-1">
+                <span className="text-xs text-muted-foreground font-medium">Espaço Desperdiçado</span>
+                <p className="font-serif text-2xl font-bold text-amber-600 dark:text-amber-500">
+                  {formatBytes(sweepResult.totalSize)}
+                </p>
+              </div>
+            </div>
+
+            {sweepResult.orphans.length > 0 ? (
+              <div className="rounded-lg border border-border overflow-hidden">
+                <div className="p-3 border-b border-border bg-muted/10">
+                  <h3 className="font-semibold text-sm">Arquivos Órfãos Encontrados</h3>
+                </div>
+                <div className="divide-y divide-border max-h-[300px] overflow-y-auto font-mono text-xs">
+                  {sweepResult.orphans.map((file, idx) => (
+                    <div key={idx} className="flex justify-between items-center p-2.5 hover:bg-muted/10 transition-colors">
+                      <div className="min-w-0 flex-1 pr-4">
+                        <span className="text-primary font-semibold">{file.bucket}</span>
+                        <span className="text-muted-foreground">/</span>
+                        <span className="truncate text-foreground/80 block md:inline">{file.path}</span>
+                      </div>
+                      <span className="shrink-0 text-muted-foreground">{formatBytes(file.size)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-emerald-200 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-950/10 p-6 text-center text-sm text-emerald-800 dark:text-emerald-300">
+                <Check className="h-6 w-6 text-emerald-500 mx-auto mb-2" />
+                Nenhum arquivo órfão encontrado. Seu storage está 100% limpo!
+              </div>
+            )}
+          </div>
+        )}
+
+        {cleanResult && (
+          <div className="rounded-lg border border-dashed border-emerald-200 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-950/10 p-6 text-center text-sm text-emerald-800 dark:text-emerald-300 space-y-2">
+            <Check className="h-6 w-6 text-emerald-500 mx-auto" />
+            <p className="font-semibold text-lg">Limpeza Realizada com Sucesso!</p>
+            <p className="text-muted-foreground text-sm">
+              Foram excluídos <strong>{cleanResult.deleted}</strong> arquivos órfãos, liberando <strong>{formatBytes(cleanResult.freedBytes)}</strong> de espaço.
+            </p>
+          </div>
+        )}
+      </section>
+
       {/* ── Plan feature legend ─────────────────────────────────────────── */}
       <section className="rounded-xl border border-border bg-card p-6 space-y-4 shadow-soft">
         <h2 className="font-serif text-xl">Comparativo de planos</h2>
@@ -1068,6 +1314,29 @@ export default function SuperAdminDashboard() {
         store={membersStore}
         onClose={() => setMembersStore(null)}
       />
+
+      {/* Clean Confirm Dialog */}
+      <Dialog open={cleanConfirmOpen} onOpenChange={setCleanConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl text-destructive">
+              Limpar arquivos órfãos?
+            </DialogTitle>
+            <DialogDescription>
+              Esta ação removerá permanentemente os {sweepResult?.totalCount} arquivos órfãos identificados nos buckets de storage. Esta operação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" onClick={() => setCleanConfirmOpen(false)} disabled={sweepLoading}>
+              Cancelar
+            </Button>
+            <Button type="button" variant="destructive" onClick={handleCleanStorage} disabled={sweepLoading}>
+              {sweepLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Excluir Definitivamente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

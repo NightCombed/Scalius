@@ -99,6 +99,19 @@ function getPreviewBgStyle(
   };
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function extractStoragePathFromUrl(url: string, bucketName: string): string | null {
+  try {
+    const marker = `/object/public/${bucketName}/`;
+    const idx = url.indexOf(marker);
+    if (idx === -1) return null;
+    return url.slice(idx + marker.length);
+  } catch {
+    return null;
+  }
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function ImageUpload({
@@ -195,6 +208,15 @@ export function ImageUpload({
       const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels, mimeType);
       if (!croppedImage)
         throw new Error("Falha ao processar imagem. Verifique se o link permite acesso externo (CORS).");
+
+      // Delete old file if it's a Storage URL for this bucket
+      if (value) {
+        const oldPath = extractStoragePathFromUrl(value, bucket);
+        if (oldPath) {
+          await supabase.storage.from(bucket).remove([oldPath]);
+          // Silently ignore errors — proceed with upload regardless
+        }
+      }
 
       const storagePath = `${pathPrefix}-${Date.now()}.jpg`;
       const { error } = await supabase.storage

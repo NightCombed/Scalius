@@ -8,7 +8,7 @@ const corsHeaders = {
 
 interface InvitePayload {
   email: string;
-  full_name: string;
+  full_name?: string;   // optional — only used if creating a new user
   store_id: string;
   role: "owner" | "admin" | "staff";
   redirect_url?: string;
@@ -33,7 +33,6 @@ serve(async (req) => {
       });
     }
 
-    // Use anon client with caller's JWT to check identity
     const callerClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -46,7 +45,6 @@ serve(async (req) => {
       });
     }
 
-    // Check super_admin flag in profiles
     const { data: profile, error: profileErr } = await callerClient
       .from("profiles")
       .select("is_super_admin")
@@ -74,62 +72,70 @@ serve(async (req) => {
     // 3. Use service role admin client
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // URL de redirect para set-password
     const siteUrl = Deno.env.get("SITE_URL") || "https://scalius.com.br";
     const inviteRedirect = redirect_url || `${siteUrl}/set-password`;
 
-    // Verifica se o usuário já existe buscando pelo email
+    // 4. Check if user already exists
     const { data: existingUsers } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
     const existingUser = existingUsers?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
 
     let userId: string;
-    let shouldCreateNew = !existingUser;
+    let isNewUser = false;
+    const isConfirmed = !!existingUser?.email_confirmed_at;
 
-    if (existingUser) {
+    if (existingUser && isConfirmed) {
+      // ── User exists with confirmed email (has password) ────────────────────
+      // Link silently — do NOT send any email.
       userId = existingUser.id;
+      console.log(`[invite-store-user] User ${email} already confirmed — linking silently, no email sent.`);
 
-      // Se o usuário ainda não confirmou o email (estado "invited"), deleta para poder reenviar do zero
-      const isUnconfirmed = !existingUser.email_confirmed_at;
-      if (isUnconfirmed) {
-        console.log(`[invite-store-user] Deletando usuario nao confirmado ${email} (ID: ${userId}) para reenviar convite.`);
-        const { error: deleteErr } = await adminClient.auth.admin.deleteUser(userId);
-        if (deleteErr) {
-          console.error("[invite-store-user] Erro ao deletar usuario para reenvio:", deleteErr.message);
-          return new Response(JSON.stringify({ error: `Erro ao deletar convite anterior: ${deleteErr.message}` }), {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        shouldCreateNew = true;
+    } else if (existingUser && !isConfirmed) {
+      // ── User exists but never confirmed (stuck invite) ─────────────────────
+      // Delete and re-invite so they get a fresh link.
+      console.log(`[invite-store-user] Deleting unconfirmed user ${email} (ID: ${existingUser.id}) to re-invite.`);
+      const { error: deleteErr } = await adminClient.auth.admin.deleteUser(existingUser.id);
+      if (deleteErr) {
+        return new Response(JSON.stringify({ error: `Erro ao remover convite anterior: ${deleteErr.message}` }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
-    }
-
-    if (shouldCreateNew) {
-      // Usuário novo ou re-convidado — convida
+      isNewUser = true;
       const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
         redirectTo: inviteRedirect,
-        data: { full_name: full_name || "" },
+        data: { full_name: full_name ?? "" },
       });
-
       if (inviteErr || !inviteData?.user) {
         return new Response(JSON.stringify({ error: inviteErr?.message || "Failed to invite user" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-
       userId = inviteData.user.id;
-
-      // Atualiza profile com full_name se fornecido
       if (full_name) {
-        await adminClient
-          .from("profiles")
-          .upsert({ id: userId, full_name, is_super_admin: false }, { onConflict: "id" });
+        await adminClient.from("profiles").upsert({ id: userId, full_name, is_super_admin: false }, { onConflict: "id" });
+      }
+
+    } else {
+      // ── Brand new user ─────────────────────────────────────────────────────
+      isNewUser = true;
+      const { data: inviteData, error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(email, {
+        redirectTo: inviteRedirect,
+        data: { full_name: full_name ?? "" },
+      });
+      if (inviteErr || !inviteData?.user) {
+        return new Response(JSON.stringify({ error: inviteErr?.message || "Failed to invite user" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      userId = inviteData.user.id;
+      if (full_name) {
+        await adminClient.from("profiles").upsert({ id: userId, full_name, is_super_admin: false }, { onConflict: "id" });
       }
     }
 
-
-    // 4. Check if already a member of this store
+    // 5. Check if already a member of this store
     const { data: existingMember } = await adminClient
       .from("store_members")
       .select("id")
@@ -142,13 +148,14 @@ serve(async (req) => {
         ok: true,
         user_id: userId,
         already_member: true,
+        is_new_user: false,
         message: "Usuário já é membro desta loja",
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // 5. Insert store_members link
+    // 6. Insert store_members link
     const { error: memberErr } = await adminClient
       .from("store_members")
       .insert({ store_id, user_id: userId, role });
@@ -164,12 +171,14 @@ serve(async (req) => {
       ok: true,
       user_id: userId,
       already_member: false,
-      message: existingUser
-        ? "Usuário existente vinculado à loja com sucesso"
-        : "Convite enviado e usuário vinculado à loja com sucesso",
+      is_new_user: isNewUser,
+      message: isNewUser
+        ? "Convite enviado e usuário vinculado à loja com sucesso"
+        : "Usuário existente vinculado à loja sem envio de e-mail",
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+
   } catch (err: any) {
     console.error("invite-store-user error:", err);
     return new Response(JSON.stringify({ error: err.message }), {

@@ -2,9 +2,10 @@ import { LayoutDashboard, Package, Tag, ShoppingBag, Users, Truck, Settings } fr
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
-  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, useSidebar,
+  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { Flower2 } from "lucide-react";
+import { useStoreRole } from "@/hooks/useStoreRole";
 
 const items = [
   { title: "Visão geral", url: "/admin", icon: LayoutDashboard, end: true },
@@ -18,6 +19,7 @@ const items = [
 export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+  const { can, roleLabel, roleBadgeClasses } = useStoreRole();
 
   return (
     <Sidebar collapsible="icon">
@@ -58,6 +60,24 @@ export function AdminSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="border-t border-slate-100 dark:border-slate-800/60 p-4">
+        {collapsed ? (
+          <div className="flex justify-center text-slate-400">
+            <Users className="h-4 w-4" />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/45">
+              Seu Cargo
+            </span>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${roleBadgeClasses}`}>
+                {roleLabel || "Carregando..."}
+              </span>
+            </div>
+          </div>
+        )}
+      </SidebarFooter>
     </Sidebar>
   );
 }

@@ -9,6 +9,7 @@ import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { NavLink } from "@/components/NavLink";
+import { useStoreRole } from "@/hooks/useStoreRole";
 
 const NAV_ITEMS = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, end: true },
@@ -143,6 +144,7 @@ export default function AdminLayout() {
   const activeStore = memberships[0]?.store;
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { can, roleLabel, roleBadgeClasses } = useStoreRole();
 
   const { data: settings } = useStoreSettings(activeStore?.id);
 
@@ -315,6 +317,14 @@ export default function AdminLayout() {
 
         {/* Drawer Footer */}
         <div className="p-4 border-t border-border space-y-2">
+          {roleLabel && (
+            <div className="flex items-center gap-2 px-2.5 py-1.5 mb-2 bg-muted/50 dark:bg-slate-900/60 rounded-xl border border-border/40">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Cargo:</span>
+              <span className={`text-[10px] font-medium px-2.5 py-0.5 rounded-full ${roleBadgeClasses}`}>
+                {roleLabel}
+              </span>
+            </div>
+          )}
           {activeStore && (
             <Button asChild variant="outline" size="sm" className="w-full gap-2">
               <Link to={`/loja/${activeStore.slug}`} target="_blank">

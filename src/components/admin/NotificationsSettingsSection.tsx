@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, BellOff, ExternalLink, Loader2, RefreshCw, Send, Webhook, Volume2 } from "lucide-react";
+import { Bell, BellOff, ExternalLink, Loader2, RefreshCw, Send, Webhook, Volume2, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFormContext } from "react-hook-form";
@@ -81,6 +81,7 @@ export function NotificationsSettingsSection({ storeId }: Props) {
   const { plan } = usePlan();
   
   const [testingWebhook, setTestingWebhook] = useState(false);
+  const [showLogs, setShowLogs] = useState(false);
 
   const set = (key: string, val: any) =>
     form.setValue(key, val, { shouldDirty: true, shouldValidate: true });
@@ -100,6 +101,7 @@ export function NotificationsSettingsSection({ storeId }: Props) {
       return data ?? [];
     },
     refetchInterval: 30_000,
+    enabled: showLogs,
   });
 
 
@@ -321,49 +323,6 @@ export function NotificationsSettingsSection({ storeId }: Props) {
             )}
           </div>
 
-          {/* Webhook */}
-          <div className="rounded-lg border border-border bg-background p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Webhook className="h-4 w-4 text-muted-foreground" />
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Webhook (API)</p>
-              </div>
-              <Switch
-                id="notif-webhook-enabled"
-                checked={prefs.notif_webhook_enabled}
-                onCheckedChange={(v) => set("notif_webhook_enabled", v)}
-              />
-            </div>
-            {prefs.notif_webhook_enabled && (
-              <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="notif-webhook-url">URL do Webhook</Label>
-                  <Input
-                    id="notif-webhook-url"
-                    placeholder="https://meuapp.com/api/webhook"
-                    value={prefs.notif_webhook_url}
-                    onChange={(e) => set("notif_webhook_url", e.target.value)}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5"
-                    onClick={handleTestWebhook}
-                    disabled={testingWebhook}
-                  >
-                    {testingWebhook ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                    Enviar teste
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Receba um JSON com todos os eventos. Útil para integração com seu próprio sistema ou N8N/Zapier.
-                </p>
-              </div>
-            )}
-          </div>
         </div>
 
         {/* ── Notificações para o CLIENTE ───────────────────────────────────── */}
@@ -439,104 +398,117 @@ export function NotificationsSettingsSection({ storeId }: Props) {
 
       {/* ── Notification Logs ─────────────────────────────────────────────────── */}
       <section className="rounded-xl border border-border bg-card p-6 space-y-4 shadow-soft">
-        <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setShowLogs(!showLogs)}
+          className="w-full flex items-center justify-between text-left"
+        >
           <div>
-            <h2 className="font-serif text-xl">Histórico de Webhooks (API)</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">Últimos 20 eventos enviados para sua URL de integração.</p>
+            <h2 className="font-serif text-xl">Histórico de Notificações</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">Últimos 20 envios de e-mails transacionais e alertas push da sua loja.</p>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => refetchLogs()}
-          >
-            <RefreshCw className="h-4 w-4" /> Atualizar
-          </Button>
-        </div>
-
-        {logsLoading ? (
-          <div className="py-8 grid place-items-center">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+            {showLogs && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 mr-1"
+                onClick={() => refetchLogs()}
+              >
+                <RefreshCw className="h-3.5 w-3.5" /> Atualizar
+              </Button>
+            )}
+            <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${showLogs ? "rotate-180" : ""}`} />
           </div>
-        ) : logs.length === 0 ? (
-          <div className="py-10 text-center text-muted-foreground text-sm">
-            Nenhuma notificação enviada ainda.
-          </div>
-        ) : (
-          <div className="overflow-x-auto -mx-2">
-            <table className="w-full text-sm min-w-[520px]">
-              <thead>
-                <tr className="text-left text-xs text-muted-foreground uppercase tracking-wide border-b border-border">
-                  <th className="px-2 pb-2 font-medium">Evento</th>
-                  <th className="px-2 pb-2 font-medium">Canal</th>
-                  <th className="px-2 pb-2 font-medium">Destinatário</th>
-                  <th className="px-2 pb-2 font-medium">Status</th>
-                  <th className="px-2 pb-2 font-medium text-right">Data</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {logs.map((log: any) => (
-                  <tr key={log.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-2 py-2.5 font-medium">
-                      {EVENT_LABELS[log.event_type] ?? log.event_type}
-                    </td>
-                    <td className="px-2 py-2.5 text-muted-foreground">
-                      {CHANNEL_LABELS[log.channel] ?? log.channel}
-                    </td>
-                    <td className="px-2 py-2.5 text-muted-foreground capitalize">
-                      {log.recipient_type === "store" ? "Loja" : "Cliente"}
-                    </td>
-                    <td className="px-2 py-2.5">
-                      {(() => {
-                        let displayStatus = log.status;
-                        let displayError = log.error_message;
+        </button>
 
-                        // Sanitize for tenants (hide rate limit yellow badge / details)
-                        if (log.status === "rate_limited") {
-                          displayStatus = "failed";
-                        }
-                        if (displayError && (
-                          displayError.includes("rate_limited") || 
-                          displayError.includes("429") || 
-                          displayError.includes("quota") ||
-                          displayError.includes("Rate limit")
-                        )) {
-                          displayError = "Falha temporária no envio de e-mails. A equipe de suporte técnica já foi notificada.";
-                        }
+        {showLogs && (
+          <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+            {logsLoading ? (
+              <div className="py-8 grid place-items-center">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : logs.length === 0 ? (
+              <div className="py-10 text-center text-muted-foreground text-sm">
+                Nenhuma notificação enviada ainda.
+              </div>
+            ) : (
+              <div className="overflow-x-auto -mx-2 pt-2">
+                <table className="w-full text-sm min-w-[520px]">
+                  <thead>
+                    <tr className="text-left text-xs text-muted-foreground uppercase tracking-wide border-b border-border">
+                      <th className="px-2 pb-2 font-medium">Evento</th>
+                      <th className="px-2 pb-2 font-medium">Canal</th>
+                      <th className="px-2 pb-2 font-medium">Destinatário</th>
+                      <th className="px-2 pb-2 font-medium">Status</th>
+                      <th className="px-2 pb-2 font-medium text-right">Data</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {logs.map((log: any) => (
+                      <tr key={log.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-2 py-2.5 font-medium">
+                          {EVENT_LABELS[log.event_type] ?? log.event_type}
+                        </td>
+                        <td className="px-2 py-2.5 text-muted-foreground">
+                          {CHANNEL_LABELS[log.channel] ?? log.channel}
+                        </td>
+                        <td className="px-2 py-2.5 text-muted-foreground capitalize">
+                          {log.recipient_type === "store" ? "Loja" : "Cliente"}
+                        </td>
+                        <td className="px-2 py-2.5">
+                          {(() => {
+                            let displayStatus = log.status;
+                            let displayError = log.error_message;
 
-                        // Map status to portuguese user-friendly label
-                        const statusLabels: Record<string, string> = {
-                          success: "Enviado",
-                          sent: "Enviado",
-                          failed: "Falha",
-                          error: "Falha",
-                          suppressed: "Bloqueado (Lista Negra)",
-                          bounced: "Retornado",
-                          complained: "Spam",
-                        };
+                            // Sanitize for tenants (hide rate limit yellow badge / details)
+                            if (log.status === "rate_limited") {
+                              displayStatus = "failed";
+                            }
+                            if (displayError && (
+                              displayError.includes("rate_limited") || 
+                              displayError.includes("429") || 
+                              displayError.includes("quota") ||
+                              displayError.includes("Rate limit")
+                            )) {
+                              displayError = "Falha temporária no envio de e-mails. A equipe de suporte técnica já foi notificada.";
+                            }
 
-                        return (
-                          <>
-                            <span className={`inline-flex text-xs px-2 py-0.5 rounded-full font-medium ${LOG_STATUS[displayStatus] ?? ""}`}>
-                              {statusLabels[displayStatus] ?? displayStatus}
-                            </span>
-                            {displayError && (
-                              <p className="text-xs text-red-500 mt-0.5 truncate max-w-[200px]" title={displayError}>
-                                {displayError}
-                              </p>
-                            )}
-                          </>
-                        );
-                      })()}
-                    </td>
-                    <td className="px-2 py-2.5 text-muted-foreground text-right whitespace-nowrap">
-                      {format(new Date(log.created_at), "d MMM, HH:mm", { locale: ptBR })}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                            // Map status to portuguese user-friendly label
+                            const statusLabels: Record<string, string> = {
+                              success: "Enviado",
+                              sent: "Enviado",
+                              failed: "Falha",
+                              error: "Falha",
+                              suppressed: "Bloqueado (Lista Negra)",
+                              bounced: "Retornado",
+                              complained: "Spam",
+                            };
+
+                            return (
+                              <>
+                                <span className={`inline-flex text-xs px-2 py-0.5 rounded-full font-medium ${LOG_STATUS[displayStatus] ?? ""}`}>
+                                  {statusLabels[displayStatus] ?? displayStatus}
+                                </span>
+                                {displayError && (
+                                  <p className="text-xs text-red-500 mt-0.5 truncate max-w-[200px]" title={displayError}>
+                                    {displayError}
+                                  </p>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </td>
+                        <td className="px-2 py-2.5 text-muted-foreground text-right whitespace-nowrap">
+                          {format(new Date(log.created_at), "d MMM, HH:mm", { locale: ptBR })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </section>

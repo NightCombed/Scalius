@@ -37,6 +37,21 @@ import { CSS } from "@dnd-kit/utilities";
 const formatBRL = (cents: number) =>
   (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+function extractStoragePath(url: string): string | null {
+  try {
+    const marker = '/object/public/';
+    const idx = url.indexOf(marker);
+    if (idx === -1) return null;
+    // Remove the bucket name prefix too
+    const afterMarker = url.slice(idx + marker.length);
+    const slashIdx = afterMarker.indexOf('/');
+    if (slashIdx === -1) return null;
+    return afterMarker.slice(slashIdx + 1); // path within bucket
+  } catch {
+    return null;
+  }
+}
+
 // ─── Extended Product type with sort_order ───────────────────────────────────
 type ProductWithOrder = Product & {
   sort_order?: number | null;
@@ -422,6 +437,32 @@ export default function AdminProducts() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      try {
+        const { data: product } = await supabase
+          .from("products")
+          .select("image_url")
+          .eq("id", id)
+          .maybeSingle();
+
+        if (product?.image_url) {
+          const urls = product.image_url.split(",").map((u) => u.trim()).filter(Boolean);
+          const paths = urls
+            .map(extractStoragePath)
+            .filter((p): p is string => p !== null);
+
+          if (paths.length > 0) {
+            const { error: storageErr } = await supabase.storage
+              .from("product-images")
+              .remove(paths);
+            if (storageErr) {
+              console.error("Error deleting product images from storage:", storageErr);
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Failed to clean up product images from storage:", e);
+      }
+
       const { error } = await supabase.from("products").delete().eq("id", id);
       if (error) throw error;
     },

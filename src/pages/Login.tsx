@@ -8,11 +8,25 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Flower2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
+function translateSignUpError(error: string): string {
+  if (error.toLowerCase().includes("user already registered")) {
+    return "Este e-mail já possui uma conta. Use a aba 'Entrar' para fazer login.";
+  }
+  if (error.toLowerCase().includes("password should be at least")) {
+    return "A senha deve ter no mínimo 6 caracteres.";
+  }
+  if (error.toLowerCase().includes("invalid email")) {
+    return "E-mail inválido.";
+  }
+  return error;
+}
+
 export default function Login() {
   const { user, signIn, signUp, isSuperAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [activeTab, setActiveTab] = useState("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -42,13 +56,19 @@ export default function Login() {
     const res = await signUp(email, password, fullName);
     setSubmitting(false);
     if (!res.ok) {
-      toast({ title: "Falha no cadastro", description: res.error, variant: "destructive" });
+      const friendlyError = translateSignUpError(res.error ?? "");
+      const isAlreadyRegistered = (res.error ?? "").toLowerCase().includes("user already registered");
+      toast({ title: "Falha no cadastro", description: friendlyError, variant: "destructive" });
+      if (isAlreadyRegistered) {
+        setActiveTab("signin");
+      }
       return;
     }
     toast({
-      title: "Conta criada",
-      description: "Verifique seu e-mail para confirmar (se confirmação estiver ativa).",
+      title: "Conta criada!",
+      description: "Sua conta foi criada com sucesso. Faça login para continuar.",
     });
+    setActiveTab("signin");
   };
 
   return (
@@ -68,7 +88,7 @@ export default function Login() {
             <img src="/scalius-logo-dark.png" alt="Scalius" className="h-8 object-contain" />
           </Link>
 
-          <Tabs defaultValue="signin" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid grid-cols-2 w-full">
               <TabsTrigger value="signin">Entrar</TabsTrigger>
               <TabsTrigger value="signup">Criar conta</TabsTrigger>
@@ -78,7 +98,7 @@ export default function Login() {
               <form onSubmit={onSignIn} className="space-y-4 pt-4">
                 <div>
                   <h1 className="font-serif text-2xl mb-1">Entrar no painel</h1>
-                  <p className="text-sm text-muted-foreground">Acesse a área administrativa da sua floricultura.</p>
+                  <p className="text-sm text-muted-foreground">Acesse a área administrativa da sua loja.</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">E-mail</Label>

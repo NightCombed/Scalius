@@ -163,6 +163,9 @@ export interface StoreSettings {
   notification_email?: string | null;
   notification_preferences?: NotificationPreferences | null;
 
+  // Team & Permissions
+  show_revenue_to_staff?: boolean;  // default true; owner/admin can disable
+
   // Sound Notifications
   sound_enabled?: boolean;
   sound_volume?: "baixo" | "normal" | "alto";

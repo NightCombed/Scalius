@@ -16,6 +16,21 @@ const slugify = (s: string) =>
   s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+function extractStoragePath(url: string): string | null {
+  try {
+    const marker = '/object/public/';
+    const idx = url.indexOf(marker);
+    if (idx === -1) return null;
+    // Remove the bucket name prefix too
+    const afterMarker = url.slice(idx + marker.length);
+    const slashIdx = afterMarker.indexOf('/');
+    if (slashIdx === -1) return null;
+    return afterMarker.slice(slashIdx + 1); // path within bucket
+  } catch {
+    return null;
+  }
+}
+
 export default function AdminCategories() {
   const store = useActiveStore();
   const queryClient = useQueryClient();
@@ -93,6 +108,28 @@ export default function AdminCategories() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      try {
+        const { data: category } = await supabase
+          .from("categories")
+          .select("image_url")
+          .eq("id", id)
+          .maybeSingle();
+
+        if (category?.image_url) {
+          const path = extractStoragePath(category.image_url);
+          if (path) {
+            const { error: storageErr } = await supabase.storage
+              .from("category-images")
+              .remove([path]);
+            if (storageErr) {
+              console.error("Error deleting category image from storage:", storageErr);
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Failed to clean up category image from storage:", e);
+      }
+
       const { error } = await supabase.from("categories").delete().eq("id", id);
       if (error) throw error;
     },

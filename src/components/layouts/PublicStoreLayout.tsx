@@ -70,7 +70,7 @@ function PublicStoreShell() {
           <Store className="mx-auto h-10 w-10 text-primary" />
           <h1 className="font-serif text-3xl">Loja não encontrada</h1>
           <p className="text-muted-foreground">
-            Verifique o endereço da floricultura ou volte para a{" "}
+            Verifique o endereço da loja ou volte para a{" "}
             <Link to="/" className="text-primary underline underline-offset-4">página inicial</Link>.
           </p>
         </div>

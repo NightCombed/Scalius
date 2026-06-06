@@ -718,7 +718,7 @@ function PublicCheckoutInner() {
         }
       } else {
         // Manual Pix flow — show confirmation with pix key
-        toast.success("Pedido enviado!", { description: "Em breve a floricultura entrará em contato." });
+        toast.success("Pedido enviado!", { description: "Em breve a loja entrará em contato." });
         clear();
         navigate(getStoreLink(`/pedido/${result.order_id}`, store!.slug));
       }

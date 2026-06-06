@@ -6,6 +6,7 @@ import { formatBRL, ORDER_STATUS_LABEL } from "@/lib/mockData";
 import { Clock, Package, ShoppingBag, Truck, CheckCircle2, TrendingUp, ArrowRight, AlertTriangle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useStoreRole } from "@/hooks/useStoreRole";
 
 const STATUS_BADGE: Record<string, string> = {
   pending:          "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
@@ -153,6 +154,9 @@ export default function AdminDashboard() {
     );
   }
 
+  const { can } = useStoreRole();
+  const showRevenue = can("view_revenue");
+
   const { todayRevenue, yesterdayRevenue, todayOrders, pending } = dashboardStats;
   
   const ticketMedio = todayOrders > 0 ? todayRevenue / todayOrders : 0;
@@ -164,16 +168,16 @@ export default function AdminDashboard() {
   const kpis = [
     { 
       label: "Vendas hoje", 
-      value: formatBRL(todayRevenue), 
+      value: showRevenue ? formatBRL(todayRevenue) : "R$ ••••", 
       icon: TrendingUp, 
       accent: "text-primary",
-      comparison: growth !== null ? {
+      comparison: showRevenue && growth !== null ? {
         value: `${growth > 0 ? "+" : ""}${growth.toFixed(0)}%`,
         trend: growth >= 0 ? "up" : "down"
-      } : { value: "—", trend: "neutral" }
+      } : undefined
     },
     { label: "Pedidos hoje", value: todayOrders, icon: ShoppingBag, accent: "text-primary" },
-    { label: "Ticket médio", value: formatBRL(ticketMedio), icon: TrendingUp, accent: "text-primary" },
+    { label: "Ticket médio", value: showRevenue ? formatBRL(ticketMedio) : "R$ ••••", icon: TrendingUp, accent: "text-primary" },
     { label: "Pendentes", value: pending, icon: Clock, accent: "text-amber-600" },
   ];
 
@@ -294,7 +298,7 @@ export default function AdminDashboard() {
                   <div className="text-xs text-muted-foreground">{row.quantity} vendidos esta semana</div>
                 </div>
                 <div className="text-sm font-medium shrink-0 text-right">
-                  <div>{formatBRL(row.revenue_cents)}</div>
+                  <div>{showRevenue ? formatBRL(row.revenue_cents) : "R$ ••••"}</div>
                 </div>
               </div>
             ))}

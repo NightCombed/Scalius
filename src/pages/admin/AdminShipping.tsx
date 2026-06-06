@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { RoleGuard } from "@/components/auth/RoleGuard";
 
 /* ───── helpers ───── */
 const parseBRL = (s: string) => {
@@ -62,50 +63,52 @@ export default function AdminShipping() {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <header>
-        <h1 className="font-serif text-3xl mb-1">Entregas e frete</h1>
-        <p className="text-muted-foreground">Configure como o frete é calculado para seus clientes.</p>
-      </header>
+    <RoleGuard permission="manage_shipping_settings">
+      <div className="space-y-6 max-w-4xl">
+        <header>
+          <h1 className="font-serif text-3xl mb-1">Entregas e frete</h1>
+          <p className="text-muted-foreground">Configure como o frete é calculado para seus clientes.</p>
+        </header>
 
-      {/* Mode selector */}
-      <div className="rounded-xl border border-border bg-card p-5 space-y-4 shadow-soft">
-        <h2 className="font-medium">Modo de cálculo de frete ativo no checkout</h2>
-        <div className="grid sm:grid-cols-2 gap-3">
-          {(["regions", "distance"] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => toggleMode.mutate(m)}
-              className={`text-left rounded-lg border-2 p-4 transition-colors ${
-                shippingMode === m ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
-              }`}
-            >
-              <div className="font-medium">{m === "regions" ? "🏘️ Por bairro/região" : "📍 Por distância"}</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {m === "regions"
-                  ? "Valor fixo para cada bairro cadastrado."
-                  : "Cálculo automático baseado na distância até o cliente."}
-              </div>
-            </button>
-          ))}
+        {/* Mode selector */}
+        <div className="rounded-xl border border-border bg-card p-5 space-y-4 shadow-soft">
+          <h2 className="font-medium">Modo de cálculo de frete ativo no checkout</h2>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {(["regions", "distance"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => toggleMode.mutate(m)}
+                className={`text-left rounded-lg border-2 p-4 transition-colors ${
+                  shippingMode === m ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                }`}
+              >
+                <div className="font-medium">{m === "regions" ? "🏘️ Por bairro/região" : "📍 Por distância"}</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {m === "regions"
+                    ? "Valor fixo para cada bairro cadastrado."
+                    : "Cálculo automático baseado na distância até o cliente."}
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
+
+        <Tabs defaultValue="regions" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="regions">Regiões / Bairros</TabsTrigger>
+            <TabsTrigger value="distance">Zonas de distância</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="regions">
+            <RegionsTab storeId={store.id} />
+          </TabsContent>
+          <TabsContent value="distance">
+            <DistanceTab storeId={store.id} hasCoords={!!(storeSettings as any)?.latitude && !!(storeSettings as any)?.longitude} />
+          </TabsContent>
+        </Tabs>
       </div>
-
-      <Tabs defaultValue="regions" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="regions">Regiões / Bairros</TabsTrigger>
-          <TabsTrigger value="distance">Zonas de distância</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="regions">
-          <RegionsTab storeId={store.id} />
-        </TabsContent>
-        <TabsContent value="distance">
-          <DistanceTab storeId={store.id} hasCoords={!!(storeSettings as any)?.latitude && !!(storeSettings as any)?.longitude} />
-        </TabsContent>
-      </Tabs>
-    </div>
+    </RoleGuard>
   );
 }
 
