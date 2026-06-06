@@ -106,6 +106,37 @@ export async function registerSession(
           message: "Sessão encerrada por outro dispositivo ou pelo dono da loja.",
         };
       }
+
+      // If clientStoredToken is different from the new sessionToken, check if the old session exists.
+      // If it does, migrate it to the new sessionToken to avoid creating a duplicate session.
+      if (clientStoredToken) {
+        const { data: oldSession, error: oldSelectError } = await supabase
+          .from("store_sessions")
+          .select("id")
+          .eq("session_token", clientStoredToken)
+          .maybeSingle();
+
+        if (oldSelectError) {
+          console.error("[session-manager] error checking old session:", oldSelectError);
+        }
+
+        if (oldSession) {
+          const { error: updateError } = await supabase
+            .from("store_sessions")
+            .update({
+              session_token: sessionToken,
+              last_seen_at: new Date().toISOString()
+            })
+            .eq("id", oldSession.id);
+
+          if (!updateError) {
+            console.log("[session-manager] Migrated old session token to new session token.");
+            return { ok: true, sessionToken };
+          } else {
+            console.error("[session-manager] Failed to migrate old session token:", updateError);
+          }
+        }
+      }
     }
 
     // 3. Check limit via DB function (also cleans stale sessions)

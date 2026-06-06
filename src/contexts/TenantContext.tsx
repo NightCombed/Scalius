@@ -34,7 +34,7 @@ export function TenantProvider({ children, fromRoute = false }: Props) {
         .from("stores")
         .select("*")
         .eq("slug", slug)
-        .eq("status", "active")
+        .in("status", ["active", "trial"])
         .maybeSingle();
       if (error) throw error;
       return data as unknown as Store | null;

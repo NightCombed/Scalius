@@ -39,6 +39,7 @@ interface StoreRow {
   plan: PlanId;
   created_at: string;
   updated_at: string | null;
+  trial_started_at: string;
 }
 
 interface MemberRow {
@@ -83,14 +84,18 @@ function pluralizeDays(value: number) {
 function getTrialCounter(store: StoreRow) {
   if (store.status !== "trial") return null;
 
-  const reference = store.updated_at || store.created_at;
+  const reference = store.trial_started_at || store.created_at;
   const startedAt = new Date(reference);
   if (Number.isNaN(startedAt.getTime())) return null;
 
   const now = new Date();
-  const elapsedDays = Math.floor((now.getTime() - startedAt.getTime()) / DAY_MS);
-  const remainingDays = TRIAL_DAYS - elapsedDays;
+  
+  // Calculate remaining days based on calendar dates (timezone-safe and matches client expectations)
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const endsAt = new Date(startedAt.getTime() + TRIAL_DAYS * DAY_MS);
+  const startOfEndsAt = new Date(endsAt.getFullYear(), endsAt.getMonth(), endsAt.getDate());
+  
+  const remainingDays = Math.ceil((startOfEndsAt.getTime() - startOfToday.getTime()) / DAY_MS);
   const formattedEndDate = endsAt.toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "2-digit",
@@ -154,7 +159,7 @@ function StoreDialog({ open, onClose, initial, onSaved }: StoreDialogProps) {
             slug: slug.trim(),
             status,
             plan,
-            ...(statusChanged ? { updated_at: new Date().toISOString() } : {}),
+            ...(statusChanged && status === "trial" ? { trial_started_at: new Date().toISOString() } : {}),
           } as any)
           .eq("id", initial!.id);
         if (error) throw error;
@@ -167,7 +172,7 @@ function StoreDialog({ open, onClose, initial, onSaved }: StoreDialogProps) {
             slug: slug.trim(),
             status,
             plan,
-            updated_at: new Date().toISOString(),
+            ...(status === "trial" ? { trial_started_at: new Date().toISOString() } : {}),
           } as any);
         if (error) throw error;
         toast.success(`Loja "${name}" criada com sucesso!`);
@@ -633,7 +638,7 @@ export default function SuperAdminDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("stores")
-        .select("id, name, slug, status, plan, created_at, updated_at")
+        .select("id, name, slug, status, plan, created_at, updated_at, trial_started_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as StoreRow[];
@@ -735,7 +740,10 @@ export default function SuperAdminDashboard() {
     mutationFn: async ({ storeId, status }: { storeId: string; status: StoreStatus }) => {
       const { error } = await supabase
         .from("stores")
-        .update({ status, updated_at: new Date().toISOString() } as any)
+        .update({ 
+          status,
+          ...(status === "trial" ? { trial_started_at: new Date().toISOString() } : {})
+        } as any)
         .eq("id", storeId);
       if (error) throw error;
     },

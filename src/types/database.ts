@@ -65,6 +65,7 @@ export interface Store {
   status: "active" | "trial" | "suspended";
   plan: PlanId;              // subscription plan — 'essencial' | 'pro'
   created_at: ISODate;
+  trial_started_at: ISODate;
 }
 
 export interface StoreMember {
