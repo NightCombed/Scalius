@@ -445,7 +445,7 @@ export default function AdminSettings() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nome da loja *</FormLabel>
-                  <FormControl><Input placeholder="Ex: Rosa Bela" {...field} /></FormControl>
+                  <FormControl><Input placeholder="Ex: Minha Loja" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -459,7 +459,7 @@ export default function AdminSettings() {
                   <FormLabel>Mensagem da loja</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Flores para todos os momentos 🌸 Entregamos com carinho na sua região."
+                      placeholder="Os melhores produtos para o seu dia a dia. Entregamos na sua região."
                       rows={3}
                       {...field}
                     />

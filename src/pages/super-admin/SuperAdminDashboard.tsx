@@ -210,7 +210,7 @@ function StoreDialog({ open, onClose, initial, onSaved }: StoreDialogProps) {
             <Label htmlFor="store-name">Nome da loja *</Label>
             <Input
               id="store-name"
-              placeholder="Ex: Rosa Bela Floricultura"
+              placeholder="Ex: Minha Loja"
               value={name}
               onChange={(e) => handleNameChange(e.target.value)}
               required
@@ -223,7 +223,7 @@ function StoreDialog({ open, onClose, initial, onSaved }: StoreDialogProps) {
             <div className="flex items-center gap-1">
               <Input
                 id="store-slug"
-                placeholder="rosa-bela"
+                placeholder="minha-loja"
                 value={slug}
                 onChange={(e) => { setSlug(e.target.value); setSlugEdited(true); }}
                 className="flex-1"
