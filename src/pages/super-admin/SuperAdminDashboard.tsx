@@ -588,6 +588,29 @@ function MembersSheet({ store, onClose }: MembersSheetProps) {
               </p>
             </div>
           </section>
+
+          {/* Roles Guide */}
+          <section className="space-y-3 pt-2">
+            <div className="rounded-xl border border-border bg-card p-4 space-y-3 shadow-sm">
+              <h4 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">
+                Diferenciais dos Cargos
+              </h4>
+              <div className="space-y-3 text-xs leading-relaxed">
+                <div>
+                  <strong className="text-violet-600 dark:text-violet-400 font-semibold block mb-0.5">👑 Dono (owner):</strong>
+                  <span className="text-muted-foreground">Acesso total. Único com permissão para gerenciar faturamento, chaves de pagamento (Mercado Pago) e gerenciar a equipe (convidar ou remover membros).</span>
+                </div>
+                <div className="border-t border-border pt-3">
+                  <strong className="text-blue-600 dark:text-blue-400 font-semibold block mb-0.5">💼 Gerente (admin):</strong>
+                  <span className="text-muted-foreground">Pode gerenciar produtos, categorias, pedidos, configurações de frete e notificações. Não altera pagamentos nem acessa a equipe.</span>
+                </div>
+                <div className="border-t border-border pt-3">
+                  <strong className="text-slate-600 dark:text-slate-400 font-semibold block mb-0.5">🛠️ Colaborador (staff):</strong>
+                  <span className="text-muted-foreground">Acesso operacional. Permite gerenciar catálogo (produtos/categorias) e controlar pedidos. Não acessa configurações da loja, pagamentos ou equipe.</span>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </SheetContent>
     </Sheet>
