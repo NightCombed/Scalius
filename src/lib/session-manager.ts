@@ -29,6 +29,19 @@ export async function hashToken(token: string): Promise<string> {
   }
 }
 
+export function isLocalhost(): boolean {
+  if (typeof window === "undefined") return false;
+  const hostname = window.location.hostname;
+  return (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "[::1]" ||
+    hostname.startsWith("192.168.") ||
+    hostname.startsWith("10.") ||
+    hostname.endsWith(".local")
+  );
+}
+
 /** Extracts a short user-agent description for display. */
 function getDeviceInfo(): string {
   const ua = navigator.userAgent;
@@ -71,6 +84,9 @@ export async function migrateSession(
   oldToken: string,
   newToken: string
 ): Promise<boolean> {
+  if (oldToken === "localhost-session" || newToken === "localhost-session" || isLocalhost()) {
+    return true;
+  }
   if (!oldToken || !newToken || oldToken === newToken) return false;
   try {
     const { data, error } = await supabase
@@ -111,6 +127,10 @@ export async function registerSession(
   accessToken: string,
   userId: string
 ): Promise<SessionRegistrationResult> {
+  if (isLocalhost()) {
+    console.log("[session-manager] Localhost environment detected. Bypassing database session tracking.");
+    return { ok: true, sessionToken: "localhost-session" };
+  }
   try {
     const sessionToken = await hashToken(accessToken);
 
@@ -213,6 +233,7 @@ export async function registerSession(
  * Returns false if the session no longer exists (remote logout).
  */
 export async function refreshSession(sessionToken: string): Promise<boolean> {
+  if (sessionToken === "localhost-session" || isLocalhost()) return true;
   if (!sessionToken) return false;
   try {
     const { data, error } = await supabase
@@ -237,6 +258,7 @@ export async function refreshSession(sessionToken: string): Promise<boolean> {
  * Removes the current session on logout.
  */
 export async function removeSession(sessionToken: string): Promise<void> {
+  if (sessionToken === "localhost-session" || isLocalhost()) return;
   if (!sessionToken) return;
   try {
     const { error } = await supabase
