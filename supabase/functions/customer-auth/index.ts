@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("MY_SERVICE_ROLE_KEY")!);
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const JWT_SECRET = Deno.env.get("CUSTOMER_JWT_SECRET")!;
   const SESSION_DAYS = 30;
 

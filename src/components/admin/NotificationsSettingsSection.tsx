@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, BellOff, ExternalLink, Loader2, RefreshCw, Send, Webhook, Volume2, ChevronDown } from "lucide-react";
+import { Bell, BellOff, ExternalLink, Loader2, RefreshCw, Send, Webhook, Volume2, ChevronDown, Info } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFormContext } from "react-hook-form";
@@ -121,7 +121,7 @@ export function NotificationsSettingsSection({ storeId }: Props) {
           event: "test",
           store_id: storeId,
           timestamp: new Date().toISOString(),
-          message: "Teste de Webhook da sua loja 🎉",
+          message: "Teste de Webhook da sua loja",
         }),
       });
       if (res.ok) {
@@ -145,7 +145,7 @@ export function NotificationsSettingsSection({ storeId }: Props) {
     }
     const result = await Notification.requestPermission();
     if (result === "granted") {
-      toast.success("Notificações push ativadas! 🔔");
+      toast.success("Notificações push ativadas!");
       new Notification("Notificações ativas!", {
         body: "Você vai receber avisos de novos pedidos por aqui.",
         icon: "/favicon.ico",
@@ -243,8 +243,9 @@ export function NotificationsSettingsSection({ storeId }: Props) {
               checked={prefs.notif_push_status_change}
               onCheckedChange={(v) => set("notif_push_status_change", v)}
             />
-            <p className="text-xs text-muted-foreground pt-2">
-              ⓘ Funciona apenas enquanto o painel do admin estiver aberto no navegador.
+            <p className="text-xs text-muted-foreground pt-2 flex items-center gap-1.5">
+              <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span>Funciona apenas enquanto o painel do admin estiver aberto no navegador.</span>
             </p>
           </div>
 

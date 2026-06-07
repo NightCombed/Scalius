@@ -4,18 +4,19 @@ import { AdminSidebar } from "./AdminSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, ExternalLink, LayoutDashboard, Package, ShoppingBag, Truck, Settings, Menu, X, Tag, Users, Flower2 } from "lucide-react";
+import { LogOut, ExternalLink, LayoutDashboard, Package, ShoppingBag, Truck, Settings, Menu, X, Tag, Users, Flower2, BarChart3, Lock } from "lucide-react";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { NavLink } from "@/components/NavLink";
 import { useStoreRole } from "@/hooks/useStoreRole";
+import { usePlan } from "@/hooks/usePlan";
 
 const NAV_ITEMS = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, end: true },
   { title: "Produtos", url: "/admin/produtos", icon: Package },
   { title: "Pedidos", url: "/admin/pedidos", icon: ShoppingBag },
-  { title: "Entregas", url: "/admin/entregas", icon: Truck },
+  { title: "Métricas", url: "/admin/metricas", icon: BarChart3 },
   { title: "Config.", url: "/admin/configuracoes", icon: Settings },
 ];
 // ─── Alerts System ────────────────────────────────────────────────────────
@@ -145,6 +146,7 @@ export default function AdminLayout() {
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { can, roleLabel, roleBadgeClasses } = useStoreRole();
+  const { isPro } = usePlan();
 
   const { data: settings } = useStoreSettings(activeStore?.id);
 
@@ -313,6 +315,26 @@ export default function AdminLayout() {
               <span>{item.title}</span>
             </NavLink>
           ))}
+
+          {/* Métricas Pro */}
+          <NavLink
+            to="/admin/metricas"
+            className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors min-h-[44px]"
+            activeClassName="bg-primary/10 text-primary"
+          >
+            <div className="relative">
+              <BarChart3 className="h-5 w-5 shrink-0" />
+              {!isPro && <Lock className="h-2.5 w-2.5 absolute -bottom-0.5 -right-0.5 text-amber-500" />}
+            </div>
+            <span className="flex items-center gap-1.5">
+              Métricas
+              <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full leading-none ${
+                isPro
+                  ? "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+                  : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+              }`}>Pro</span>
+            </span>
+          </NavLink>
         </nav>
 
         {/* Drawer Footer */}

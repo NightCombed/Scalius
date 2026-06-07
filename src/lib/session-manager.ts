@@ -12,7 +12,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /** Generates a hash from the Supabase JWT jti (or the full token as fallback). */
-async function hashToken(token: string): Promise<string> {
+export async function hashToken(token: string): Promise<string> {
   // Use only the jti claim if available (middle part of JWT)
   const parts = token.split(".");
   const payload = parts[1];
@@ -64,9 +64,47 @@ export type SessionRegistrationResult =
   | { ok: false; reason: "limit_exceeded" | "error"; message: string };
 
 /**
+ * Migrates an existing session row to a new token (called on JWT token refresh).
+ * Returns true if a row was found and updated, false otherwise.
+ */
+export async function migrateSession(
+  oldToken: string,
+  newToken: string
+): Promise<boolean> {
+  if (!oldToken || !newToken || oldToken === newToken) return false;
+  try {
+    const { data, error } = await supabase
+      .from("store_sessions")
+      .update({
+        session_token: newToken,
+        last_seen_at: new Date().toISOString(),
+      })
+      .eq("session_token", oldToken)
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      console.error("[session-manager] migrateSession error:", error);
+      return false;
+    }
+    if (data) {
+      console.log("[session-manager] Token rotated — session row migrated in-place.");
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.error("[session-manager] migrateSession error:", err);
+    return false;
+  }
+}
+
+/**
  * Registers a new admin session for the store.
  * Calls the `check_session_limit` DB function before inserting.
  * Returns `{ ok: false, reason: 'limit_exceeded' }` if the plan limit is reached.
+ *
+ * Key invariant: at most ONE session row per physical browser tab/window.
+ * On JWT token refresh (TOKEN_REFRESHED) use migrateSession() instead of this.
  */
 export async function registerSession(
   storeId: string,
@@ -76,7 +114,7 @@ export async function registerSession(
   try {
     const sessionToken = await hashToken(accessToken);
 
-    // 1. Check if this session already exists in the DB
+    // 1. Check if this exact token already has a row — just heartbeat it.
     const { data: existing, error: selectError } = await supabase
       .from("store_sessions")
       .select("id")
@@ -88,54 +126,37 @@ export async function registerSession(
     }
 
     if (existing) {
-      // Session exists, just refresh last_seen_at (heartbeat)
-      const refreshed = await refreshSession(sessionToken);
-      if (refreshed) {
-        return { ok: true, sessionToken };
-      }
+      await refreshSession(sessionToken);
+      return { ok: true, sessionToken };
     }
 
-    // 2. If it does not exist in the DB, check if the client had it in localStorage
+    // 2. Check for a previous session row from the same browser (localStorage token).
+    //    If found, migrate the row to the new token instead of inserting a new row.
+    //    This is the main guard against phantom duplicates from JWT token rotation.
     if (typeof window !== "undefined") {
       const clientStoredToken = localStorage.getItem("scalius_session_token");
-      if (clientStoredToken === sessionToken) {
+
+      if (clientStoredToken && clientStoredToken !== sessionToken) {
+        // Attempt in-place migration first
+        const migrated = await migrateSession(clientStoredToken, sessionToken);
+        if (migrated) {
+          return { ok: true, sessionToken };
+        }
+        // The old token row no longer exists (was deleted remotely or expired).
+        // If the old token was still in localStorage it means this browser had a valid
+        // session that was terminated remotely — block re-registration.
+        // However, if clientStoredToken was merely stale (row already cleaned up by
+        // the >1h TTL), we should allow a fresh login. Distinguish by checking whether
+        // the old token's row was ever present: we just tried to migrate and got false,
+        // meaning no row existed → fall through to normal check_session_limit path.
+      } else if (clientStoredToken === sessionToken) {
+        // Token in localStorage matches new token but row is missing → was terminated remotely.
         console.warn("[session-manager] Session was terminated remotely. Blocking registration.");
         return {
           ok: false,
           reason: "error",
           message: "Sessão encerrada por outro dispositivo ou pelo dono da loja.",
         };
-      }
-
-      // If clientStoredToken is different from the new sessionToken, check if the old session exists.
-      // If it does, migrate it to the new sessionToken to avoid creating a duplicate session.
-      if (clientStoredToken) {
-        const { data: oldSession, error: oldSelectError } = await supabase
-          .from("store_sessions")
-          .select("id")
-          .eq("session_token", clientStoredToken)
-          .maybeSingle();
-
-        if (oldSelectError) {
-          console.error("[session-manager] error checking old session:", oldSelectError);
-        }
-
-        if (oldSession) {
-          const { error: updateError } = await supabase
-            .from("store_sessions")
-            .update({
-              session_token: sessionToken,
-              last_seen_at: new Date().toISOString()
-            })
-            .eq("id", oldSession.id);
-
-          if (!updateError) {
-            console.log("[session-manager] Migrated old session token to new session token.");
-            return { ok: true, sessionToken };
-          } else {
-            console.error("[session-manager] Failed to migrate old session token:", updateError);
-          }
-        }
       }
     }
 

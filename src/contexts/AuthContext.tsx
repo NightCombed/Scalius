@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Hidrata profile + memberships para um auth user.
   // Usa setTimeout(0) quando chamado de dentro do listener para evitar deadlocks.
-  const hydrate = useCallback(async (authUser: User | null, accessToken?: string) => {
+  const hydrate = useCallback(async (authUser: User | null, accessToken?: string, event?: string) => {
     if (!authUser) {
       setUser(null);
       setMemberships([]);
@@ -119,6 +119,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (storeMemberships.length > 0 && accessToken) {
       const activeStoreId = storeMemberships[0].store.id;
       try {
+        // On token refresh, migrate the existing session row in-place instead of
+        // creating a new one — this prevents the "2 devices" phantom duplicate bug.
+        if (event === "TOKEN_REFRESHED") {
+          const prevToken = localStorage.getItem("scalius_session_token");
+          if (prevToken) {
+            const { migrateSession, hashToken } = await import("@/lib/session-manager");
+            const newToken = await hashToken(accessToken);
+            const migrated = await migrateSession(prevToken, newToken);
+            if (migrated) {
+              localStorage.setItem("scalius_session_token", newToken);
+              console.log("[AuthContext] TOKEN_REFRESHED: session migrated in-place.");
+              return;
+            }
+          }
+          // If migration failed (no previous row), fall through to registerSession.
+        }
+
         const { registerSession } = await import("@/lib/session-manager");
         const res = await registerSession(activeStoreId, accessToken, authUser.id);
         if (!res.ok) {
@@ -147,10 +164,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // 1) Listener PRIMEIRO (síncrono) — hidratação adiada com setTimeout(0)
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
       setTimeout(() => {
-        void hydrate(newSession?.user ?? null, newSession?.access_token);
+        void hydrate(newSession?.user ?? null, newSession?.access_token, event);
       }, 0);
     });
 

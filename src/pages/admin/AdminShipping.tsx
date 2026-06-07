@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, MapPin, Loader2, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, MapPin, Loader2, AlertCircle, Map } from "lucide-react";
 import { useActiveStore } from "@/hooks/useActiveStore";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
@@ -83,7 +83,19 @@ export default function AdminShipping() {
                   shippingMode === m ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
                 }`}
               >
-                <div className="font-medium">{m === "regions" ? "🏘️ Por bairro/região" : "📍 Por distância"}</div>
+                <div className="font-medium flex items-center gap-2">
+                  {m === "regions" ? (
+                    <>
+                      <Map className="h-5 w-5 text-primary" />
+                      <span>Por bairro/região</span>
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="h-5 w-5 text-primary" />
+                      <span>Por distância</span>
+                    </>
+                  )}
+                </div>
                 <div className="text-xs text-muted-foreground mt-1">
                   {m === "regions"
                     ? "Valor fixo para cada bairro cadastrado."

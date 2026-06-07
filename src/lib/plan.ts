@@ -19,7 +19,8 @@ export type { PlanId };
 export type PlanFeature =
   | "customer_emails"      // Emails automáticos para o cliente
   | "melhorenvio_label"    // Etiqueta Melhor Envio 1-clique
-  | "unlimited_users";     // Usuários ilimitados no admin
+  | "unlimited_users"      // Usuários ilimitados no admin
+  | "advanced_analytics";  // Aba Métricas completa e profissional
 
 /** Human-readable labels for each feature (used in the ProGate component) */
 export const PLAN_FEATURE_LABELS: Record<PlanFeature, { title: string; description: string }> = {
@@ -38,6 +39,11 @@ export const PLAN_FEATURE_LABELS: Record<PlanFeature, { title: string; descripti
     description:
       "Adicione quantos colaboradores precisar ao painel da loja. Disponível no Plano Pro.",
   },
+  advanced_analytics: {
+    title: "Métricas avançadas",
+    description:
+      "Acesse relatórios completos de faturamento, produtos, clientes e logística com gráficos interativos. Disponível no Plano Pro.",
+  },
 };
 
 /**
@@ -46,12 +52,13 @@ export const PLAN_FEATURE_LABELS: Record<PlanFeature, { title: string; descripti
  */
 const PLAN_ACCESS: Record<PlanId, Set<PlanFeature>> = {
   essencial: new Set([
-    // customer_emails, melhorenvio_label, and unlimited_users are NOT here
+    // customer_emails, melhorenvio_label, unlimited_users, and advanced_analytics are NOT here
   ]),
   pro: new Set([
     "customer_emails",
     "melhorenvio_label",
     "unlimited_users",
+    "advanced_analytics",
   ]),
 };
 

@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Order not found" }), { status: 404, headers: CORS_HEADERS });
     }
 
-    console.log("Order found, store_id:", order.store_id, \"total_cents:\", order.total_cents);
+    console.log("Order found, store_id:", order.store_id, "total_cents:", order.total_cents);
 
     // 2. Load store settings separately
     const { data: settings, error: settingsErr } = await supabase

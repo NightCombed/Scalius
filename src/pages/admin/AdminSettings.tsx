@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Save, Store, MapPin, Loader2, Users } from "lucide-react";
+import { Save, Store, MapPin, Loader2, Users, AlertTriangle, Package, Lightbulb } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useActiveStore } from "@/hooks/useActiveStore";
 import { useMockData } from "@/hooks/useMockData";
@@ -1311,17 +1311,17 @@ export default function AdminSettings() {
                   </div>
 
                   <div className="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-lg text-sm text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-800 flex gap-3">
-                    <span className="text-lg">⚠️</span>
+                    <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                     <div className="space-y-1">
                       <p className="font-semibold text-amber-900 dark:text-amber-200">Atenção ao Risco de Prejuízo</p>
                       <p>Estas dimensões e peso são usados como <strong>"Reserva" (Fallback)</strong>. Se um produto for mais pesado que o valor acima e você não cadastrar o peso real no cadastro dele, o cliente pagará um frete mais barato e a sua loja terá que arcar com a diferença.</p>
-                      <p className="text-xs mt-2">💡 <strong>Recomendação:</strong> Cadastre o peso real em cada produto. Se não for possível, coloque aqui o peso do seu produto mais comum ou da sua caixa padrão.</p>
+                      <p className="text-xs mt-2 flex items-center gap-1.5"><Lightbulb className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" /> <strong>Recomendação:</strong> Cadastre o peso real em cada produto. Se não for possível, coloque aqui o peso do seu produto mais comum ou da sua caixa padrão.</p>
                     </div>
                   </div>
 
                   <div className="bg-sky-50 dark:bg-sky-950/20 p-5 rounded-xl text-sm text-sky-800 dark:text-sky-400 border border-sky-200 dark:border-sky-800 space-y-4 mt-4">
                     <div className="flex gap-2.5 items-center">
-                      <span className="text-xl">📦</span>
+                      <Package className="h-5 w-5 text-sky-600 dark:text-sky-400 shrink-0" />
                       <h4 className="font-semibold text-sky-900 dark:text-sky-200 text-base">Guia Completo: Como funciona o Cálculo de Frete com Vários Itens</h4>
                     </div>
                     
@@ -1397,8 +1397,9 @@ export default function AdminSettings() {
                   <div className="text-xs text-muted-foreground mt-0.5 space-y-1">
                     <p>Usadas para calcular frete por distância. Clique em "Obter coordenadas" para preencher automaticamente a partir do endereço.</p>
                     <div className="text-[11px] text-amber-600 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/30 bg-amber-500/5 p-3 rounded-md mt-1.5 leading-relaxed space-y-2">
-                      <p>
-                        💡 <strong>Dica se a busca automática falhar:</strong> Se o endereço não for localizado automaticamente, você pode obter as coordenadas direto no 
+                      <p className="flex items-center gap-1.5">
+                        <Lightbulb className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                        <strong>Dica se a busca automática falhar:</strong> Se o endereço não for localizado automaticamente, você pode obter as coordenadas direto no 
                         <a href="https://www.google.com/maps" target="_blank" rel="noreferrer" className="text-primary hover:underline font-semibold mx-1">Google Maps</a>:
                       </p>
                       <div className="grid sm:grid-cols-2 gap-3 pt-2 border-t border-amber-200/20 dark:border-amber-900/20">

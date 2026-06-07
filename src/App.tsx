@@ -34,6 +34,7 @@ import AdminProducts from "@/pages/admin/AdminProducts";
 import AdminCategories from "@/pages/admin/AdminCategories";
 import AdminShipping from "@/pages/admin/AdminShipping";
 import AdminSettings from "@/pages/admin/AdminSettings";
+import AdminAnalytics from "@/pages/admin/AdminAnalytics";
 import MercadoPagoCallback from "@/pages/admin/MercadoPagoCallback";
 import { PlaceholderPage } from "@/components/PlaceholderPage";
 import SuperAdminLayout from "@/components/layouts/SuperAdminLayout";
@@ -113,9 +114,9 @@ const App = () => {
                     <Route path="categorias" element={<AdminCategories />} />
                     <Route path="pedidos" element={<AdminOrders />} />
                     <Route path="pedidos/:orderId" element={<AdminOrderDetail />} />
-                    <Route path="clientes" element={<PlaceholderPage title="Clientes" />} />
                     <Route path="entregas" element={<AdminShipping />} />
                     <Route path="configuracoes" element={<AdminSettings />} />
+                    <Route path="metricas" element={<AdminAnalytics />} />
                     <Route path="oauth/mercadopago/callback" element={<MercadoPagoCallback />} />
                   </Route>
                 </>
@@ -161,9 +162,9 @@ const App = () => {
                     <Route path="categorias" element={<AdminCategories />} />
                     <Route path="pedidos" element={<AdminOrders />} />
                     <Route path="pedidos/:orderId" element={<AdminOrderDetail />} />
-                    <Route path="clientes" element={<PlaceholderPage title="Clientes" />} />
                     <Route path="entregas" element={<AdminShipping />} />
                     <Route path="configuracoes" element={<AdminSettings />} />
+                    <Route path="metricas" element={<AdminAnalytics />} />
                     <Route path="oauth/mercadopago/callback" element={<MercadoPagoCallback />} />
                   </Route>
 
