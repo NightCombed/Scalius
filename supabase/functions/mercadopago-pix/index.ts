@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
     // 2. Load store settings separately
     const { data: settings, error: settingsErr } = await supabase
       .from("store_settings")
-      .select("mp_access_token, mp_user_id, payment_provider")
+      .select("payment_provider")
       .eq("store_id", order.store_id)
       .maybeSingle();
 
@@ -104,12 +104,25 @@ Deno.serve(async (req) => {
       console.error("Settings fetch error:", JSON.stringify(settingsErr));
       return new Response(JSON.stringify({ error: "DB error fetching settings", details: settingsErr }), { status: 500, headers: CORS_HEADERS });
     }
-    if (!settings?.mp_access_token) {
+
+    // Load store secrets
+    const { data: secrets, error: secretsErr } = await supabase
+      .from("store_secrets")
+      .select("mp_access_token, mp_user_id")
+      .eq("store_id", order.store_id)
+      .maybeSingle();
+
+    if (secretsErr) {
+      console.error("Secrets fetch error:", JSON.stringify(secretsErr));
+      return new Response(JSON.stringify({ error: "DB error fetching secrets", details: secretsErr }), { status: 500, headers: CORS_HEADERS });
+    }
+
+    if (!secrets?.mp_access_token) {
       console.error("No MP access token for store:", order.store_id);
       return new Response(JSON.stringify({ error: "Mercado Pago not configured for this store" }), { status: 400, headers: CORS_HEADERS });
     }
 
-    const accessToken = settings.mp_access_token;
+    const accessToken = secrets.mp_access_token;
     console.log("Access token found, creating MP payment...");
 
     // 3. Build payer info

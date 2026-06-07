@@ -16,8 +16,7 @@ import { NotificationsSettingsSection } from "@/components/admin/NotificationsSe
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { ActiveSessionsSection } from "@/components/admin/ActiveSessionsSection";
 import { useStoreRole } from "@/hooks/useStoreRole";
-
-
+import { AuditLogsPanel } from "@/components/admin/AuditLogsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -322,7 +321,7 @@ export default function AdminSettings() {
     if (!store) return;
     setSaving(true);
     try {
-      const { error } = await supabase
+      const settingsPromise = supabase
         .from("store_settings")
         .upsert({
           store_id: store.id,
@@ -349,7 +348,6 @@ export default function AdminSettings() {
           latitude: values.latitude ? parseFloat(values.latitude) : null,
           longitude: values.longitude ? parseFloat(values.longitude) : null,
           national_shipping_enabled: values.national_shipping_enabled,
-          melhorenvio_token: values.melhorenvio_token || null,
           melhorenvio_sandbox: values.melhorenvio_sandbox,
           sender_postal_code: values.sender_postal_code || null,
           enabled_shipping_services: values.enabled_shipping_services,
@@ -400,7 +398,18 @@ export default function AdminSettings() {
           show_category_images: values.show_category_images,
           show_revenue_to_staff: values.show_revenue_to_staff,
         }, { onConflict: "store_id" });
-      if (error) throw error;
+
+      const secretsPromise = supabase
+        .from("store_secrets")
+        .upsert({
+          store_id: store.id,
+          melhorenvio_token: values.melhorenvio_token || null,
+        }, { onConflict: "store_id" });
+
+      const [settingsRes, secretsRes] = await Promise.all([settingsPromise, secretsPromise]);
+
+      if (settingsRes.error) throw settingsRes.error;
+      if (secretsRes.error) throw secretsRes.error;
       
       queryClient.invalidateQueries({ queryKey: ["store-settings", store.id] });
 
@@ -486,6 +495,8 @@ export default function AdminSettings() {
                       onChange={field.onChange}
                       placeholder="https://..."
                       aspect={1}
+                      maxWidth={500}
+                      quality={0.82}
                     />
                   </FormControl>
                   <FormDescription>
@@ -511,6 +522,8 @@ export default function AdminSettings() {
                       placeholder="https://..."
                       aspect={16/4}
                       showBannerGuides
+                      maxWidth={1920}
+                      quality={0.85}
                     />
                   </FormControl>
                   <FormDescription>
@@ -556,6 +569,9 @@ export default function AdminSettings() {
                       onChange={field.onChange}
                       placeholder="https://..."
                       aspect={1}
+                      maxWidth={128}
+                      quality={0.80}
+                      outputFormat="image/png"
                     />
                   </FormControl>
                   <FormDescription>
@@ -1549,6 +1565,12 @@ export default function AdminSettings() {
           </div>
         </form>
       </Form>
+
+      {isManager && (
+        <div className="mt-8 pt-8 border-t border-border">
+          <AuditLogsPanel storeId={store.id} />
+        </div>
+      )}
       </div>
     </RoleGuard>
   );

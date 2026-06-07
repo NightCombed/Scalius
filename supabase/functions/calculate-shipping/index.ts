@@ -7,11 +7,15 @@ const melhorenvioApiUrl = Deno.env.get("MELHORENVIO_API_URL") || "https://melhor
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+const getCorsHeaders = () => ({
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+});
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: getCorsHeaders() });
   }
-
   try {
     const body = await req.json();
     const { action = "calculate", store_id } = body;
@@ -25,6 +29,14 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (settingsError || !settings) throw new Error("Store settings not found");
+
+    const { data: secrets } = await supabase
+      .from("store_secrets")
+      .select("melhorenvio_token")
+      .eq("store_id", store_id)
+      .maybeSingle();
+
+    settings.melhorenvio_token = secrets?.melhorenvio_token || null;
 
     const parseNum = (val: any) => {
       if (val === undefined || val === null || val === "") return 0;

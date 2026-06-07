@@ -316,7 +316,7 @@ export default function PublicOrderTracking() {
     queryFn: async () => {
       if (!orderId) return null;
       const { data, error } = await supabase
-        .from("orders")
+        .from("orders_tracking_view")
         .select("*, order_items(*)")
         .eq("id", orderId)
         .maybeSingle();

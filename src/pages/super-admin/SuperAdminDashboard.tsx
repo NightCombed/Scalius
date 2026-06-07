@@ -6,6 +6,7 @@ import {
   Loader2, Store, Sparkles, Users, ShoppingBag, Check, ChevronDown,
   Plus, Pencil, X, UserPlus, Trash2, ExternalLink, Copy, RefreshCw,
   CheckCircle2, AlertCircle, Clock, Mail, AlertTriangle, Send, HardDrive,
+  Activity, Bug, Shield, Bell, ChevronRight, Filter, Search,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -619,6 +620,377 @@ function MembersSheet({ store, onClose }: MembersSheetProps) {
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+// ─── Logs Monitor Panel ─────────────────────────────────────────────────────
+
+type LogsTab = "audit" | "errors";
+
+interface AuditLogRow {
+  id: string;
+  store_id: string;
+  user_id: string | null;
+  user_email: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  payload: Record<string, any> | null;
+  created_at: string;
+}
+
+interface ClientErrorRow {
+  id: string;
+  store_id: string | null;
+  user_id: string | null;
+  url: string | null;
+  error_message: string;
+  stack_trace: string | null;
+  user_agent: string | null;
+  metadata: Record<string, any> | null;
+  created_at: string;
+}
+
+const ACTION_STYLES: Record<string, { bg: string; text: string }> = {
+  INSERT: { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-700 dark:text-emerald-400" },
+  UPDATE: { bg: "bg-blue-100 dark:bg-blue-900/30",    text: "text-blue-700 dark:text-blue-400" },
+  DELETE: { bg: "bg-red-100 dark:bg-red-900/30",     text: "text-red-700 dark:text-red-400" },
+};
+
+function LogsMonitorPanel({ stores }: { stores: { id: string; name: string; slug: string }[] }) {
+  const [activeTab, setActiveTab] = useState<LogsTab>("errors");
+  const [filterStore, setFilterStore] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [alertSending, setAlertSending] = useState(false);
+
+  const storeMap = Object.fromEntries(stores.map((s) => [s.id, s]));
+
+  // ── Audit Logs ────────────────────────────────────────────────────────────
+  const { data: auditLogs = [], isLoading: loadingAudit, refetch: refetchAudit } = useQuery<AuditLogRow[]>({
+    queryKey: ["super-admin-audit-logs", filterStore],
+    queryFn: async () => {
+      let q = supabase
+        .from("audit_logs")
+        .select("id, store_id, user_id, user_email, action, entity_type, entity_id, payload, created_at")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (filterStore !== "all") q = q.eq("store_id", filterStore);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as AuditLogRow[];
+    },
+    refetchInterval: 120_000, // 2 minutos — evita polling excessivo no banco
+  });
+
+  // ── Client Error Logs ─────────────────────────────────────────────────────
+  const { data: errorLogs = [], isLoading: loadingErrors, refetch: refetchErrors } = useQuery<ClientErrorRow[]>({
+    queryKey: ["super-admin-error-logs", filterStore],
+    queryFn: async () => {
+      let q = supabase
+        .from("client_error_logs")
+        .select("id, store_id, user_id, url, error_message, stack_trace, user_agent, metadata, created_at")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (filterStore !== "all") q = q.eq("store_id", filterStore);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as ClientErrorRow[];
+    },
+    refetchInterval: 120_000, // 2 minutos — evita polling excessivo no banco
+  });
+
+  const isLoading = activeTab === "audit" ? loadingAudit : loadingErrors;
+
+  // ── Filtered data ─────────────────────────────────────────────────────────
+  const filteredAudit = auditLogs.filter((l) => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      l.action.toLowerCase().includes(term) ||
+      l.entity_type.toLowerCase().includes(term) ||
+      (l.user_email ?? "").toLowerCase().includes(term)
+    );
+  });
+
+  const filteredErrors = errorLogs.filter((l) => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      l.error_message.toLowerCase().includes(term) ||
+      (l.url ?? "").toLowerCase().includes(term)
+    );
+  });
+
+  async function sendCriticalAlert() {
+    setAlertSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("alert-critical-errors");
+      if (error) throw new Error(error.message);
+      const result = data as { ok: boolean; alerted: boolean; totalErrors?: number; message?: string };
+      if (result.alerted) {
+        toast.success(`Alerta enviado!`, {
+          description: `E-mail com ${result.totalErrors} erro(s) enviado para luixlima2010p@gmail.com.`,
+        });
+      } else {
+        toast.info("Sem erros críticos", {
+          description: result.message ?? "Nenhum erro crítico na última hora.",
+        });
+      }
+    } catch (err: any) {
+      toast.error("Erro ao enviar alerta", { description: err.message });
+    } finally {
+      setAlertSending(false);
+    }
+  }
+
+  function formatTime(iso: string) {
+    return new Date(iso).toLocaleString("pt-BR", {
+      day: "2-digit", month: "2-digit", year: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+    });
+  }
+
+  return (
+    <section className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
+      {/* Header */}
+      <div className="p-6 border-b border-border">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="space-y-1">
+            <h2 className="font-serif text-xl flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              Monitoramento de Logs
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Auditoria de ações e erros capturados na plataforma em tempo real.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 border-violet-200 text-violet-700 hover:bg-violet-50 dark:border-violet-800 dark:text-violet-400 dark:hover:bg-violet-950/20"
+              onClick={sendCriticalAlert}
+              disabled={alertSending}
+            >
+              {alertSending
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <Bell className="h-4 w-4" />}
+              Enviar Alerta Agora
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => activeTab === "audit" ? refetchAudit() : refetchErrors()}
+              title="Recarregar"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-1 mt-4 bg-muted/40 p-1 rounded-lg w-fit">
+          {(["errors", "audit"] as LogsTab[]).map((tab) => {
+            const icons = { errors: Bug, audit: Shield };
+            const labels = { errors: "Erros de Frontend", audit: "Auditoria de Ações" };
+            const counts = { errors: errorLogs.length, audit: auditLogs.length };
+            const Icon = icons[tab];
+            return (
+              <button
+                key={tab}
+                onClick={() => { setActiveTab(tab); setExpandedId(null); setSearchTerm(""); }}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all",
+                  activeTab === tab
+                    ? "bg-background shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {labels[tab]}
+                <span className={cn(
+                  "text-[10px] px-1.5 py-0.5 rounded-full font-bold",
+                  tab === "errors" && counts.errors > 0
+                    ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                    : "bg-muted text-muted-foreground"
+                )}>{counts[tab]}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="px-6 py-3 border-b border-border bg-muted/20 flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <input
+            type="text"
+            placeholder={activeTab === "errors" ? "Filtrar por mensagem ou URL…" : "Filtrar por ação, entidade ou e-mail…"}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-8 pr-3 py-1.5 text-sm bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Filter className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <select
+            value={filterStore}
+            onChange={(e) => setFilterStore(e.target.value)}
+            className="text-sm bg-background border border-border rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="all">Todas as lojas</option>
+            {stores.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="divide-y divide-border max-h-[560px] overflow-y-auto">
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : activeTab === "errors" ? (
+          filteredErrors.length === 0 ? (
+            <div className="py-12 text-center">
+              <Bug className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">
+                {searchTerm ? "Nenhum erro encontrado com esse filtro." : "Nenhum erro de frontend registrado. 🎉"}
+              </p>
+            </div>
+          ) : (
+            filteredErrors.map((log) => {
+              const store = log.store_id ? (storeMap[log.store_id] ?? null) : null;
+              const isExpanded = expandedId === log.id;
+              return (
+                <div key={log.id} className="hover:bg-muted/10 transition-colors">
+                  <button
+                    className="w-full text-left px-5 py-3.5 flex items-start gap-3"
+                    onClick={() => setExpandedId(isExpanded ? null : log.id)}
+                  >
+                    <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-sm text-red-600 dark:text-red-400 truncate">
+                          {log.error_message}
+                        </span>
+                        {store && (
+                          <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full text-muted-foreground shrink-0">
+                            {store.name}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-xs text-muted-foreground">{formatTime(log.created_at)}</span>
+                        {log.url && (
+                          <span className="text-xs text-muted-foreground font-mono truncate max-w-[300px]">{log.url}</span>
+                        )}
+                      </div>
+                    </div>
+                    <ChevronRight className={cn("h-4 w-4 text-muted-foreground shrink-0 transition-transform mt-0.5", isExpanded && "rotate-90")} />
+                  </button>
+                  {isExpanded && (
+                    <div className="px-5 pb-4 space-y-3 bg-muted/10 border-t border-border">
+                      {log.stack_trace && (
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Stack Trace</p>
+                          <pre className="text-xs text-muted-foreground bg-muted p-3 rounded-lg overflow-x-auto max-h-[180px] leading-relaxed whitespace-pre-wrap">
+                            {log.stack_trace}
+                          </pre>
+                        </div>
+                      )}
+                      {log.user_agent && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">User Agent</p>
+                          <p className="text-xs text-muted-foreground font-mono break-all">{log.user_agent}</p>
+                        </div>
+                      )}
+                      {log.metadata && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Metadata</p>
+                          <pre className="text-xs text-muted-foreground bg-muted p-3 rounded-lg overflow-x-auto max-h-[120px] whitespace-pre-wrap">
+                            {JSON.stringify(log.metadata, null, 2)}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )
+        ) : (
+          // ── Audit Logs ────────────────────────────────────────────────────
+          filteredAudit.length === 0 ? (
+            <div className="py-12 text-center">
+              <Shield className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">
+                {searchTerm ? "Nenhuma entrada encontrada com esse filtro." : "Nenhum log de auditoria registrado ainda."}
+              </p>
+            </div>
+          ) : (
+            filteredAudit.map((log) => {
+              const store = storeMap[log.store_id] ?? null;
+              const actionStyle = ACTION_STYLES[log.action] ?? ACTION_STYLES.INSERT;
+              const isExpanded = expandedId === log.id;
+              return (
+                <div key={log.id} className="hover:bg-muted/10 transition-colors">
+                  <button
+                    className="w-full text-left px-5 py-3 flex items-center gap-3"
+                    onClick={() => setExpandedId(isExpanded ? null : log.id)}
+                  >
+                    <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0", actionStyle.bg, actionStyle.text)}>
+                      {log.action}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-sm">{log.entity_type}</span>
+                        {store && (
+                          <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full text-muted-foreground shrink-0">
+                            {store.name}
+                          </span>
+                        )}
+                        {log.user_email && (
+                          <span className="text-xs text-muted-foreground truncate">
+                            por {log.user_email}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground">{formatTime(log.created_at)}</span>
+                    </div>
+                    <ChevronRight className={cn("h-4 w-4 text-muted-foreground shrink-0 transition-transform", isExpanded && "rotate-90")} />
+                  </button>
+                  {isExpanded && log.payload && (
+                    <div className="px-5 pb-4 bg-muted/10 border-t border-border">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 mt-3">Payload</p>
+                      <pre className="text-xs text-muted-foreground bg-muted p-3 rounded-lg overflow-x-auto max-h-[200px] whitespace-pre-wrap">
+                        {JSON.stringify(log.payload, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )
+        )}
+      </div>
+
+      {/* Footer status */}
+      <div className="px-6 py-3 border-t border-border bg-muted/10 flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Mostrando {activeTab === "errors" ? filteredErrors.length : filteredAudit.length} entradas · Atualiza a cada 2 min
+        </p>
+        <div className="flex items-center gap-1.5">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-xs text-muted-foreground">Monitoramento ativo</span>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -1281,6 +1653,9 @@ export default function SuperAdminDashboard() {
           </div>
         )}
       </section>
+
+      {/* ── Logs Monitor Panel ──────────────────────────────────────────── */}
+      <LogsMonitorPanel stores={stores} />
 
       {/* ── Plan feature legend ─────────────────────────────────────────── */}
       <section className="rounded-xl border border-border bg-card p-6 space-y-4 shadow-soft">

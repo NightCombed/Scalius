@@ -389,6 +389,8 @@ export function ProductFormDialog({ open, onOpenChange, storeId, product, catego
                       }}
                       placeholder="https://..."
                       aspect={4/3}
+                      maxWidth={1200}
+                      quality={0.82}
                     />
                   </div>
                   <Button

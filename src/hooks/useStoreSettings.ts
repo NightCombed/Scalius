@@ -8,16 +8,31 @@ export function useStoreSettings(storeId: string | undefined) {
     queryKey: ["store-settings", storeId],
     queryFn: async () => {
       if (!storeId) return null;
-      const { data, error } = await supabase
-        .from("store_settings")
-        .select("*")
-        .eq("store_id", storeId)
-        .maybeSingle();
+      const [settingsRes, secretsRes] = await Promise.all([
+        supabase
+          .from("store_settings")
+          .select("*")
+          .eq("store_id", storeId)
+          .maybeSingle(),
+        supabase
+          .from("store_secrets")
+          .select("mp_access_token, mp_refresh_token, mp_access_token_secret_id, mp_refresh_token_secret_id, mp_token_expires_at, mp_user_id, melhorenvio_token")
+          .eq("store_id", storeId)
+          .maybeSingle(),
+      ]);
         
-      if (error) throw error;
-      if (!data) return null;
+      if (settingsRes.error) throw settingsRes.error;
+      if (secretsRes.error) {
+        console.error("[useStoreSettings] Error loading secrets:", secretsRes.error);
+      }
+      if (!settingsRes.data) return null;
 
-      return mapStoreSettings(data);
+      const mergedData = {
+        ...settingsRes.data,
+        ...(secretsRes.data || {}),
+      };
+
+      return mapStoreSettings(mergedData);
     },
     enabled: !!storeId,
     // Add a bit of staleTime to avoid constant refetching

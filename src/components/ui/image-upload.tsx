@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import Cropper from "react-easy-crop";
 import { getCroppedImg } from "@/lib/imageUtils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-
 interface ImageUploadProps {
   bucket: string;
   pathPrefix: string;
@@ -18,6 +17,10 @@ interface ImageUploadProps {
   aspect?: number;
   /** When true, shows mobile + desktop safe-zone guides (use for banners) */
   showBannerGuides?: boolean;
+  maxWidth?: number;
+  maxHeight?: number;
+  quality?: number;
+  outputFormat?: "image/webp" | "image/jpeg" | "image/png";
 }
 
 // ── Guide constants ────────────────────────────────────────────────────────────
@@ -123,6 +126,10 @@ export function ImageUpload({
   id,
   aspect = 1,
   showBannerGuides = false,
+  maxWidth,
+  maxHeight,
+  quality = 0.82,
+  outputFormat = "image/webp",
 }: ImageUploadProps) {
   const [uploading,          setUploading]          = useState(false);
   const [showCropper,        setShowCropper]        = useState(false);
@@ -204,10 +211,21 @@ export function ImageUpload({
     setUploading(true);
     setShowCropper(false);
     try {
-      const mimeType     = "image/jpeg";
-      const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels, mimeType);
+      const croppedImage = await getCroppedImg(
+        imageSrc,
+        croppedAreaPixels,
+        outputFormat,
+        quality,
+        maxWidth,
+        maxHeight
+      );
       if (!croppedImage)
         throw new Error("Falha ao processar imagem. Verifique se o link permite acesso externo (CORS).");
+
+      const actualMimeType = croppedImage.type;
+      let extension = "jpg";
+      if (actualMimeType === "image/webp") extension = "webp";
+      else if (actualMimeType === "image/png") extension = "png";
 
       // Delete old file if it's a Storage URL for this bucket
       if (value) {
@@ -218,10 +236,10 @@ export function ImageUpload({
         }
       }
 
-      const storagePath = `${pathPrefix}-${Date.now()}.jpg`;
+      const storagePath = `${pathPrefix}-${Date.now()}.${extension}`;
       const { error } = await supabase.storage
         .from(bucket)
-        .upload(storagePath, croppedImage, { contentType: mimeType });
+        .upload(storagePath, croppedImage, { contentType: actualMimeType });
       if (error) throw error;
 
       const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(storagePath);

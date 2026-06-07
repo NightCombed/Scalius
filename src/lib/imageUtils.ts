@@ -85,10 +85,22 @@ export const createImage = (url: string): Promise<HTMLImageElement> => {
   });
 };
 
+export function isWebpSupported(): boolean {
+  try {
+    const canvas = document.createElement("canvas");
+    return canvas.toDataURL("image/webp").indexOf("data:image/webp") === 0;
+  } catch {
+    return false;
+  }
+}
+
 export async function getCroppedImg(
   imageSrc: string,
   pixelCrop: { x: number; y: number; width: number; height: number },
-  format: "image/jpeg" | "image/png" = "image/jpeg"
+  format: string = "image/webp",
+  quality?: number,
+  maxWidth?: number,
+  maxHeight?: number
 ): Promise<Blob | null> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement("canvas");
@@ -104,14 +116,23 @@ export async function getCroppedImg(
   let targetWidth = Math.round(pixelCrop.width);
   let targetHeight = Math.round(pixelCrop.height);
 
-  // Cap canvas size to a reasonable maximum to avoid browser limits and performance issues
-  const MAX_CANVAS_SIZE = 2500;
+  // 1. Calculate scaling factors based on maxWidth and maxHeight while keeping aspect ratio
   let scale = 1;
-  if (targetWidth > MAX_CANVAS_SIZE || targetHeight > MAX_CANVAS_SIZE) {
-    scale = MAX_CANVAS_SIZE / Math.max(targetWidth, targetHeight);
-    targetWidth = Math.round(targetWidth * scale);
-    targetHeight = Math.round(targetHeight * scale);
+  if (maxWidth && targetWidth > maxWidth) {
+    scale = Math.min(scale, maxWidth / targetWidth);
   }
+  if (maxHeight && targetHeight > maxHeight) {
+    scale = Math.min(scale, maxHeight / targetHeight);
+  }
+
+  // 2. Cap canvas size to a reasonable maximum to avoid browser limits and performance issues
+  const MAX_CANVAS_SIZE = 2500;
+  if (targetWidth * scale > MAX_CANVAS_SIZE || targetHeight * scale > MAX_CANVAS_SIZE) {
+    scale = Math.min(scale, MAX_CANVAS_SIZE / Math.max(targetWidth, targetHeight));
+  }
+
+  targetWidth = Math.round(targetWidth * scale);
+  targetHeight = Math.round(targetHeight * scale);
 
   // set canvas size to match the scaled crop size
   canvas.width = targetWidth;
@@ -142,10 +163,21 @@ export async function getCroppedImg(
     ctx.drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dw, dh);
   }
 
+  // Fallback if browser doesn't support WebP export
+  let exportFormat = format;
+  if (exportFormat === "image/webp" && !isWebpSupported()) {
+    exportFormat = "image/jpeg";
+  }
+
   // as a blob
   return new Promise((resolve) => {
-    canvas.toBlob((file) => {
-      resolve(file);
-    }, format);
+    canvas.toBlob(
+      (file) => {
+        resolve(file);
+      },
+      exportFormat,
+      quality !== undefined ? quality : undefined
+    );
   });
 }
+

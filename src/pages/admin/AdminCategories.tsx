@@ -235,6 +235,8 @@ export default function AdminCategories() {
                 onChange={setImageUrl}
                 placeholder="https://..."
                 aspect={1}
+                maxWidth={500}
+                quality={0.80}
               />
               <p className="text-xs text-muted-foreground">
                 Imagem que aparecerá no site público (recomendado: 200×200px)

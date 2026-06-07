@@ -105,13 +105,13 @@ Deno.serve(async (req) => {
   }
 
   // ── Get store access token ──────────────────────────────────────────────
-  const { data: settings } = await supabase
-    .from("store_settings")
+  const { data: secrets } = await supabase
+    .from("store_secrets")
     .select("mp_access_token")
     .eq("store_id", order.store_id)
     .maybeSingle();
 
-  if (!settings?.mp_access_token) {
+  if (!secrets?.mp_access_token) {
     console.error("[webhook] no MP token for store:", order.store_id);
     await supabase.from("webhook_logs").insert({
       store_id: order.store_id, order_id: order.id,
@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
 
   // ── Double-check with MP API ─────────────────────────────────────────────
   const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${dataIdFromUrl}`, {
-    headers: { Authorization: `Bearer ${settings.mp_access_token}` },
+    headers: { Authorization: `Bearer ${secrets.mp_access_token}` },
   });
   const mpPayment = await mpRes.json();
   const mpStatus: string = mpPayment.status ?? "unknown";
@@ -149,8 +149,14 @@ async function validateSignature(
   secret: string | null
 ): Promise<boolean> {
   if (!secret) {
-    console.warn("[sig] MP_WEBHOOK_SECRET not set, skipping validation");
-    return true; // allow without secret (dev mode)
+    console.error("[sig] MP_WEBHOOK_SECRET not set in environment!");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    const isLocal = supabaseUrl.includes("localhost") || supabaseUrl.includes("127.0.0.1");
+    if (isLocal) {
+      console.warn("[sig] Running locally, skipping signature validation.");
+      return true;
+    }
+    return false; // Enforce signature verification in production
   }
   if (!signature) {
     console.warn("[sig] no x-signature header present");
