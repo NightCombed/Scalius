@@ -284,12 +284,6 @@ export default function PublicOrderConfirmation() {
               📎 Esta loja pede o <strong>comprovante de pagamento</strong>. Envie pelo WhatsApp após pagar.
             </div>
           )}
-
-          {requiresProof && (
-            <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 p-3 text-sm text-blue-800 dark:text-blue-300">
-              📎 Esta loja pede o <strong>comprovante de pagamento</strong>. Envie pelo WhatsApp após pagar.
-            </div>
-          )}
         </div>
       )}
 

@@ -17,7 +17,8 @@ export function hexToHsl(hex: string): string {
   }
   r /= 255; g /= 255; b /= 255;
   const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0, l = (max + min) / 2;
+  const l = (max + min) / 2;
+  let h = 0, s = 0;
   if (max !== min) {
     const d = max - min;
     s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
@@ -34,9 +35,9 @@ export function hexToHsl(hex: string): string {
 export function hslToHex(hslStr: string): string {
   const parts = hslStr.match(/\d+/g);
   if (!parts || parts.length < 3) return "#000000";
-  let h = parseInt(parts[0]) / 360;
-  let s = parseInt(parts[1]) / 100;
-  let l = parseInt(parts[2]) / 100;
+  const h = parseInt(parts[0]) / 360;
+  const s = parseInt(parts[1]) / 100;
+  const l = parseInt(parts[2]) / 100;
   let r, g, b;
   if (s === 0) {
     r = g = b = l;

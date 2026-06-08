@@ -146,6 +146,9 @@ export default function AdminDashboard() {
     enabled: !!store?.id,
   });
 
+  const { can } = useStoreRole();
+  const showRevenue = can("view_revenue");
+
   if (!store) {
     return (
       <div className="rounded-lg border border-border p-8 text-center">
@@ -153,9 +156,6 @@ export default function AdminDashboard() {
       </div>
     );
   }
-
-  const { can } = useStoreRole();
-  const showRevenue = can("view_revenue");
 
   const { todayRevenue, yesterdayRevenue, todayOrders, pending } = dashboardStats;
   

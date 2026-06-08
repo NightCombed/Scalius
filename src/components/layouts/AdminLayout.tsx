@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { AdminSidebar } from "./AdminSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -20,7 +20,6 @@ const NAV_ITEMS = [
   { title: "Config.", url: "/admin/configuracoes", icon: Settings },
 ];
 // ─── Alerts System ────────────────────────────────────────────────────────
-let flashInterval: NodeJS.Timeout | null = null;
 
 function playSaleAlertSound(volume: "baixo" | "normal" | "alto" = "normal") {
   try {
@@ -88,57 +87,7 @@ function isCurrentTimeInSilentHours(start: string, end: string): boolean {
   }
 }
 
-function triggerVisualAlert(storeName: string) {
-  if (flashInterval) clearInterval(flashInterval);
-  
-  let toggle = false;
-  const originalTitle = document.title;
-  
-  // Criar uma div overlay para piscar a tela inteira
-  let overlay = document.getElementById("sale-flash-overlay");
-  if (!overlay) {
-    overlay = document.createElement("div");
-    overlay.id = "sale-flash-overlay";
-    overlay.style.position = "fixed";
-    overlay.style.inset = "0";
-    overlay.style.zIndex = "999999";
-    overlay.style.pointerEvents = "none";
-    overlay.style.transition = "background-color 0.1s ease-in-out";
-    document.body.appendChild(overlay);
-  }
-  
-  flashInterval = setInterval(() => {
-    // Piscar a aba
-    document.title = toggle ? "💰 NOVA VENDA! 💰" : originalTitle;
-    
-    // Piscar a tela de preto e transparente
-    if (overlay) {
-      overlay.style.backgroundColor = toggle ? "rgba(0, 0, 0, 0.85)" : "transparent";
-    }
-    
-    toggle = !toggle;
-  }, 400); // 400ms para piscar rápido
 
-  const stopFlashing = () => {
-    if (flashInterval) {
-      clearInterval(flashInterval);
-      flashInterval = null;
-      document.title = `${storeName} | Painel Admin | Scalius`;
-    }
-    const existingOverlay = document.getElementById("sale-flash-overlay");
-    if (existingOverlay) {
-      existingOverlay.style.backgroundColor = "transparent";
-      setTimeout(() => existingOverlay.remove(), 200);
-    }
-    // Remove os eventos depois de limpar
-    window.removeEventListener("click", stopFlashing);
-    window.removeEventListener("keydown", stopFlashing);
-  };
-
-  // Forçar o usuário a dar um clique ou apertar alguma tecla para parar o alerta (foco ou mousemove não para mais)
-  window.addEventListener("click", stopFlashing);
-  window.addEventListener("keydown", stopFlashing);
-}
 
 export default function AdminLayout() {
   const { user, memberships, signOut, isSuperAdmin } = useAuth();
@@ -147,6 +96,53 @@ export default function AdminLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { can, roleLabel, roleBadgeClasses } = useStoreRole();
   const { isPro } = usePlan();
+
+  const flashIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const triggerVisualAlert = (storeName: string) => {
+    if (flashIntervalRef.current) clearInterval(flashIntervalRef.current);
+    
+    let toggle = false;
+    const originalTitle = document.title;
+    
+    let overlay = document.getElementById("sale-flash-overlay");
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.id = "sale-flash-overlay";
+      overlay.style.position = "fixed";
+      overlay.style.inset = "0";
+      overlay.style.zIndex = "999999";
+      overlay.style.pointerEvents = "none";
+      overlay.style.transition = "background-color 0.1s ease-in-out";
+      document.body.appendChild(overlay);
+    }
+    
+    flashIntervalRef.current = setInterval(() => {
+      document.title = toggle ? "💰 NOVA VENDA! 💰" : originalTitle;
+      if (overlay) {
+        overlay.style.backgroundColor = toggle ? "rgba(0, 0, 0, 0.85)" : "transparent";
+      }
+      toggle = !toggle;
+    }, 400);
+
+    const stopFlashing = () => {
+      if (flashIntervalRef.current) {
+        clearInterval(flashIntervalRef.current);
+        flashIntervalRef.current = null;
+        document.title = `${storeName} | Painel Admin | Scalius`;
+      }
+      const existingOverlay = document.getElementById("sale-flash-overlay");
+      if (existingOverlay) {
+        existingOverlay.style.backgroundColor = "transparent";
+        setTimeout(() => existingOverlay.remove(), 200);
+      }
+      window.removeEventListener("click", stopFlashing);
+      window.removeEventListener("keydown", stopFlashing);
+    };
+
+    window.addEventListener("click", stopFlashing);
+    window.addEventListener("keydown", stopFlashing);
+  };
 
   const { data: settings } = useStoreSettings(activeStore?.id);
 
@@ -178,10 +174,15 @@ export default function AdminLayout() {
   // ── Real-time Push Notifications ──────────────────────────────────────────
   useEffect(() => {
     if (!activeStore?.id || !settings) return;
-    const hasPushActive =
+    
+    // BUG-009: Only subscribe if push notifications or sound/visual alerts are active
+    const hasChannelActive =
       settings.notif_push_new_order ||
       settings.notif_push_payment_confirmed ||
-      settings.notif_push_status_change;
+      settings.notif_push_status_change ||
+      settings.sound_enabled !== false;
+
+    if (!hasChannelActive) return;
 
     const channel = supabase
       .channel(`admin-notifications-${activeStore.id}`)
@@ -197,7 +198,9 @@ export default function AdminLayout() {
           const order = payload.new as any;
           const oldOrder = payload.old as any;
           const orderNum = order.order_number || order.id.slice(-6).toUpperCase();
-          const isMercadoPago = settings.payment_provider === "mercadopago";
+          const isManual = settings.payment_provider === "manual";
+          const isAutomatic = !isManual;
+          
           const notify = (title: string, body: string) => {
             if (Notification.permission !== "granted") return;
             const n = new Notification(title, { body, icon: "/favicon.ico" });
@@ -206,28 +209,31 @@ export default function AdminLayout() {
               window.location.href = `/admin/pedidos/${order.id}`;
             };
           };
-          if (payload.eventType === "INSERT" && settings.notif_push_new_order && !isMercadoPago) {
+
+          // BUG-006: Only notify new order on INSERT if it's manual (automatic gets notified on paid)
+          if (payload.eventType === "INSERT" && settings.notif_push_new_order && isManual) {
             notify("Novo Pedido! 🛍️", `O pedido #${orderNum} acaba de chegar!`);
           }
-          if (
-            payload.eventType === "UPDATE" &&
-            order.payment_status === "paid" &&
-            oldOrder?.payment_status !== "paid" &&
-            settings.notif_push_payment_confirmed
-          ) {
+
+          // BUG-006: Notify on UPDATE (or INSERT) when payment status turns to paid for automatic gateways
+          const isPaidUpdate = payload.eventType === "UPDATE" && order.payment_status === "paid" && oldOrder?.payment_status !== "paid";
+          const isPaidInsert = payload.eventType === "INSERT" && order.payment_status === "paid" && isAutomatic;
+
+          if ((isPaidUpdate || isPaidInsert) && settings.notif_push_payment_confirmed) {
+            const gatewayLabel = settings.payment_provider === "mercadopago" ? "Mercado Pago" : "InfinitePay";
             notify(
-              isMercadoPago ? "Pagamento confirmado! Novo pedido 🛍️💰" : "Pagamento Confirmado! 💰",
-              isMercadoPago
-                ? `O pedido #${orderNum} foi pago via Mercado Pago. Já pode preparar!`
+              isAutomatic ? "Pagamento confirmado! Novo pedido 🛍️💰" : "Pagamento Confirmado! 💰",
+              isAutomatic
+                ? `O pedido #${orderNum} foi pago via ${gatewayLabel}. Já pode preparar!`
                 : `O pagamento do pedido #${orderNum} foi confirmado.`,
             );
           }
+
           if (payload.eventType === "UPDATE" && order.status !== oldOrder?.status && settings.notif_push_status_change) {
             notify("Status Atualizado! 📋", `O pedido #${orderNum} agora está: ${order.status}`);
           }
 
           // ── Alerts Logic (Sound and Tab Flash) ──
-          const isManual = settings.payment_provider === "manual";
           const isNewManualOrder = isManual && payload.eventType === "INSERT";
           const isAutomaticUpdatePaid = !isManual && payload.eventType === "UPDATE" && order.payment_status === "paid" && oldOrder?.payment_status !== "paid";
           const isAutomaticInsertPaid = !isManual && payload.eventType === "INSERT" && order.payment_status === "paid";
@@ -247,7 +253,18 @@ export default function AdminLayout() {
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    // BUG-007: Clean up channel, flashIntervalRef, and visual overlay on unmount
+    return () => { 
+      supabase.removeChannel(channel); 
+      if (flashIntervalRef.current) {
+        clearInterval(flashIntervalRef.current);
+        flashIntervalRef.current = null;
+      }
+      const existingOverlay = document.getElementById("sale-flash-overlay");
+      if (existingOverlay) {
+        existingOverlay.remove();
+      }
+    };
   }, [activeStore?.id, settings]);
 
   return (

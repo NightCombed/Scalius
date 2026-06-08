@@ -71,11 +71,11 @@ export default function AdminOrderDetail() {
 
   // Sync tracking code state
   useEffect(() => {
-    if (order && (order as any).tracking_code) {
-      setTrackingCode((order as any).tracking_code);
+    if (order && order.tracking_code) {
+      setTrackingCode(order.tracking_code);
     }
     // Sync invoice_key state
-    const savedKey = (order as any)?.invoice_key ?? "";
+    const savedKey = order?.invoice_key ?? "";
     setInvoiceKey(savedKey);
     setInvoiceMode(savedKey ? "nfe" : "dce");
   }, [order]);
@@ -204,7 +204,7 @@ export default function AdminOrderDetail() {
         description: `ID: ${data?.melhorenvio_order_id ?? "?"} — Abra o Console (F12) para ver o payload completo.`,
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       console.error("Erro ao enviar para o carrinho:", error);
       toast.error("Erro ao enviar para o Melhor Envio", {
         description: error.message || "Verifique as configurações de remetente no Admin.",
@@ -248,10 +248,10 @@ export default function AdminOrderDetail() {
       [order.address_street, order.address_number].filter(Boolean).join(", "),
       order.address_neighborhood,
       order.address_complement,
-      (order as any).national_shipping_cep ? `CEP: ${(order as any).national_shipping_cep}` : null
+      order.national_shipping_cep ? `CEP: ${order.national_shipping_cep}` : null
     ].filter(Boolean).join(" — ") || "Sem endereço cadastrado";
 
-  const isNationalShipping = !!(order as any).shipping_company || !!(order as any).shipping_service_name;
+  const isNationalShipping = !!order.shipping_company || !!order.shipping_service_name;
 
   const setStatus = (s: Order["status"]) => {
     updateStatus.mutate(s);
@@ -769,12 +769,12 @@ export default function AdminOrderDetail() {
                   Região: <span className="font-medium text-foreground">{order.shipping_region_name}</span>
                 </div>
               )}
-              {(order as any).delivery_distance_km != null && !isNationalShipping && (
+              {order.delivery_distance_km != null && !isNationalShipping && (
                 <div className="text-xs text-muted-foreground flex items-center gap-1">
                   <MapPin className="h-3 w-3 text-primary shrink-0" />
-                  <span>Distância: <span className="font-medium text-foreground">{Number((order as any).delivery_distance_km).toFixed(1)} km</span></span>
-                  {(order as any).delivery_zone_name && (
-                    <span> · Zona: <span className="font-medium text-foreground">{(order as any).delivery_zone_name}</span></span>
+                  <span>Distância: <span className="font-medium text-foreground">{Number(order.delivery_distance_km).toFixed(1)} km</span></span>
+                  {order.delivery_zone_name && (
+                    <span> · Zona: <span className="font-medium text-foreground">{order.delivery_zone_name}</span></span>
                   )}
                 </div>
               )}
@@ -786,11 +786,11 @@ export default function AdminOrderDetail() {
                       <Package className="h-4 w-4" /> Frete Nacional
                     </div>
                     <div className="text-sm">
-                      <span className="text-muted-foreground">Transportadora:</span> <span className="font-medium">{(order as any).shipping_company} - {(order as any).shipping_service_name}</span>
+                      <span className="text-muted-foreground">Transportadora:</span> <span className="font-medium">{order.shipping_company} - {order.shipping_service_name}</span>
                     </div>
-                    {(order as any).shipping_delivery_time_days && (
+                    {order.shipping_delivery_time_days && (
                       <div className="text-sm">
-                        <span className="text-muted-foreground">Prazo estimado:</span> <span className="font-medium">{(order as any).shipping_delivery_time_days} dias úteis</span>
+                        <span className="text-muted-foreground">Prazo estimado:</span> <span className="font-medium">{order.shipping_delivery_time_days} dias úteis</span>
                       </div>
                     )}
                   </div>
@@ -799,10 +799,10 @@ export default function AdminOrderDetail() {
                   <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Documento Fiscal</div>
-                      {(order as any).invoice_key && (
+                      {order.invoice_key && (
                         <span className="text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded-full">NF-e</span>
                       )}
-                      {!(order as any).invoice_key && (
+                      {!order.invoice_key && (
                         <span className="text-[10px] font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full">DC-e automática</span>
                       )}
                     </div>
@@ -812,7 +812,7 @@ export default function AdminOrderDetail() {
                       <button
                         onClick={() => {
                           setInvoiceMode("dce");
-                          if ((order as any).invoice_key) {
+                          if (order.invoice_key) {
                             setInvoiceKey("");
                             saveInvoiceKey.mutate(null);
                           }
@@ -863,10 +863,10 @@ export default function AdminOrderDetail() {
                           <Button
                             size="sm"
                             className="h-8 text-xs"
-                            disabled={invoiceKey.length !== 44 || saveInvoiceKey.isPending || invoiceKey === ((order as any).invoice_key ?? "")}
+                            disabled={invoiceKey.length !== 44 || saveInvoiceKey.isPending || invoiceKey === (order.invoice_key ?? "")}
                             onClick={() => saveInvoiceKey.mutate(invoiceKey)}
                           >
-                            {saveInvoiceKey.isPending ? "..." : invoiceKey === ((order as any).invoice_key ?? "") && invoiceKey ? <Check className="h-3.5 w-3.5" /> : "Salvar"}
+                            {saveInvoiceKey.isPending ? "..." : invoiceKey === (order.invoice_key ?? "") && invoiceKey ? <Check className="h-3.5 w-3.5" /> : "Salvar"}
                           </Button>
                         </div>
                         {invoiceKey.length > 0 && invoiceKey.length < 44 && (
@@ -880,7 +880,7 @@ export default function AdminOrderDetail() {
                   </div>
 
                   <ProGate feature="melhorenvio_label" plan={plan} variant="inline" className="mb-2">
-                    {!(order as any).melhorenvio_order_id ? (
+                    {!order.melhorenvio_order_id ? (
                       <Button 
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2 font-medium"
                         onClick={() => sendToMelhorEnvioCart.mutate()}
@@ -919,9 +919,9 @@ export default function AdminOrderDetail() {
                       <Button 
                         size="sm" 
                         onClick={() => saveTrackingCode.mutate()} 
-                        disabled={saveTrackingCode.isPending || trackingCode === (order as any).tracking_code}
+                        disabled={saveTrackingCode.isPending || trackingCode === order.tracking_code}
                       >
-                        {saveTrackingCode.isPending ? "Salvando..." : trackingCode === (order as any).tracking_code && trackingCode ? <Check className="h-4 w-4" /> : "Salvar"}
+                        {saveTrackingCode.isPending ? "Salvando..." : trackingCode === order.tracking_code && trackingCode ? <Check className="h-4 w-4" /> : "Salvar"}
                       </Button>
                     </div>
                   </div>
@@ -960,7 +960,7 @@ export default function AdminOrderDetail() {
           <h2 className="font-medium">Itens do pedido</h2>
         </header>
         <div className="divide-y divide-border">
-          {items.map((it: any) => {
+          {items.map((it) => {
             return (
               <div key={it.id} className="p-4 flex items-center justify-between gap-4">
                 <div className="min-w-0">
@@ -984,7 +984,7 @@ export default function AdminOrderDetail() {
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">
-              Frete{isNationalShipping ? ` · ${(order as any).shipping_company}` : order.shipping_region_name ? ` · ${order.shipping_region_name}` : order.delivery_type === "pickup" ? " · Retirada" : ""}
+              Frete{isNationalShipping ? ` · ${order.shipping_company}` : order.shipping_region_name ? ` · ${order.shipping_region_name}` : order.delivery_type === "pickup" ? " · Retirada" : ""}
             </span>
             <span className="tabular-nums">
               {order.delivery_type === "pickup" || order.shipping_fee_cents === 0

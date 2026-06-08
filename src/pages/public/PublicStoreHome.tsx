@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { Search, Clock, MapPin, Store, ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTenant } from "@/contexts/TenantContext";
@@ -142,9 +142,10 @@ export default function PublicStoreHome() {
   }, [rawProducts, query, activeCatId, settings?.show_out_of_stock]);
 
   // Check scroll when featured products change
-  useMemo(() => {
+  useEffect(() => {
     // Timeout to allow DOM to render before checking
-    setTimeout(checkFeaturedScroll, 100);
+    const timer = setTimeout(checkFeaturedScroll, 100);
+    return () => clearTimeout(timer);
   }, [featuredProducts]);
 
   if (!store) return (

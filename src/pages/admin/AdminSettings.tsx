@@ -27,6 +27,7 @@ import { Link } from "react-router-dom";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { hexToHsl, hslToHex } from "@/lib/utils";
 import { geocodeAddress, buildAddressString } from "@/lib/distance";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const HEX_REGEX = /^#[0-9A-Fa-f]{6}$/;
 
@@ -238,11 +239,11 @@ export default function AdminSettings() {
       display_name: settings.display_name ?? "",
       tagline: settings.tagline ?? "",
       whatsapp: settings.whatsapp ?? "",
-      address_street: settings.address ?? "",
-      address_number: "",
-      address_neighborhood: "",
-      address_city: "",
-      address_state: "",
+      address_street: settings.address_street ?? "",
+      address_number: settings.address_number ?? "",
+      address_neighborhood: settings.address_neighborhood ?? "",
+      address_city: settings.address_city ?? "",
+      address_state: settings.address_state ?? "",
       opening_hours: settings.opening_hours ?? "",
       brand_color: settings.brand_color ? hslToHex(settings.brand_color) : "#ea580c",
       secondary_color: settings.secondary_color ? hslToHex(settings.secondary_color) : "#000000",
@@ -329,10 +330,10 @@ export default function AdminSettings() {
           message: values.tagline || null,
           whatsapp_number: values.whatsapp || null,
           address_street: values.address_street || null,
-          address_number: null,
-          address_neighborhood: null,
-          address_city: null,
-          address_state: null,
+          address_number: values.address_number || null,
+          address_neighborhood: values.address_neighborhood || null,
+          address_city: values.address_city || null,
+          address_state: values.address_state || null,
           opening_hours: values.opening_hours || null,
           primary_color: hexToHsl(values.brand_color),
           secondary_color: values.secondary_color ? hexToHsl(values.secondary_color) : null,
@@ -677,19 +678,21 @@ export default function AdminSettings() {
                 render={({ field }) => (
                   <FormItem className="space-y-1.5">
                     <FormLabel>Estilo das Categorias</FormLabel>
-                    <FormControl>
-                      <select
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        value={field.value}
-                        onChange={field.onChange}
-                      >
-                        <option value="pill">Pills Arredondados (Padrão)</option>
-                        <option value="compact">Quadrados Compactos</option>
-                      </select>
-                    </FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o estilo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="pill">Pills Arredondados (Padrão)</SelectItem>
+                        <SelectItem value="compact">Quadrados Compactos</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormDescription>
                       Selecione o estilo visual das abas de categorias.
                     </FormDescription>
+                    <FormMessage />
                   </FormItem>
                 )}
               />

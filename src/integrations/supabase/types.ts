@@ -125,6 +125,24 @@ export type Database = {
           store_id: string
           subtotal_cents: number
           total_cents: number
+          tracking_code: string | null
+          invoice_key: string | null
+          shipping_company: string | null
+          shipping_service_name: string | null
+          shipping_delivery_time_days: number | null
+          shipping_service_id: number | null
+          melhorenvio_order_id: string | null
+          national_shipping_cep: string | null
+          delivery_distance_km: number | null
+          delivery_zone_name: string | null
+          delivery_zone_id: string | null
+          delivery_id: string | null
+          payment_provider: string | null
+          external_payment_id: string | null
+          qr_code_data: string | null
+          qr_code_base64: string | null
+          payment_expires_at: string | null
+          pix_name: string | null
         }
         Insert: {
           address_complement?: string | null
@@ -147,6 +165,24 @@ export type Database = {
           store_id: string
           subtotal_cents: number
           total_cents: number
+          tracking_code?: string | null
+          invoice_key?: string | null
+          shipping_company?: string | null
+          shipping_service_name?: string | null
+          shipping_delivery_time_days?: number | null
+          shipping_service_id?: number | null
+          melhorenvio_order_id?: string | null
+          national_shipping_cep?: string | null
+          delivery_distance_km?: number | null
+          delivery_zone_name?: string | null
+          delivery_zone_id?: string | null
+          delivery_id?: string | null
+          payment_provider?: string | null
+          external_payment_id?: string | null
+          qr_code_data?: string | null
+          qr_code_base64?: string | null
+          payment_expires_at?: string | null
+          pix_name?: string | null
         }
         Update: {
           address_complement?: string | null
@@ -169,6 +205,24 @@ export type Database = {
           store_id?: string
           subtotal_cents?: number
           total_cents?: number
+          tracking_code?: string | null
+          invoice_key?: string | null
+          shipping_company?: string | null
+          shipping_service_name?: string | null
+          shipping_delivery_time_days?: number | null
+          shipping_service_id?: number | null
+          melhorenvio_order_id?: string | null
+          national_shipping_cep?: string | null
+          delivery_distance_km?: number | null
+          delivery_zone_name?: string | null
+          delivery_zone_id?: string | null
+          delivery_id?: string | null
+          payment_provider?: string | null
+          external_payment_id?: string | null
+          qr_code_data?: string | null
+          qr_code_base64?: string | null
+          payment_expires_at?: string | null
+          pix_name?: string | null
         }
         Relationships: [
           {
