@@ -502,7 +502,7 @@ const Index = () => {
                   'Etiqueta Nacional Manual',
                   'Portal do Cliente com Login, Histórico e Acompanhamento',
                   'Alertas em tempo real para a loja',
-                  '2 Usuários Administradores',
+                  '2 Dispositivos Administradores',
                   'Domínio no padrão Scalius (ex: sualoja.scalius.com.br)',
                 ].map(f => (
                   <li key={f}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {f}</li>
