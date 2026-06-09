@@ -156,9 +156,6 @@ const Index = () => {
               <div className="hero-btns">
                 <a href="#precos" className="btn btn-brand">Criar minha loja grátis</a>
               </div>
-              <div className="hero-cta-info">
-                <span className="cta-trial-label">14 dias grátis. Sem cartão de crédito.</span>
-              </div>
             </div>
 
             {/* Integration logos com SVGs reais */}
@@ -509,9 +506,6 @@ const Index = () => {
                 ))}
               </ul>
               <a href="https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Essencial%20do%20Scalius." target="_blank" rel="noopener noreferrer" className="btn" style={{ width: '100%', justifyContent: 'center', background: 'white', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}>Assinar Essencial</a>
-              <span style={{ display: 'block', textAlign: 'center', fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '12px', fontWeight: 500 }}>
-                14 dias grátis
-              </span>
             </div>
 
             {/* Pro */}
@@ -543,9 +537,6 @@ const Index = () => {
                 ))}
               </ul>
               <a href="https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Pro%20do%20Scalius." target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Assinar Pro</a>
-              <span style={{ display: 'block', textAlign: 'center', fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '12px', fontWeight: 500 }}>
-                14 dias grátis
-              </span>
             </div>
           </div>
           
