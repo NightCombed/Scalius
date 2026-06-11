@@ -487,12 +487,12 @@ const Index = () => {
                 {[
                   'Produtos, Pedidos e Estoque Ilimitados',
                   'Pix Automático (Mercado Pago) e Pix Manual',
+                  'Suporte a Domínio 100% personalizado (ex: sualoja.com.br)',
                   'Cálculo de Frete Nacional Automático e Exato (Correios, Jadlog, Azul Cargo e etc.)',
                   'Etiqueta Nacional Manual',
                   'Portal do Cliente com Login, Histórico e Acompanhamento',
                   'Alertas em tempo real para a loja',
                   '2 Dispositivos Administradores',
-                  'Domínio no padrão Scalius (ex: sualoja.scalius.com.br)',
                 ].map(f => (
                   <li key={f}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {f}</li>
                 ))}
@@ -516,9 +516,7 @@ const Index = () => {
                   'Etiqueta Nacional em 1 Clique',
                   'E-mails Automáticos para o Cliente por etapa do pedido',
                   'Usuários Administradores Ilimitados',
-                  'Suporte a Domínio 100% personalizado (ex: sualoja.com.br)',
                   'Métricas Avançadas',
-                  'Sem "Feito com Scalius" no rodapé do site',
                 ].map(f => (
                   <li key={f}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>{f}</strong></li>
                 ))}
