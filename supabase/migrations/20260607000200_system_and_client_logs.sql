@@ -68,9 +68,12 @@ BEGIN
   -- Identificar usuário que realizou a ação
   v_user_id := auth.uid();
   IF v_user_id IS NOT NULL THEN
-    SELECT email INTO v_user_email FROM public.profiles WHERE id = v_user_id;
+    v_user_email := auth.jwt()->>'email';
     IF v_user_email IS NULL THEN
-      v_user_email := COALESCE(auth.jwt()->>'email', 'user-' || substring(v_user_id::text from 1 for 8));
+      SELECT email INTO v_user_email FROM auth.users WHERE id = v_user_id;
+    END IF;
+    IF v_user_email IS NULL THEN
+      v_user_email := 'user-' || substring(v_user_id::text from 1 for 8);
     END IF;
   ELSE
     v_user_email := 'system/anonymous';
