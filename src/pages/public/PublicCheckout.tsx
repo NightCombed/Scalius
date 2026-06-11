@@ -66,8 +66,20 @@ const checkoutSchema = baseSchema.superRefine((data, ctx) => {
     if (!data.postal_code || !/^\d{5}-?\d{3}$/.test(data.postal_code)) {
       ctx.addIssue({ code: "custom", path: ["postal_code"], message: "CEP inválido" });
     }
+    if (!data.street || data.street.trim().length < 1) {
+      ctx.addIssue({ code: "custom", path: ["street"], message: "Informe a rua" });
+    }
     if (!data.number || data.number.length < 1) {
       ctx.addIssue({ code: "custom", path: ["number"], message: "Informe o número" });
+    }
+    if (!data.neighborhood || data.neighborhood.trim().length < 1) {
+      ctx.addIssue({ code: "custom", path: ["neighborhood"], message: "Informe o bairro" });
+    }
+    if (!data.city || data.city.trim().length < 1) {
+      ctx.addIssue({ code: "custom", path: ["city"], message: "Cidade não identificada" });
+    }
+    if (!data.state || data.state.trim().length < 1) {
+      ctx.addIssue({ code: "custom", path: ["state"], message: "Estado não identificado" });
     }
   }
   if (data.delivery_type === "national_shipping") {
@@ -1208,10 +1220,11 @@ function PublicCheckoutInner() {
                   name="street"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Rua</FormLabel>
+                      <FormLabel>Rua *</FormLabel>
                       <FormControl>
-                        <Input {...field} readOnly className="bg-muted/50 cursor-not-allowed" />
+                        <Input placeholder="Rua, Avenida, Travessa..." maxLength={120} {...field} />
                       </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -1278,10 +1291,11 @@ function PublicCheckoutInner() {
                   name="neighborhood"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Bairro</FormLabel>
+                      <FormLabel>Bairro *</FormLabel>
                       <FormControl>
-                        <Input {...field} readOnly className="bg-muted/50 cursor-not-allowed" />
+                        <Input placeholder="Seu bairro" maxLength={80} {...field} />
                       </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
