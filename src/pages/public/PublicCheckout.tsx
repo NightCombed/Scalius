@@ -1042,7 +1042,11 @@ function PublicCheckoutInner() {
                                               className="accent-primary"
                                             />
                                             <div className="flex flex-col">
-                                              <span className="font-medium text-sm">{option.name}</span>
+                                              <span className="font-medium text-sm">
+                                                {option.name.toLowerCase().includes(option.company.toLowerCase())
+                                                  ? option.name
+                                                  : `${option.company} ${option.name}`}
+                                              </span>
                                               <span className="text-xs text-muted-foreground">Prazo: {option.delivery_time} dias úteis</span>
                                             </div>
                                           </div>
