@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import '../scalius-landing.css';
 import { ContainerScroll } from '../components/ContainerScroll';
-import { Rocket, Flame } from 'lucide-react';
+import { Rocket } from 'lucide-react';
 
 const Index = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -144,7 +144,7 @@ const Index = () => {
           <div className="hero-content reveal">
             <div className="hero-badge" style={{ border: '1px solid rgba(255, 94, 0, 0.15)' }}>
               <Rocket size={14} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-              Acesso Beta: 50% OFF para os primeiros (Preço travado para sempre!)
+              Sua vitrine escalando
             </div>
             <h1>
               Venda mais com sua loja online completa e{' '}
@@ -154,7 +154,7 @@ const Index = () => {
 
             <div className="hero-cta-group">
               <div className="hero-btns">
-                <a href="#precos" className="btn btn-brand">Criar minha loja grátis</a>
+                <a href="#precos" className="btn btn-brand">Criar minha loja</a>
               </div>
             </div>
 
@@ -472,10 +472,7 @@ const Index = () => {
             <p>Sem taxas abusivas por venda. Assine e tenha previsibilidade financeira.</p>
           </div>
 
-          <div className="pricing-alert-banner reveal" style={{ transitionDelay: '0.05s' }}>
-            <Flame size={20} className="alert-emoji" style={{ color: 'var(--primary)', flexShrink: 0 }} />
-            <p>Assine agora durante o Beta e garanta <strong>50% de desconto com preço travado para sempre</strong>. Restam apenas <strong>7 vagas</strong> com este benefício exclusivo!</p>
-          </div>
+
           <div className="pricing-grid">
             {/* Essencial */}
             <div className="pricing-card reveal">
@@ -483,12 +480,7 @@ const Index = () => {
                 <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Essencial</h3>
                 <p style={{ color: 'var(--text-muted)', margin: '8px 0 32px 0', fontSize: '1rem' }}>Para quem está dando o primeiro passo digital com a loja.</p>
                 <div className="price-container">
-                  <div className="price-row-header">
-                    <span className="price-old">De R$ 89</span>
-                    <span className="discount-tag">50% OFF</span>
-                  </div>
-                  <div className="price">R$ 44<span>/mês</span></div>
-                  <p className="price-guarantee">Preço travado para sempre enquanto você for cliente.</p>
+                  <div className="price">R$ 89<span>/mês</span></div>
                 </div>
               </div>
               <ul className="pricing-features">
@@ -513,14 +505,9 @@ const Index = () => {
               <div className="price-badge">Mais Popular</div>
               <div>
                 <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Pro</h3>
-                <p style={{ color: 'var(--text-muted)', margin: '8px 0 32px 0', fontSize: '1rem' }}>Automação total para escalar sua operação B2B e B2C.</p>
+                <p style={{ color: 'var(--text-muted)', margin: '8px 0 32px 0', fontSize: '1rem' }}>Para quem quer máximo desempenho e profissionalismo.</p>
                 <div className="price-container">
-                  <div className="price-row-header">
-                    <span className="price-old">De R$ 159</span>
-                    <span className="discount-tag">50% OFF</span>
-                  </div>
-                  <div className="price">R$ 79<span>/mês</span></div>
-                  <p className="price-guarantee">Preço travado para sempre enquanto você for cliente.</p>
+                  <div className="price">R$ 159<span>/mês</span></div>
                 </div>
               </div>
               <ul className="pricing-features">
@@ -540,10 +527,7 @@ const Index = () => {
             </div>
           </div>
           
-          <div className="pricing-disclaimer reveal" style={{ transitionDelay: '0.2s' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            <span>Preço beta válido apenas para os primeiros assinantes. Após o beta, novos clientes pagam o valor cheio.</span>
-          </div>
+
         </div>
       </section>
 

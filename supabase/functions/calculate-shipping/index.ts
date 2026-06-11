@@ -1,16 +1,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const melhorenvioApiUrl = Deno.env.get("MELHORENVIO_API_URL") || "https://melhorenvio.com.br";
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-const getCorsHeaders = () => ({
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-});
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
