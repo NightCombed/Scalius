@@ -10,7 +10,7 @@
       const path = window.location.pathname;
       if (path.startsWith('/admin') || path.startsWith('/super-admin')) {
         const savedTheme = localStorage.getItem('scalius-admin-theme');
-        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        if (savedTheme === 'dark') {
           document.documentElement.classList.add('dark');
         }
       }
