@@ -4,13 +4,14 @@ import { AdminSidebar } from "./AdminSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, ExternalLink, LayoutDashboard, Package, ShoppingBag, Truck, Settings, Menu, X, Tag, Users, Flower2, BarChart3, Lock } from "lucide-react";
+import { LogOut, ExternalLink, LayoutDashboard, Package, ShoppingBag, Truck, Settings, Menu, X, Tag, Users, Flower2, BarChart3, Lock, Sun, Moon } from "lucide-react";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { NavLink } from "@/components/NavLink";
 import { useStoreRole } from "@/hooks/useStoreRole";
 import { usePlan } from "@/hooks/usePlan";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const NAV_ITEMS = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, end: true },
@@ -96,6 +97,19 @@ export default function AdminLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { can, roleLabel, roleBadgeClasses } = useStoreRole();
   const { isPro } = usePlan();
+  const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+    return () => {
+      root.classList.remove("dark");
+    };
+  }, [theme]);
 
   const flashIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -294,7 +308,7 @@ export default function AdminLayout() {
         {/* Drawer Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-border">
           <div className="flex items-center gap-2">
-            <img src="/scalius-logo-dark.png" alt="Scalius" className="h-7 object-contain" />
+            <img src="/scalius-logo-dark.png" alt="Scalius" className="h-7 object-contain dark:brightness-0 dark:invert" />
           </div>
           <button
             onClick={() => setDrawerOpen(false)}
@@ -378,9 +392,20 @@ export default function AdminLayout() {
           )}
           <div className="flex items-center justify-between gap-2 px-1">
             <span className="text-xs text-muted-foreground truncate">{user?.full_name ?? user?.email}</span>
-            <Button variant="ghost" size="icon" onClick={() => void signOut()} aria-label="Sair">
-              <LogOut className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                aria-label={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
+                className="h-8 w-8"
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => void signOut()} aria-label="Sair" className="h-8 w-8">
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </aside>
@@ -400,7 +425,7 @@ export default function AdminLayout() {
 
           {/* Logo — mobile only, centered */}
           <div className="md:hidden flex-1 flex justify-center">
-            <img src="/scalius-logo-dark.png" alt="Scalius" className="h-7 object-contain" />
+            <img src="/scalius-logo-dark.png" alt="Scalius" className="h-7 object-contain dark:brightness-0 dark:invert" />
           </div>
 
           {/* Desktop: store name */}
@@ -424,6 +449,15 @@ export default function AdminLayout() {
               </Button>
             )}
             <span className="hidden lg:block text-sm text-muted-foreground px-2">{user?.full_name}</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              aria-label={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
+              className="min-w-[44px] min-h-[44px]"
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
             <Button variant="ghost" size="icon" onClick={() => void signOut()} aria-label="Sair" className="min-w-[44px] min-h-[44px]">
               <LogOut className="h-4 w-4" />
             </Button>

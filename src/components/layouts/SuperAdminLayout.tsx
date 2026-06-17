@@ -1,10 +1,26 @@
+import { useEffect } from "react";
 import { Link, Outlet } from "react-router-dom";
-import { Flower2, LogOut } from "lucide-react";
+import { Flower2, LogOut, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function SuperAdminLayout() {
   const { user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+    return () => {
+      root.classList.remove("dark");
+    };
+  }, [theme]);
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <header className="h-14 border-b border-border bg-gradient-botanical text-primary-foreground flex items-center px-4 gap-3">
@@ -13,6 +29,9 @@ export default function SuperAdminLayout() {
         </Link>
         <div className="flex-1" />
         <span className="text-sm opacity-90">{user?.full_name}</span>
+        <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-primary-foreground hover:bg-white/10" aria-label={theme === "dark" ? "Modo claro" : "Modo escuro"}>
+          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </Button>
         <Button variant="ghost" size="icon" onClick={signOut} className="text-primary-foreground hover:bg-white/10">
           <LogOut className="h-4 w-4" />
         </Button>
