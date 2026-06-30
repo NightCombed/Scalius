@@ -51,8 +51,11 @@ export const PLAN_FEATURE_LABELS: Record<PlanFeature, { title: string; descripti
  * Any feature NOT listed for a plan is considered blocked.
  */
 const PLAN_ACCESS: Record<PlanId, Set<PlanFeature>> = {
+  basico: new Set([
+    // basico has no premium features
+  ]),
   essencial: new Set([
-    // customer_emails, melhorenvio_label, unlimited_users, and advanced_analytics are NOT here
+    // essencial has no premium features (corresponds to Profissional)
   ]),
   pro: new Set([
     "customer_emails",
@@ -71,19 +74,23 @@ export function hasFeature(plan: PlanId, feature: PlanFeature): boolean {
 
 /** Max admin users allowed per plan. Unlimited = Infinity */
 export const MAX_USERS_BY_PLAN: Record<PlanId, number> = {
+  basico: 1,
   essencial: 2,
   pro: Infinity,
 };
 
 /** Display name for each plan */
 export const PLAN_LABEL: Record<PlanId, string> = {
-  essencial: "Essencial",
+  basico: "Básico",
+  essencial: "Profissional",
   pro: "Pro",
 };
 
 /** Badge color classes for each plan (Tailwind) */
 export const PLAN_BADGE_CLASSES: Record<PlanId, string> = {
-  essencial:
+  basico:
     "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+  essencial:
+    "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
   pro: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
 };

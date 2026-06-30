@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { removeSessionById } from "@/lib/session-manager";
+import type { PlanId } from "@/types/database";
 import { Laptop, Smartphone, LogOut, ShieldAlert, MonitorSmartphone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
@@ -10,7 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface Props {
   storeId: string;
-  plan: "essencial" | "pro";
+  plan: PlanId;
 }
 
 export function ActiveSessionsSection({ storeId, plan }: Props) {
@@ -67,7 +68,7 @@ export function ActiveSessionsSection({ storeId, plan }: Props) {
     return currentToken === sessionToken;
   };
 
-  const limit = plan === "essencial" ? 2 : Infinity;
+  const limit = plan === "basico" ? 1 : plan === "essencial" ? 2 : Infinity;
   const count = sessions.length;
   const limitReached = count >= limit;
 
@@ -96,9 +97,9 @@ export function ActiveSessionsSection({ storeId, plan }: Props) {
           <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
             {count} / {limit === Infinity ? "Ilimitado" : limit} ativo(s)
           </span>
-          {limitReached && plan === "essencial" && (
+          {limitReached && (plan === "essencial" || plan === "basico") && (
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-              Limite atingido (Essencial)
+              Limite atingido ({plan === "basico" ? "Básico" : "Profissional"})
             </span>
           )}
         </div>
@@ -158,11 +159,11 @@ export function ActiveSessionsSection({ storeId, plan }: Props) {
         </div>
       </div>
 
-      {plan === "essencial" && limitReached && (
+      {(plan === "basico" || plan === "essencial") && limitReached && (
         <div className="p-3 bg-amber-500/5 border border-amber-500/15 rounded-xl flex items-start gap-2.5">
           <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
           <div className="text-xs text-amber-700 dark:text-amber-300">
-            <strong>Precisa de mais conexões?</strong> O plano Essencial limita a 2 dispositivos conectados simultaneamente. Para ter acessos ilimitados e cadastrar mais usuários, faça upgrade para o <strong>Plano Pro</strong>.
+            <strong>Precisa de mais conexões?</strong> O plano {plan === "basico" ? "Básico" : "Profissional"} limita a {limit} dispositivo{limit > 1 ? "s" : ""} conectado{limit > 1 ? "s" : ""} simultaneamente. Para ter acessos ilimitados e cadastrar mais usuários, faça upgrade para o <strong>Plano Pro</strong>.
           </div>
         </div>
       )}

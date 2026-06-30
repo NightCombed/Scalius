@@ -302,6 +302,19 @@ export default function AdminProducts() {
   const [formOpen, setFormOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
 
+  const handleNewProduct = () => {
+    if (store?.plan === "basico" && products.length >= 40) {
+      toast({
+        title: "Limite de produtos atingido",
+        description: "O plano Básico limita a 40 produtos cadastrados. Faça upgrade para o plano Profissional para ter produtos ilimitados.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setEditing(null);
+    setFormOpen(true);
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, {
@@ -625,10 +638,7 @@ export default function AdminProducts() {
               </Button>
               <Button
                 size="sm"
-                onClick={() => {
-                  setEditing(null);
-                  setFormOpen(true);
-                }}
+                onClick={handleNewProduct}
               >
                 <Plus className="h-4 w-4" />
                 <span className="hidden sm:inline ml-1">Novo produto</span>

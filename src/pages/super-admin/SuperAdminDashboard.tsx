@@ -259,7 +259,8 @@ function StoreDialog({ open, onClose, initial, onSaved }: StoreDialogProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="essencial">Essencial</SelectItem>
+                  <SelectItem value="basico">Básico</SelectItem>
+                  <SelectItem value="essencial">Profissional</SelectItem>
                   <SelectItem value="pro">Pro ✨</SelectItem>
                 </SelectContent>
               </Select>
@@ -1359,7 +1360,7 @@ export default function SuperAdminDashboard() {
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="w-44">
-                        {(["essencial", "pro"] as PlanId[]).map((p) => (
+                        {(["basico", "essencial", "pro"] as PlanId[]).map((p) => (
                           <DropdownMenuItem
                             key={p}
                             onClick={() => updatePlan.mutate({ storeId: store.id, plan: p })}
@@ -1665,20 +1666,30 @@ export default function SuperAdminDashboard() {
             <thead>
               <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wide">
                 <th className="pb-3 pr-6 font-medium">Feature</th>
-                <th className="pb-3 px-4 font-medium text-center">Essencial</th>
+                <th className="pb-3 px-4 font-medium text-center">Básico</th>
+                <th className="pb-3 px-4 font-medium text-center">Profissional</th>
                 <th className="pb-3 px-4 font-medium text-center text-violet-600 dark:text-violet-400">Pro</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {[
-                ["E-mails automáticos para a loja", true, true],
-                ["E-mails automáticos para o cliente", false, true],
-                ["Etiqueta Melhor Envio 1-clique", false, true],
-                ["Máximo de usuários admin", "2", "Ilimitado"],
-                ["Sem limite de emails", true, true],
-              ].map(([feature, essencial, pro]) => (
+                ["E-mails automáticos para a loja", true, true, true],
+                ["E-mails automáticos para o cliente", false, false, true],
+                ["Etiqueta Melhor Envio 1-clique", false, false, true],
+                ["Máximo de usuários admin", "1", "2", "Ilimitado"],
+                ["Limite de produtos", "40", "Ilimitado", "Ilimitado"],
+                ["Domínio personalizado", false, true, true],
+                ["Portal do cliente", false, true, true],
+              ].map(([feature, basico, essencial, pro]) => (
                 <tr key={feature as string} className="hover:bg-muted/20 transition-colors">
                   <td className="py-3 pr-6 font-medium">{feature as string}</td>
+                  <td className="py-3 px-4 text-center">
+                    {typeof basico === "boolean" ? (
+                      basico ? <Check className="h-4 w-4 text-emerald-500 mx-auto" /> : <span className="text-muted-foreground text-xs">—</span>
+                    ) : (
+                      <span className="text-sm font-medium">{basico}</span>
+                    )}
+                  </td>
                   <td className="py-3 px-4 text-center">
                     {typeof essencial === "boolean" ? (
                       essencial ? <Check className="h-4 w-4 text-emerald-500 mx-auto" /> : <span className="text-muted-foreground text-xs">—</span>

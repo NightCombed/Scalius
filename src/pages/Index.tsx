@@ -474,54 +474,78 @@ const Index = () => {
 
 
           <div className="pricing-grid">
-            {/* Essencial */}
+            {/* Básico */}
             <div className="pricing-card reveal">
               <div>
-                <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Essencial</h3>
+                <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Básico</h3>
                 <p style={{ color: 'var(--text-muted)', margin: '8px 0 32px 0', fontSize: '1rem' }}>Para quem está dando o primeiro passo digital com a loja.</p>
+                <div className="price-container">
+                  <div className="price">R$ 47<span>/mês</span></div>
+                </div>
+              </div>
+              <ul className="pricing-features">
+                {[
+                  'Até 40 Produtos Cadastrados',
+                  '1 Dispositivo Administrador Conectado',
+                  'Pix Automático (Mercado Pago) e Pix Manual',
+                  'Cálculo de Frete Nacional Automático e Exato (Correios, Jadlog, Azul Cargo e etc.)',
+                  'Etiqueta Nacional Manual',
+                  'Alertas em tempo real para a loja',
+                  'Suporte Padrão via WhatsApp/E-mail',
+                ].map(f => (
+                  <li key={f}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {f}</li>
+                ))}
+              </ul>
+              <a href="https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Básico%20do%20Scalius." target="_blank" rel="noopener noreferrer" className="btn" style={{ width: '100%', justifyContent: 'center', background: 'white', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}>Assinar Básico</a>
+            </div>
+
+            {/* Profissional */}
+            <div className="pricing-card pro reveal" style={{ transitionDelay: '0.1s' }}>
+              <div className="price-badge">Mais Popular</div>
+              <div>
+                <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Profissional</h3>
+                <p style={{ color: 'var(--text-muted)', margin: '8px 0 32px 0', fontSize: '1rem' }}>Para quem quer máximo desempenho e profissionalismo.</p>
                 <div className="price-container">
                   <div className="price">R$ 89<span>/mês</span></div>
                 </div>
               </div>
               <ul className="pricing-features">
+                <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong style={{ color: 'var(--primary)' }}>Tudo do Básico, mais:</strong></li>
                 {[
                   'Produtos, Pedidos e Estoque Ilimitados',
-                  'Pix Automático (Mercado Pago) e Pix Manual',
+                  '2 Dispositivos Administradores Conectados',
                   'Suporte a Domínio 100% personalizado (ex: sualoja.com.br)',
-                  'Cálculo de Frete Nacional Automático e Exato (Correios, Jadlog, Azul Cargo e etc.)',
-                  'Etiqueta Nacional Manual',
                   'Portal do Cliente com Login, Histórico e Acompanhamento',
-                  'Alertas em tempo real para a loja',
-                  '2 Dispositivos Administradores',
+                  'Suporte Prioritário via WhatsApp/E-mail',
                 ].map(f => (
-                  <li key={f}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {f}</li>
+                  <li key={f}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>{f}</strong></li>
                 ))}
               </ul>
-              <a href="https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Essencial%20do%20Scalius." target="_blank" rel="noopener noreferrer" className="btn" style={{ width: '100%', justifyContent: 'center', background: 'white', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}>Assinar Essencial</a>
+              <a href="https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Profissional%20do%20Scalius." target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Assinar Profissional</a>
             </div>
 
             {/* Pro */}
-            <div className="pricing-card pro reveal" style={{ transitionDelay: '0.1s' }}>
-              <div className="price-badge">Mais Popular</div>
+            <div className="pricing-card reveal" style={{ transitionDelay: '0.2s' }}>
               <div>
                 <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Pro</h3>
-                <p style={{ color: 'var(--text-muted)', margin: '8px 0 32px 0', fontSize: '1rem' }}>Para quem quer máximo desempenho e profissionalismo.</p>
+                <p style={{ color: 'var(--text-muted)', margin: '8px 0 32px 0', fontSize: '1rem' }}>Para quem quer escala e automação completa.</p>
                 <div className="price-container">
                   <div className="price">R$ 159<span>/mês</span></div>
                 </div>
               </div>
               <ul className="pricing-features">
-                <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong style={{ color: 'var(--primary)' }}>Tudo do Essencial, mais:</strong></li>
+                <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>Tudo do Profissional, mais:</strong></li>
                 {[
                   'Etiqueta Nacional em 1 Clique',
                   'E-mails Automáticos para o Cliente por etapa do pedido',
                   'Usuários Administradores Ilimitados',
                   'Métricas Avançadas',
+                  'Suporte VIP / Atendimento prioritário dedicado',
                 ].map(f => (
                   <li key={f}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>{f}</strong></li>
                 ))}
               </ul>
-              <a href="https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Pro%20do%20Scalius." target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Assinar Pro</a>
+              <a href="https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Pro%20do%20Scalius." target="_blank" rel="noopener noreferrer" className="btn" style={{ width: '100%', justifyContent: 'center', background: 'white', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}>Assinar Pro</a>
             </div>
           </div>
           
