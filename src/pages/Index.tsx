@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import '../scalius-landing.css';
 import { ContainerScroll } from '../components/ContainerScroll';
-import { Rocket } from 'lucide-react';
+import { Rocket, Instagram } from 'lucide-react';
 
 const Index = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -581,9 +581,13 @@ const Index = () => {
           </a>
         </div>
         <p>© {new Date().getFullYear()} Scalius. Todos os direitos reservados.</p>
-        <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
+        <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
           <a href="/politica-de-privacidade" style={{ color: '#fff', textDecoration: 'none' }}>Política de Privacidade</a>
           <a href="/termos-de-servico" style={{ color: '#fff', textDecoration: 'none' }}>Termos de Serviço</a>
+          <a href="https://www.instagram.com/scalius.com.br/" target="_blank" rel="noopener noreferrer" style={{ color: '#fff', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <Instagram size={16} />
+            @scalius.com.br
+          </a>
         </div>
       </footer>
 
