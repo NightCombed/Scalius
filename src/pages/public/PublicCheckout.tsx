@@ -1262,6 +1262,20 @@ function PublicCheckoutInner() {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="reference"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ponto de referência (Opcional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: Próximo ao mercado, portão verde..." maxLength={120} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </section>
           )}
