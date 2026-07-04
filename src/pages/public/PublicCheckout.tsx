@@ -1242,7 +1242,7 @@ function PublicCheckoutInner() {
                       <FormItem>
                         <FormLabel>Complemento</FormLabel>
                         <FormControl>
-                          <Input placeholder="Apto 45" maxLength={120} {...field} />
+                          <Input placeholder="Apto, bloco, quadra, lote..." maxLength={120} {...field} />
                         </FormControl>
                       </FormItem>
                     )}
