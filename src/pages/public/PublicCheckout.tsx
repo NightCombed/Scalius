@@ -50,8 +50,6 @@ const baseSchema = z.object({
   neighborhood: z.string().trim().max(80).optional(),
   city: z.string().trim().max(100).optional(),
   state: z.string().trim().max(2).optional(),
-  quadra: z.string().trim().max(20).optional(),
-  lote: z.string().trim().max(20).optional(),
   complement: z.string().trim().max(120).optional(),
   reference: z.string().trim().max(120).optional(),
   
@@ -69,10 +67,8 @@ const checkoutSchema = baseSchema.superRefine((data, ctx) => {
     if (!data.street || data.street.trim().length < 1) {
       ctx.addIssue({ code: "custom", path: ["street"], message: "Informe a rua" });
     }
-    const hasNumber = data.number && data.number.trim().length > 0;
-    const hasLote = data.lote && data.lote.trim().length > 0;
-    if (!hasNumber && !hasLote) {
-      ctx.addIssue({ code: "custom", path: ["number"], message: "Informe o número ou o lote" });
+    if (!data.number || data.number.trim().length < 1) {
+      ctx.addIssue({ code: "custom", path: ["number"], message: "Informe o número" });
     }
     if (!data.neighborhood || data.neighborhood.trim().length < 1) {
       ctx.addIssue({ code: "custom", path: ["neighborhood"], message: "Informe o bairro" });
@@ -188,8 +184,6 @@ function PublicCheckoutInner() {
       neighborhood: "",
       city: "",
       state: "",
-      quadra: "",
-      lote: "",
       complement: "",
       reference: "",
       immediate: true,
@@ -594,9 +588,7 @@ function PublicCheckoutInner() {
         const complementSegments: string[] = [];
         
         for (const seg of segments) {
-          if (seg.startsWith("QD: ")) form.setValue("quadra", seg.replace("QD: ", ""));
-          else if (seg.startsWith("LT: ")) form.setValue("lote", seg.replace("LT: ", ""));
-          else if (seg.startsWith("Ref: ")) form.setValue("reference", seg.replace("Ref: ", ""));
+          if (seg.startsWith("Ref: ")) form.setValue("reference", seg.replace("Ref: ", ""));
           else complementSegments.push(seg);
         }
         
@@ -638,15 +630,13 @@ function PublicCheckoutInner() {
         p_delivery_date: deliveryDate,
         p_notes: values.notes || null,
         p_address_street: isDelivery ? (values.street ?? null) : null,
-        p_address_number: isDelivery ? (values.number?.trim() || null) : null,
+        p_address_number: isDelivery ? (values.number ?? null) : null,
         p_address_neighborhood: isDelivery ? (values.neighborhood ?? null) : null,
         p_address_city: isDelivery ? (values.city ?? null) : null,
         p_address_state: isDelivery ? (values.state ?? null) : null,
         p_national_shipping_cep: values.postal_code ? values.postal_code.replace(/\D/g,"") : null,
         p_address_complement: isDelivery ? (
           [
-            values.quadra ? `QD: ${values.quadra}` : null,
-            values.lote ? `LT: ${values.lote}` : null,
             values.complement,
             values.reference ? `Ref: ${values.reference}` : null
           ].filter(Boolean).join(", ") || null
@@ -1224,7 +1214,7 @@ function PublicCheckoutInner() {
                     <FormItem>
                       <FormLabel>Rua *</FormLabel>
                       <FormControl>
-                        <Input placeholder="Rua, Avenida, Travessa..." maxLength={120} {...field} />
+                        <Input placeholder="Rua, Avenida, Quadra..." maxLength={120} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1237,9 +1227,9 @@ function PublicCheckoutInner() {
                     name="number"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Número {(!watched.lote || watched.lote.trim() === "") && " *"}</FormLabel>
+                        <FormLabel>Número *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ex: 123" maxLength={20} {...field} />
+                          <Input placeholder="Ex: 123 ou Lote 05" maxLength={20} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -1254,35 +1244,6 @@ function PublicCheckoutInner() {
                         <FormControl>
                           <Input placeholder="Apto 45" maxLength={120} {...field} />
                         </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="quadra"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Quadra (Opcional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Ex: 103 Norte" maxLength={20} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="lote"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Lote (Opcional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Ex: 05" maxLength={20} {...field} />
-                        </FormControl>
-                        <FormMessage />
                       </FormItem>
                     )}
                   />
