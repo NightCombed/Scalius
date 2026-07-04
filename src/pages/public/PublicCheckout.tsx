@@ -69,8 +69,10 @@ const checkoutSchema = baseSchema.superRefine((data, ctx) => {
     if (!data.street || data.street.trim().length < 1) {
       ctx.addIssue({ code: "custom", path: ["street"], message: "Informe a rua" });
     }
-    if (!data.number || data.number.length < 1) {
-      ctx.addIssue({ code: "custom", path: ["number"], message: "Informe o número" });
+    const hasNumber = data.number && data.number.trim().length > 0;
+    const hasLote = data.lote && data.lote.trim().length > 0;
+    if (!hasNumber && !hasLote) {
+      ctx.addIssue({ code: "custom", path: ["number"], message: "Informe o número ou o lote" });
     }
     if (!data.neighborhood || data.neighborhood.trim().length < 1) {
       ctx.addIssue({ code: "custom", path: ["neighborhood"], message: "Informe o bairro" });
@@ -636,7 +638,7 @@ function PublicCheckoutInner() {
         p_delivery_date: deliveryDate,
         p_notes: values.notes || null,
         p_address_street: isDelivery ? (values.street ?? null) : null,
-        p_address_number: isDelivery ? (values.number ?? null) : null,
+        p_address_number: isDelivery ? (values.number?.trim() || null) : null,
         p_address_neighborhood: isDelivery ? (values.neighborhood ?? null) : null,
         p_address_city: isDelivery ? (values.city ?? null) : null,
         p_address_state: isDelivery ? (values.state ?? null) : null,
@@ -1235,7 +1237,7 @@ function PublicCheckoutInner() {
                     name="number"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Número *</FormLabel>
+                        <FormLabel>Número {(!watched.lote || watched.lote.trim() === "") && " *"}</FormLabel>
                         <FormControl>
                           <Input placeholder="Ex: 123" maxLength={20} {...field} />
                         </FormControl>
