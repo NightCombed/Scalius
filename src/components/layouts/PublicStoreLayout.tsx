@@ -192,24 +192,22 @@ function PublicStoreShell() {
             )}
           </div>
           <div className="md:text-right text-muted-foreground">
-            {store.plan !== 'pro' && (
-              <div className="flex items-center gap-1.5 md:justify-end mb-2">
-                <span className="text-sm">Feito com</span>
-                <a
-                  href="https://scalius.com.br"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity"
-                  aria-label="Feito com Scalius"
-                >
-                  <img
-                    src="/scalius-logo-dark.png"
-                    alt="Scalius"
-                    className="h-5 w-auto object-contain"
-                  />
-                </a>
-              </div>
-            )}
+            <div className="flex items-center gap-1.5 md:justify-end mb-2">
+              <span className="text-sm">Feito com</span>
+              <a
+                href="https://scalius.com.br"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity"
+                aria-label="Feito com Scalius"
+              >
+                <img
+                  src="/scalius-logo-dark.png"
+                  alt="Scalius"
+                  className="h-5 w-auto object-contain"
+                />
+              </a>
+            </div>
             <div className="flex flex-wrap gap-3 md:justify-end">
               <Link to="/politica-de-privacidade" className="hover:text-primary">
                 Política de Privacidade
