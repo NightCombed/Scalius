@@ -75,11 +75,15 @@ const Index = () => {
       }
 
       // 2. Disparar pixel
-      const firstName = leadName.trim().split(' ')[0] || '';
-      const phoneInput = document.getElementById('lead-whatsapp') as HTMLInputElement | null;
-      const rawPhone = phoneInput ? phoneInput.value : leadWhatsApp;
-      const cleanPhoneDigitsFromInput = rawPhone.replace(/\D/g, '');
-      const cleanPhone = '+55' + cleanPhoneDigitsFromInput;
+      const nameParts = leadName.trim().split(/\s+/);
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
+      const phoneInput = document.getElementById('lead-whatsapp') as HTMLInputElement;
+      const emailInput = document.getElementById('lead-email') as HTMLInputElement;
+
+      const cleanPhone = '55' + phoneInput.value.replace(/\D/g, '');
+      const emailValue = emailInput ? emailInput.value.trim().toLowerCase() : '';
 
       if (typeof window !== 'undefined' && window.fbq) {
         window.fbq('track', 'Lead', {
@@ -88,7 +92,8 @@ const Index = () => {
         }, {
           ph: cleanPhone,
           fn: firstName,
-          ...(leadEmail.trim() ? { em: leadEmail.trim().toLowerCase() } : {})
+          ln: lastName,
+          ...(emailValue ? { em: emailValue } : {})
         });
       }
 
