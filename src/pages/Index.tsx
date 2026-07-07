@@ -719,7 +719,13 @@ const Index = () => {
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
             </button>
+            <div className="lead-modal-logo-wrapper">
+              <img src="/scalius-logo-dark.png" alt="Scalius" className="lead-modal-logo" />
+            </div>
             <div className="lead-modal-header">
+              <div className="lead-modal-badge">
+                Vamos <span className="highlight">começar</span>
+              </div>
               <h2>Informe os dados abaixo para prosseguir.</h2>
               <p>Você será redirecionado para concluir seu atendimento no WhatsApp.</p>
             </div>
