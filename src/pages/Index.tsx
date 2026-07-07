@@ -2,9 +2,108 @@ import React, { useEffect, useRef, useState } from 'react';
 import '../scalius-landing.css';
 import { ContainerScroll } from '../components/ContainerScroll';
 import { Rocket, Instagram } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [leadName, setLeadName] = useState('');
+  const [leadWhatsApp, setLeadWhatsApp] = useState('');
+  const [leadEmail, setLeadEmail] = useState('');
+  const [selectedPlan, setSelectedPlan] = useState<{ name: string; url: string } | null>(null);
+  const [formErrors, setFormErrors] = useState<{ name?: string; whatsapp?: string }>({});
+  const [isSubmittingLead, setIsSubmittingLead] = useState(false);
+
+  const formatWhatsApp = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+  };
+
+  const handleWhatsAppChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLeadWhatsApp(formatWhatsApp(e.target.value));
+  };
+
+  const handleOpenModal = (e: React.MouseEvent, planName: string, whatsappUrl: string) => {
+    e.preventDefault();
+    setSelectedPlan({ name: planName, url: whatsappUrl });
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setLeadName('');
+    setLeadWhatsApp('');
+    setLeadEmail('');
+    setFormErrors({});
+  };
+
+  const handleLeadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPlan) return;
+
+    const errors: { name?: string; whatsapp?: string } = {};
+    if (!leadName.trim()) {
+      errors.name = 'Nome completo é obrigatório.';
+    }
+    const cleanPhoneDigits = leadWhatsApp.replace(/\D/g, '');
+    if (!leadWhatsApp.trim() || cleanPhoneDigits.length < 10) {
+      errors.whatsapp = 'WhatsApp válido é obrigatório.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    setIsSubmittingLead(true);
+
+    try {
+      // 1. Salvar na base
+      const { error } = await supabase.from('leads').insert({
+        name: leadName.trim(),
+        whatsapp: leadWhatsApp,
+        email: leadEmail.trim() || null,
+        plan_name: selectedPlan.name
+      });
+
+      if (error) {
+        console.error('Erro ao salvar lead:', error);
+      }
+
+      // 2. Disparar pixel
+      const firstName = leadName.trim().split(' ')[0] || '';
+      let cleanPhone = cleanPhoneDigits;
+      if (cleanPhone.length > 0 && !cleanPhone.startsWith('55') && cleanPhone.length <= 11) {
+        cleanPhone = '55' + cleanPhone;
+      }
+
+      if (typeof window !== 'undefined' && window.fbq) {
+        window.fbq('track', 'Lead', {
+          content_name: 'Plano ' + selectedPlan.name,
+          currency: 'BRL'
+        }, {
+          ph: cleanPhone,
+          fn: firstName,
+          ...(leadEmail.trim() ? { em: leadEmail.trim().toLowerCase() } : {})
+        });
+      }
+
+      // 3. Redirecionar após 300ms
+      setTimeout(() => {
+        window.open(selectedPlan.url, '_blank', 'noopener,noreferrer');
+        handleCloseModal();
+        setIsSubmittingLead(false);
+      }, 300);
+
+    } catch (err) {
+      console.error('Erro inesperado no fluxo de lead:', err);
+      setIsSubmittingLead(false);
+    }
+  };
 
   useEffect(() => {
     try {
@@ -496,7 +595,7 @@ const Index = () => {
                   <li key={f}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {f}</li>
                 ))}
               </ul>
-              <a href="https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Básico%20do%20Scalius." target="_blank" rel="noopener noreferrer" className="btn" style={{ width: '100%', justifyContent: 'center', background: 'white', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}>Assinar Básico</a>
+              <a href="#" onClick={(e) => handleOpenModal(e, 'Básico', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Básico%20do%20Scalius.')} className="btn" style={{ width: '100%', justifyContent: 'center', background: 'white', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}>Assinar Básico</a>
             </div>
 
             {/* Profissional */}
@@ -521,7 +620,7 @@ const Index = () => {
                   <li key={f}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>{f}</strong></li>
                 ))}
               </ul>
-              <a href="https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Profissional%20do%20Scalius." target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Assinar Profissional</a>
+              <a href="#" onClick={(e) => handleOpenModal(e, 'Profissional', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Profissional%20do%20Scalius.')} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Assinar Profissional</a>
             </div>
 
             {/* Pro */}
@@ -545,7 +644,7 @@ const Index = () => {
                   <li key={f}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>{f}</strong></li>
                 ))}
               </ul>
-              <a href="https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Pro%20do%20Scalius." target="_blank" rel="noopener noreferrer" className="btn" style={{ width: '100%', justifyContent: 'center', background: 'white', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}>Assinar Pro</a>
+              <a href="#" onClick={(e) => handleOpenModal(e, 'Pro', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Pro%20do%20Scalius.')} className="btn" style={{ width: '100%', justifyContent: 'center', background: 'white', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}>Assinar Pro</a>
             </div>
           </div>
           
@@ -610,6 +709,69 @@ const Index = () => {
           </svg>
         </div>
       </a>
+
+      {isModalOpen && (
+        <div className="lead-modal-overlay" onClick={handleCloseModal}>
+          <div className="lead-modal-container" onClick={(e) => e.stopPropagation()}>
+            <button className="lead-modal-close" onClick={handleCloseModal} aria-label="Fechar">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+            <div className="lead-modal-header">
+              <h2>Informe os dados abaixo para prosseguir.</h2>
+              <p>Você será redirecionado para concluir seu atendimento no WhatsApp.</p>
+            </div>
+            <form onSubmit={handleLeadSubmit} className="lead-modal-form">
+              <div className="form-group">
+                <label htmlFor="lead-name">Nome Completo <span className="required">*</span></label>
+                <input
+                  type="text"
+                  id="lead-name"
+                  value={leadName}
+                  onChange={(e) => setLeadName(e.target.value)}
+                  placeholder="Seu nome completo"
+                  className={formErrors.name ? 'input-error' : ''}
+                  disabled={isSubmittingLead}
+                />
+                {formErrors.name && <span className="error-message">{formErrors.name}</span>}
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="lead-whatsapp">WhatsApp <span className="required">*</span></label>
+                <input
+                  type="text"
+                  id="lead-whatsapp"
+                  value={leadWhatsApp}
+                  onChange={handleWhatsAppChange}
+                  placeholder="(00) 00000-0000"
+                  className={formErrors.whatsapp ? 'input-error' : ''}
+                  maxLength={15}
+                  disabled={isSubmittingLead}
+                />
+                {formErrors.whatsapp && <span className="error-message">{formErrors.whatsapp}</span>}
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="lead-email">E-mail <span className="optional">(Opcional)</span></label>
+                <input
+                  type="email"
+                  id="lead-email"
+                  value={leadEmail}
+                  onChange={(e) => setLeadEmail(e.target.value)}
+                  placeholder="seu.email@exemplo.com"
+                  disabled={isSubmittingLead}
+                />
+              </div>
+              
+              <button type="submit" className="btn btn-brand btn-submit-lead" disabled={isSubmittingLead}>
+                {isSubmittingLead ? 'Processando...' : 'Avançar para o WhatsApp'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );
