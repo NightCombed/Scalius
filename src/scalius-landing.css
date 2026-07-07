@@ -2201,16 +2201,20 @@
   font-size: 0.95rem;
   font-weight: 700;
   justify-content: center;
-  box-shadow: 0 8px 24px rgba(255, 94, 0, 0.25);
+  box-shadow: none !important;
   cursor: pointer;
   border: none;
   width: 100%;
 }
 
+.scalius-landing-wrapper .lead-modal-form .btn-submit-lead:hover {
+  box-shadow: none !important;
+}
+
 .scalius-landing-wrapper .lead-modal-form .btn-submit-lead:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  box-shadow: none;
+  box-shadow: none !important;
 }
 
 @keyframes modalFadeIn {
