@@ -595,7 +595,7 @@ const Index = () => {
                   <li key={f}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {f}</li>
                 ))}
               </ul>
-              <a href="#" onClick={(e) => handleOpenModal(e, 'Básico', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Básico%20do%20Scalius.')} className="btn" style={{ width: '100%', justifyContent: 'center', background: 'white', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}>Assinar Básico</a>
+              <a href="#" onClick={(e) => handleOpenModal(e, 'Básico', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Básico%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', justifyContent: 'center' }}>Assinar Básico</a>
             </div>
 
             {/* Profissional */}
@@ -620,7 +620,7 @@ const Index = () => {
                   <li key={f}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>{f}</strong></li>
                 ))}
               </ul>
-              <a href="#" onClick={(e) => handleOpenModal(e, 'Profissional', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Profissional%20do%20Scalius.')} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Assinar Profissional</a>
+              <a href="#" onClick={(e) => handleOpenModal(e, 'Profissional', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Profissional%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', justifyContent: 'center' }}>Assinar Profissional</a>
             </div>
 
             {/* Pro */}
@@ -644,7 +644,7 @@ const Index = () => {
                   <li key={f}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>{f}</strong></li>
                 ))}
               </ul>
-              <a href="#" onClick={(e) => handleOpenModal(e, 'Pro', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Pro%20do%20Scalius.')} className="btn" style={{ width: '100%', justifyContent: 'center', background: 'white', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}>Assinar Pro</a>
+              <a href="#" onClick={(e) => handleOpenModal(e, 'Pro', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Pro%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', justifyContent: 'center' }}>Assinar Pro</a>
             </div>
           </div>
           
