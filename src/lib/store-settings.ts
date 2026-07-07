@@ -14,11 +14,7 @@ export function mapStoreSettings(data: any): StoreSettings {
     brand_color: data.primary_color || "22 100% 50%",
     secondary_color: data.secondary_color || "0 0% 0%",
     whatsapp: data.whatsapp_number,
-    address: [
-      [data.address_street, data.address_number].filter(Boolean).join(", "),
-      data.address_neighborhood,
-      [data.address_city, data.address_state].filter(Boolean).join(" — ")
-    ].filter(Boolean).join(" — "),
+    address: data.address_street || "",
     address_street: data.address_street,
     address_number: data.address_number,
     address_neighborhood: data.address_neighborhood,
