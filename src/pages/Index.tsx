@@ -76,10 +76,10 @@ const Index = () => {
 
       // 2. Disparar pixel
       const firstName = leadName.trim().split(' ')[0] || '';
-      let cleanPhone = cleanPhoneDigits;
-      if (cleanPhone.length > 0 && !cleanPhone.startsWith('55') && cleanPhone.length <= 11) {
-        cleanPhone = '55' + cleanPhone;
-      }
+      const phoneInput = document.getElementById('lead-whatsapp') as HTMLInputElement | null;
+      const rawPhone = phoneInput ? phoneInput.value : leadWhatsApp;
+      const cleanPhoneDigitsFromInput = rawPhone.replace(/\D/g, '');
+      const cleanPhone = '+55' + cleanPhoneDigitsFromInput;
 
       if (typeof window !== 'undefined' && window.fbq) {
         window.fbq('track', 'Lead', {
