@@ -86,14 +86,25 @@ const Index = () => {
       const emailValue = emailInput ? emailInput.value.trim().toLowerCase() : '';
 
       if (typeof window !== 'undefined' && window.fbq) {
-        window.fbq('track', 'Lead', {
-          content_name: 'Plano ' + selectedPlan.name,
-          currency: 'BRL'
-        }, {
+        // Re-initialize to ensure global advanced matching is updated
+        window.fbq('init', '2307686380037006', {
           ph: cleanPhone,
           fn: firstName,
           ln: lastName,
           ...(emailValue ? { em: emailValue } : {})
+        });
+
+        // Track Lead event with explicit event-level user_data
+        window.fbq('track', 'Lead', {
+          content_name: 'Plano ' + selectedPlan.name,
+          currency: 'BRL'
+        }, {
+          user_data: {
+            ph: cleanPhone,
+            fn: firstName,
+            ln: lastName,
+            ...(emailValue ? { em: emailValue } : {})
+          }
         });
       }
 
