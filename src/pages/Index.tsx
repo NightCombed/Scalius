@@ -63,11 +63,22 @@ const Index = () => {
 
     try {
       // 1. Salvar na base
+      const utmSource = sessionStorage.getItem('utm_source');
+      const utmMedium = sessionStorage.getItem('utm_medium');
+      const utmCampaign = sessionStorage.getItem('utm_campaign');
+      const utmContent = sessionStorage.getItem('utm_content');
+      const fbclid = sessionStorage.getItem('fbclid');
+
       const { error } = await supabase.from('leads').insert({
         name: leadName.trim(),
         whatsapp: leadWhatsApp,
         email: leadEmail.trim() || null,
-        plan_name: selectedPlan.name
+        plan_name: selectedPlan.name,
+        utm_source: utmSource,
+        utm_medium: utmMedium,
+        utm_campaign: utmCampaign,
+        utm_content: utmContent,
+        fbclid: fbclid
       });
 
       if (error) {
@@ -86,31 +97,38 @@ const Index = () => {
       const emailValue = emailInput ? emailInput.value.trim().toLowerCase() : '';
 
       if (typeof window !== 'undefined' && window.fbq) {
-        // Re-initialize to ensure global advanced matching is updated
-        window.fbq('init', '2307686380037006', {
+        // Set user data for Advanced Matching without re-initializing the Pixel
+        window.fbq('set', 'userData', {
           ph: cleanPhone,
           fn: firstName,
           ln: lastName,
           ...(emailValue ? { em: emailValue } : {})
         });
 
-        // Track Lead event with explicit event-level user_data
+        // Track Lead event with standard parameters
         window.fbq('track', 'Lead', {
-          content_name: 'Plano ' + selectedPlan.name,
-          currency: 'BRL'
-        }, {
-          user_data: {
-            ph: cleanPhone,
-            fn: firstName,
-            ln: lastName,
-            ...(emailValue ? { em: emailValue } : {})
-          }
+          content_name: 'Plano ' + selectedPlan.name
         });
       }
 
       // 3. Redirecionar após 300ms
       setTimeout(() => {
-        window.open(selectedPlan.url, '_blank', 'noopener,noreferrer');
+        let finalUrl = selectedPlan.url;
+        try {
+          const urlObj = new URL(finalUrl);
+          
+          if (utmSource) urlObj.searchParams.set('utm_source', utmSource);
+          if (utmMedium) urlObj.searchParams.set('utm_medium', utmMedium);
+          if (utmCampaign) urlObj.searchParams.set('utm_campaign', utmCampaign);
+          if (utmContent) urlObj.searchParams.set('utm_content', utmContent);
+          if (fbclid) urlObj.searchParams.set('fbclid', fbclid);
+          
+          finalUrl = urlObj.toString();
+        } catch (e) {
+          console.error('Erro ao injetar UTMs no link do WhatsApp:', e);
+        }
+
+        window.open(finalUrl, '_blank', 'noopener,noreferrer');
         handleCloseModal();
         setIsSubmittingLead(false);
       }, 300);
@@ -120,6 +138,26 @@ const Index = () => {
       setIsSubmittingLead(false);
     }
   };
+
+  useEffect(() => {
+    try {
+      // Capturar e guardar parâmetros UTM e fbclid se presentes na URL
+      const searchParams = new URLSearchParams(window.location.search);
+      const uSource = searchParams.get('utm_source');
+      const uMedium = searchParams.get('utm_medium');
+      const uCampaign = searchParams.get('utm_campaign');
+      const uContent = searchParams.get('utm_content');
+      const fclid = searchParams.get('fbclid');
+
+      if (uSource) sessionStorage.setItem('utm_source', uSource);
+      if (uMedium) sessionStorage.setItem('utm_medium', uMedium);
+      if (uCampaign) sessionStorage.setItem('utm_campaign', uCampaign);
+      if (uContent) sessionStorage.setItem('utm_content', uContent);
+      if (fclid) sessionStorage.setItem('fbclid', fclid);
+    } catch (e) {
+      console.error('Erro ao extrair parâmetros UTM e fbclid:', e);
+    }
+  }, []);
 
   useEffect(() => {
     try {

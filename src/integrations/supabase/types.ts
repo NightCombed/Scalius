@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -397,25 +397,40 @@ export type Database = {
         Row: {
           created_at: string
           email: string | null
+          fbclid: string | null
           id: string
           name: string
           plan_name: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
           whatsapp: string
         }
         Insert: {
           created_at?: string
           email?: string | null
+          fbclid?: string | null
           id?: string
           name: string
           plan_name: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
           whatsapp: string
         }
         Update: {
           created_at?: string
           email?: string | null
+          fbclid?: string | null
           id?: string
           name?: string
           plan_name?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
           whatsapp?: string
         }
         Relationships: []
