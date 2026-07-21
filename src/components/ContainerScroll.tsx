@@ -68,6 +68,17 @@ export const ContainerScroll: React.FC<ContainerScrollProps> = ({ titleComponent
       className="relative pt-16 pb-[250px] md:pt-24 md:pb-[440px] px-4 overflow-visible"
       style={{ perspective: "1200px" }}
     >
+      {/* Background Grid com degradê suave */}
+      <div 
+        className="absolute inset-0 pointer-events-none -z-10"
+        style={{
+          backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.08) 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+          backgroundPosition: "center center",
+          WebkitMaskImage: "linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)",
+          maskImage: "linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)",
+        }}
+      />
       {/* Cabeçalho da seção */}
       <motion.div
         style={{ translateY }}

@@ -1,12 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
 import '../scalius-landing.css';
 import { ContainerScroll } from '../components/ContainerScroll';
-import { Rocket, Instagram } from 'lucide-react';
+import { Rocket, Instagram, ArrowRight } from 'lucide-react';
+import ShowcaseFlowPath from '../components/ShowcaseFlowPath';
 import { supabase } from '@/integrations/supabase/client';
+import { CatalogAnimation } from '../components/animations/CatalogAnimation';
+import { PaymentAnimation } from '../components/animations/PaymentAnimation';
+import { ShippingAnimation } from '../components/animations/ShippingAnimation';
 
 const Index = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const showcaseContainerRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = useState(1);
 
+  const handleTabChange = (newTab: number) => {
+    setActiveTab(newTab);
+  };
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [leadName, setLeadName] = useState('');
   const [leadWhatsApp, setLeadWhatsApp] = useState('');
@@ -227,20 +236,7 @@ const Index = () => {
         }, 3000);
       }
 
-      // Tabs
-      const tabBtns = document.querySelectorAll('.tab-btn');
-      tabBtns.forEach(btn => {
-        btn.setAttribute('aria-expanded', btn.classList.contains('active') ? 'true' : 'false');
-        btn.addEventListener('click', () => {
-          tabBtns.forEach(b => b.classList.remove('active'));
-          tabBtns.forEach(b => b.setAttribute('aria-expanded', 'false'));
-          btn.classList.add('active');
-          btn.setAttribute('aria-expanded', 'true');
-          const step = btn.getAttribute('data-step');
-          const wrapper = btn.closest('.tabs-wrapper') as HTMLElement | null;
-          if (step && wrapper) wrapper.dataset.step = step;
-        });
-      });
+      // Tabs logic is now managed by React state
 
       // FAQ Accordion
       const faqQuestions = document.querySelectorAll('.faq-question');
@@ -307,7 +303,12 @@ const Index = () => {
 
             <div className="hero-cta-group">
               <div className="hero-btns">
-                <a href="#precos" className="btn btn-brand">Criar minha loja</a>
+                <a href="#precos" className="btn btn-brand">
+                  Começar Agora
+                  <span className="btn-icon-circle">
+                    <ArrowRight size={18} color="var(--primary)" />
+                  </span>
+                </a>
               </div>
             </div>
 
@@ -451,9 +452,9 @@ const Index = () => {
       </section>
 
       {/* PRODUCT SHOWCASE ZIG-ZAG */}
-      <section className="section" id="recursos" style={{ paddingTop: '44px' }}>
-        <div className="container">
-          <div className="bento-header reveal" style={{ marginBottom: '72px' }}>
+      <section className="section" id="recursos">
+        <div className="container" ref={showcaseContainerRef} style={{ position: 'relative' }}>
+          <div className="bento-header reveal">
             <h2>Um arsenal completo.</h2>
             <p>Abaixo detalhamos a artilharia pesada do Scalius para você focar apenas em faturar e escalar.</p>
           </div>
@@ -569,6 +570,8 @@ const Index = () => {
               />
             </div>
           </div>
+
+          <ShowcaseFlowPath containerRef={showcaseContainerRef} />
         </div>
       </section>
 
@@ -579,39 +582,58 @@ const Index = () => {
             <h2>Seu negócio rodando no piloto automático.</h2>
             <p>Veja como é simples iniciar e escalar suas vendas com o Scalius.</p>
           </div>
-          <div className="tabs-wrapper process-wrapper reveal" data-step="1" style={{ transitionDelay: '0.1s' }}>
-            <div className="process-progress-head">
-              <span className="process-progress-label">
-                <span>Faturando</span>
-                <Rocket className="process-progress-rocket" aria-hidden="true" />
-              </span>
-            </div>
-            <div className="process-progress" aria-hidden="true">
-              <span className="process-progress-fill"></span>
-            </div>
+          <div className="tabs-wrapper process-wrapper reveal" data-step={activeTab} style={{ transitionDelay: '0.1s' }}>
+            <div className="grid lg:grid-cols-2 gap-8 items-center w-full">
+              <div className="flex flex-col relative w-full gap-[18px] lg:gap-[22px] order-last lg:order-first">
+                <div className="process-progress-head">
+                  <span className="process-progress-label">
+                    <span>Faturando</span>
+                    <Rocket className="process-progress-rocket" aria-hidden="true" />
+                  </span>
+                </div>
+                <div className="process-progress" aria-hidden="true">
+                  <span className="process-progress-fill"></span>
+                </div>
 
-            <div className="tabs-list process-steps">
-              <button className="tab-btn process-step active" data-tab="tab-1" data-step="1" aria-expanded="true">
-                <span className="process-step-number">1</span>
-                <h3>Crie seu Catálogo.</h3>
-                <div className="process-step-body">
-                  <p>Cadastre seus produtos e personalize sua loja com fotos, preços, variações e muito mais. Deixe sua vitrine com um visual único, profissional e a identidade do seu negócio.</p>
+                <div className="tabs-list process-steps">
+                  <button className={`tab-btn process-step ${activeTab === 1 ? 'active' : ''}`} data-tab="tab-1" data-step="1" aria-expanded={activeTab === 1} onClick={() => handleTabChange(1)}>
+                    <span className="process-step-number">1</span>
+                    <h3>Crie seu Catálogo.</h3>
+                    <div className="process-step-body">
+                      <p>Cadastre seus produtos e personalize sua loja com fotos, preços, variações e muito mais. Deixe sua vitrine com um visual único, profissional e a identidade do seu negócio.</p>
+                    </div>
+                  </button>
+                  <div className={`lg:hidden w-full overflow-hidden transition-all duration-500 ease-in-out ${activeTab === 1 ? 'max-h-[600px] opacity-100 mt-2 mb-6' : 'max-h-0 opacity-0 m-0'}`}>
+                    <CatalogAnimation />
+                  </div>
+                  <button className={`tab-btn process-step ${activeTab === 2 ? 'active' : ''}`} data-tab="tab-2" data-step="2" aria-expanded={activeTab === 2} onClick={() => handleTabChange(2)}>
+                    <span className="process-step-number">2</span>
+                    <h3>Configure seus Pagamentos.</h3>
+                    <div className="process-step-body">
+                      <p>Ative o recebimento via Pix. Ao selecionar o Pix automático, todo o fluxo de checkout e aprovação acontece de forma automática, sem a sua intervenção.</p>
+                    </div>
+                  </button>
+                  <div className={`lg:hidden w-full overflow-hidden transition-all duration-500 ease-in-out ${activeTab === 2 ? 'max-h-[600px] opacity-100 mt-2 mb-6' : 'max-h-0 opacity-0 m-0'}`}>
+                    <PaymentAnimation />
+                  </div>
+                  <button className={`tab-btn process-step ${activeTab === 3 ? 'active' : ''}`} data-tab="tab-3" data-step="3" aria-expanded={activeTab === 3} onClick={() => handleTabChange(3)}>
+                    <span className="process-step-number">3</span>
+                    <h3>Envie do seu jeito.</h3>
+                    <div className="process-step-body">
+                      <p>Ative e combine diferentes formas de entrega: retirada física, frete local por KM, região ou motor de cálculo que simula apps de entrega, e a praticidade do envio nacional.</p>
+                    </div>
+                  </button>
+                  <div className={`lg:hidden w-full overflow-hidden transition-all duration-500 ease-in-out ${activeTab === 3 ? 'max-h-[600px] opacity-100 mt-2 mb-6' : 'max-h-0 opacity-0 m-0'}`}>
+                    <ShippingAnimation />
+                  </div>
                 </div>
-              </button>
-              <button className="tab-btn process-step" data-tab="tab-2" data-step="2" aria-expanded="false">
-                <span className="process-step-number">2</span>
-                <h3>Configure seus Pagamentos.</h3>
-                <div className="process-step-body">
-                  <p>Ative o recebimento via Pix. Ao selecionar o Pix automático, todo o fluxo de checkout e aprovação acontece de forma automática, sem a sua intervenção.</p>
-                </div>
-              </button>
-              <button className="tab-btn process-step" data-tab="tab-3" data-step="3" aria-expanded="false">
-                <span className="process-step-number">3</span>
-                <h3>Envie do seu jeito.</h3>
-                <div className="process-step-body">
-                  <p>Ative e combine diferentes formas de entrega: retirada física, frete local por KM, região ou motor de cálculo que simula apps de entrega, e a praticidade do envio nacional.</p>
-                </div>
-              </button>
+              </div>
+
+              <div className="hidden lg:flex w-full justify-center items-center">
+                {activeTab === 1 && <CatalogAnimation />}
+                {activeTab === 2 && <PaymentAnimation />}
+                {activeTab === 3 && <ShippingAnimation />}
+              </div>
             </div>
           </div>
         </div>
@@ -635,6 +657,7 @@ const Index = () => {
                 <div className="price-container">
                   <div className="price">R$ 47<span>/mês</span></div>
                 </div>
+                <a href="#" onClick={(e) => handleOpenModal(e, 'Básico', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Básico%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', justifyContent: 'center', marginTop: '20px', marginBottom: '24px' }}>Assinar Básico</a>
               </div>
               <ul className="pricing-features">
                 {[
@@ -649,7 +672,6 @@ const Index = () => {
                   <li key={f}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {f}</li>
                 ))}
               </ul>
-              <a href="#" onClick={(e) => handleOpenModal(e, 'Básico', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Básico%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', justifyContent: 'center' }}>Assinar Básico</a>
             </div>
 
             {/* Profissional */}
@@ -661,6 +683,7 @@ const Index = () => {
                 <div className="price-container">
                   <div className="price">R$ 89<span>/mês</span></div>
                 </div>
+                <a href="#" onClick={(e) => handleOpenModal(e, 'Profissional', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Profissional%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', justifyContent: 'center', marginTop: '20px', marginBottom: '24px' }}>Assinar Profissional</a>
               </div>
               <ul className="pricing-features">
                 <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong style={{ color: 'var(--primary)' }}>Tudo do Básico, mais:</strong></li>
@@ -674,7 +697,6 @@ const Index = () => {
                   <li key={f}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>{f}</strong></li>
                 ))}
               </ul>
-              <a href="#" onClick={(e) => handleOpenModal(e, 'Profissional', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Profissional%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', justifyContent: 'center' }}>Assinar Profissional</a>
             </div>
 
             {/* Pro */}
@@ -685,6 +707,7 @@ const Index = () => {
                 <div className="price-container">
                   <div className="price">R$ 159<span>/mês</span></div>
                 </div>
+                <a href="#" onClick={(e) => handleOpenModal(e, 'Pro', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Pro%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', justifyContent: 'center', marginTop: '20px', marginBottom: '24px' }}>Assinar Pro</a>
               </div>
               <ul className="pricing-features">
                 <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>Tudo do Profissional, mais:</strong></li>
@@ -698,7 +721,6 @@ const Index = () => {
                   <li key={f}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>{f}</strong></li>
                 ))}
               </ul>
-              <a href="#" onClick={(e) => handleOpenModal(e, 'Pro', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Pro%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', justifyContent: 'center' }}>Assinar Pro</a>
             </div>
           </div>
           
