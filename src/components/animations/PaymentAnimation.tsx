@@ -101,28 +101,20 @@ export const PaymentAnimation = () => {
         <div className="absolute hidden md:block w-96 h-96 bg-orange-400 blur-[100px] opacity-20 rounded-full pointer-events-none"></div>
 
         {/* Mockup do Painel Flutuante */}
-        <div className="animate-float w-full max-w-sm bg-white rounded-2xl shadow-xl md:shadow-2xl border border-gray-200 overflow-hidden relative z-10 perspective-1000 flex flex-col h-[340px] md:h-[420px]">
-            <div className="flex flex-col w-full h-[420px] origin-top scale-[0.8] md:scale-100">
-                <div className="h-10 bg-gray-50 border-b border-gray-200 flex items-center px-4 gap-2 shrink-0 z-50 relative">
-                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                    <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                    <div className="ml-4 h-4 w-32 bg-gray-200 rounded-md"></div>
-                    
-                    <div className="absolute bottom-0 left-0 h-[2px] bg-orange-500 w-full opacity-50"></div>
-                </div>
+        <div className="md:animate-float w-full max-w-sm bg-white rounded-2xl shadow-xl md:shadow-2xl border border-gray-200 overflow-hidden relative z-10 perspective-1000 flex flex-col h-[280px] md:h-[420px]">
+            <div className="flex flex-col w-full h-full md:h-[420px] origin-top md:scale-100">
 
                 {/* CONTAINER DE TELAS SOBREPOSTAS (Corpo do App) */}
                 <div className="relative w-full flex-1 bg-gray-50/50 overflow-hidden">
 
-                    <div className="seq-screen-1 absolute inset-0 p-6 flex flex-col bg-gray-50/50">
+                    <div className="seq-screen-1 absolute inset-0 p-4 md:p-6 flex flex-col bg-gray-50/50">
                         
-                        <div className="w-24 h-3 bg-gray-300 rounded-full mb-6"></div>
+                        <div className="w-24 h-2 md:h-3 bg-gray-300 rounded-full mb-4 md:mb-6"></div>
 
                         {/* Produto Resumo (Skeleton) */}
-                        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4 mb-6">
-                            <div className="w-12 h-12 bg-gray-100 border border-gray-200 rounded-lg flex items-center justify-center">
-                                 <svg className="w-6 h-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <div className="bg-white p-3 md:p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
+                            <div className="w-10 h-10 md:w-12 md:h-12 bg-gray-100 border border-gray-200 rounded-lg flex items-center justify-center">
+                                 <svg className="w-5 h-5 md:w-6 md:h-6 text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                                     <path fillRule="evenodd" d="M7.5 6v.75H5.513c-.96 0-1.764.724-1.865 1.679l-1.263 12A1.875 1.875 0 004.25 22.5h15.5a1.875 1.875 0 001.865-2.071l-1.263-12a1.875 1.875 0 00-1.865-1.679H16.5V6a4.5 4.5 0 10-9 0zM12 3a3 3 0 00-3 3v.75h6V6a3 3 0 00-3-3zm-3 8.25a3 3 0 106 0v-.75a.75.75 0 011.5 0v.75a4.5 4.5 0 11-9 0v-.75a.75.75 0 011.5 0v.75z" clipRule="evenodd" />
                                 </svg>
                             </div>
@@ -133,31 +125,31 @@ export const PaymentAnimation = () => {
                         </div>
 
                         {/* Opção Pix Selecionada */}
-                        <div className="border-2 border-orange-500 bg-orange-50/50 rounded-xl p-3 flex items-center gap-3 relative overflow-hidden mb-auto shadow-sm shadow-orange-500/10">
-                            <div className="w-4 h-4 rounded-full border-4 border-orange-500 bg-white"></div>
+                        <div className="border-2 border-orange-500 bg-orange-50/50 rounded-xl p-2 md:p-3 flex items-center gap-2 md:gap-3 relative overflow-hidden mb-auto shadow-sm shadow-orange-500/10">
+                            <div className="w-3 h-3 md:w-4 md:h-4 rounded-full border-2 md:border-4 border-orange-500 bg-white"></div>
                             <div className="flex-1">
                                 <div className="w-16 h-2 bg-orange-800/80 rounded-full"></div>
                             </div>
                             {/* Ícone Pix Menor */}
-                            <svg className="w-4 h-4 text-orange-500" viewBox="0 0 24 24" fill="currentColor">
+                            <svg className="w-3 h-3 md:w-4 md:h-4 text-orange-500" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 2.5L2.5 12 12 21.5 21.5 12 12 2.5zm0 2.83l6.67 6.67-6.67 6.67-6.67-6.67L12 5.33z"/>
                             </svg>
                         </div>
 
                         {/* Botão Finalizar */}
-                        <div className="pt-4 mt-4">
-                            <div className="seq-btn-click w-full h-10 rounded-lg flex items-center justify-center shadow-lg shadow-orange-500/30 text-white font-medium">
-                                <div className="w-24 h-2 bg-white/90 rounded-full"></div>
+                        <div className="pt-2 md:pt-4 mt-2 md:mt-4">
+                            <div className="seq-btn-click w-full h-8 md:h-10 rounded-lg flex items-center justify-center shadow-lg shadow-orange-500/30 text-white font-medium">
+                                <div className="w-20 md:w-24 h-2 bg-white/90 rounded-full"></div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="seq-screen-2 absolute inset-0 bg-white flex flex-col items-center justify-center p-6 z-10">
+                    <div className="seq-screen-2 absolute inset-0 bg-white flex flex-col items-center justify-center p-4 md:p-6 z-10">
                         
-                        <div className="w-32 h-3 bg-gray-800 rounded-full mb-8"></div>
+                        <div className="w-24 md:w-32 h-2 md:h-3 bg-gray-800 rounded-full mb-6 md:mb-8"></div>
 
                         {/* Box do QR Code com Animação de Scanner */}
-                        <div className="relative w-40 h-40 bg-white border border-gray-100 rounded-xl p-3 shadow-xl shadow-gray-200/50 flex items-center justify-center overflow-hidden">
+                        <div className="relative w-32 h-32 md:w-40 md:h-40 bg-white border border-gray-100 rounded-xl p-3 shadow-xl shadow-gray-200/50 flex items-center justify-center overflow-hidden">
                             
                             {/* Marcações nos cantos do scanner */}
                             <div className="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-orange-500 rounded-tl"></div>
@@ -189,21 +181,21 @@ export const PaymentAnimation = () => {
                             <div className="seq-scanner-bg absolute left-0 top-0 w-full bg-orange-500 z-10"></div>
                         </div>
 
-                        <div className="w-32 h-2 bg-gray-200 rounded-full mt-8"></div>
+                        <div className="w-24 md:w-32 h-2 bg-gray-200 rounded-full mt-6 md:mt-8"></div>
                     </div>
 
-                    <div className="seq-screen-3 absolute inset-0 bg-gray-50 flex flex-col items-center justify-center p-6 z-20">
+                    <div className="seq-screen-3 absolute inset-0 bg-gray-50 flex flex-col items-center justify-center p-4 md:p-6 z-20">
                         
                         {/* Cabeçalho Sucesso */}
-                        <div className="mb-6 flex flex-col items-center">
-                            <div className="seq-check-pop w-12 h-12 bg-green-500 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30 mb-4">
-                                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>
+                        <div className="mb-4 md:mb-6 flex flex-col items-center">
+                            <div className="seq-check-pop w-10 h-10 md:w-12 md:h-12 bg-green-500 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30 mb-3 md:mb-4">
+                                <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>
                             </div>
-                            <div className="w-24 h-3 bg-green-500 rounded-full"></div>
+                            <div className="w-20 md:w-24 h-2 md:h-3 bg-green-500 rounded-full"></div>
                         </div>
 
                         {/* Recibo Dropdown */}
-                        <div className="seq-receipt w-full max-w-[240px] bg-white border border-gray-200 rounded-xl p-5 shadow-sm relative">
+                        <div className="seq-receipt w-full max-w-[240px] bg-white border border-gray-200 rounded-xl p-4 md:p-5 shadow-sm relative">
                             {/* Detalhe de serrilhado no topo simulando papel */}
                             <div className="absolute -top-1 left-0 w-full flex justify-around overflow-hidden">
                                 <div className="w-2 h-2 rounded-full bg-gray-50"></div>
@@ -216,19 +208,19 @@ export const PaymentAnimation = () => {
                                 <div className="w-2 h-2 rounded-full bg-gray-50"></div>
                             </div>
 
-                            <div className="space-y-4 pt-2">
+                            <div className="space-y-3 md:space-y-4 pt-1 md:pt-2">
                                 <div>
-                                    <div className="w-12 h-2 bg-gray-200 rounded-full mb-2"></div>
+                                    <div className="w-12 h-2 bg-gray-200 rounded-full mb-1.5 md:mb-2"></div>
                                     <div className="seq-line-fill-1 h-2 bg-gray-800 rounded-full"></div>
                                 </div>
                                 <div>
-                                    <div className="w-16 h-2 bg-gray-200 rounded-full mb-2"></div>
+                                    <div className="w-16 h-2 bg-gray-200 rounded-full mb-1.5 md:mb-2"></div>
                                     <div className="seq-line-fill-2 h-2 bg-gray-800 rounded-full"></div>
                                 </div>
                                 
-                                <div className="border-t border-dashed border-gray-300 pt-4 mt-4 flex justify-between items-center">
+                                <div className="border-t border-dashed border-gray-300 pt-3 mt-3 md:pt-4 md:mt-4 flex justify-between items-center">
                                     <div className="w-10 h-2 bg-gray-200 rounded-full"></div>
-                                    <div className="w-16 h-4 bg-green-500 rounded-full"></div>
+                                    <div className="w-16 h-3 md:h-4 bg-green-500 rounded-full"></div>
                                 </div>
                             </div>
                         </div>

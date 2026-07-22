@@ -11,10 +11,34 @@ import { ShippingAnimation } from '../components/animations/ShippingAnimation';
 const Index = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const showcaseContainerRef = useRef<HTMLDivElement>(null);
+  const mobileScrollRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState(1);
 
   const handleTabChange = (newTab: number) => {
     setActiveTab(newTab);
+  };
+
+  const handleMobileScroll = () => {
+    if (!mobileScrollRef.current) return;
+    const container = mobileScrollRef.current;
+    const scrollLeft = container.scrollLeft;
+    const firstChild = container.firstElementChild as HTMLElement;
+    const cardWidth = firstChild ? firstChild.offsetWidth + 16 : container.clientWidth * 0.8;
+    const newIndex = Math.round(scrollLeft / cardWidth) + 1;
+    const clampedIndex = Math.max(1, Math.min(3, newIndex));
+    if (clampedIndex !== activeTab) {
+      setActiveTab(clampedIndex);
+    }
+  };
+
+  const scrollToCard = (step: number) => {
+    setActiveTab(step);
+    if (mobileScrollRef.current) {
+      const card = mobileScrollRef.current.children[step - 1] as HTMLElement;
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    }
   };
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [leadName, setLeadName] = useState('');
@@ -281,7 +305,7 @@ const Index = () => {
             <a href="#precos">Planos</a>
           </div>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <a href="#precos" className="btn btn-primary" style={{ padding: '10px 20px', fontSize: '13px' }}>Criar Loja</a>
+            <a href="#precos" className="btn btn-primary" style={{ padding: '10px 20px', fontSize: '13px', boxShadow: 'none' }}>Criar Loja</a>
           </div>
         </nav>
       </div>
@@ -394,7 +418,7 @@ const Index = () => {
           <div className="bento-grid bento-grid-two">
             {/* Card 1 – Customização */}
             <div className="bento-item bento-feature reveal" style={{ transitionDelay: '0s' }}>
-              <div className="bento-icon-wrapper" style={{ color: 'var(--primary)', background: 'var(--primary-light)', border: '1px solid rgba(255,94,0,0.2)', marginBottom: '24px' }}>
+              <div className="bento-icon-wrapper modern-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10"></circle>
                   <line x1="2" y1="12" x2="22" y2="12"></line>
@@ -403,9 +427,9 @@ const Index = () => {
               </div>
               <h3>Sua marca. Do jeito que você imaginou.</h3>
               <p>Personalize Banner de Capa, Avatar, cores e textos da loja — e veja as mudanças aplicadas em tempo real.</p>
-              <ul style={{ listStyle: 'none', padding: 0, margin: '24px 0 0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <ul className="feature-list">
                 {['Logo e banner da loja', 'Paleta de cores personalizável', 'Mensagem e tagline da vitrine', 'Edições salvas instantaneamente'].map(item => (
-                  <li key={item} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.92rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                  <li key={item} className="feature-list-item">
                     {item === 'Paleta de cores personalizável' ? (
                       <span className="palette-sync-row">
                         <span className="palette-sync-swatch">
@@ -415,7 +439,7 @@ const Index = () => {
                       </span>
                     ) : (
                       <>
-                        <span style={{ width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--primary)', backgroundColor: 'var(--primary-light)' }}>
+                        <span className="feature-list-icon">
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         </span>
                         {item}
@@ -428,7 +452,7 @@ const Index = () => {
 
             {/* Card 2 – Mobile */}
             <div className="bento-item bento-feature reveal" style={{ transitionDelay: '0.15s' }}>
-              <div className="bento-icon-wrapper" style={{ color: 'var(--primary)', background: 'var(--primary-light)', border: '1px solid rgba(255,94,0,0.2)', marginBottom: '24px' }}>
+              <div className="bento-icon-wrapper modern-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
                   <line x1="12" y1="18" x2="12.01" y2="18"></line>
@@ -436,11 +460,11 @@ const Index = () => {
               </div>
               <h3>Gerencie sua loja <br className="hidden md:block" /> também pela palma da sua mão.</h3>
               <p>Acompanhe pedidos, ajuste produtos e gerencie sua operação de qualquer lugar, sem depender de um computador.</p>
-              <ul style={{ listStyle: 'none', padding: 0, margin: '24px 0 0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <ul className="feature-list">
                 {['Vitrine pensada para compra pelo celular', 'Painel acessível para ajustes rápidos', 'Pedidos e estoque sempre por perto', 'Checkout responsivo para o cliente finalizar com conforto'].map(item => (
-                  <li key={item} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.92rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-                    <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <li key={item} className="feature-list-item">
+                    <span className="feature-list-icon">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
                     </span>
                     {item}
                   </li>
@@ -582,9 +606,12 @@ const Index = () => {
             <h2>Seu negócio rodando no piloto automático.</h2>
             <p>Veja como é simples iniciar e escalar suas vendas com o Scalius.</p>
           </div>
-          <div className="tabs-wrapper process-wrapper reveal" data-step={activeTab} style={{ transitionDelay: '0.1s' }}>
-            <div className="grid lg:grid-cols-2 gap-8 items-center w-full">
-              <div className="flex flex-col relative w-full gap-[18px] lg:gap-[22px] order-last lg:order-first">
+
+          {/* DESKTOP VERSION (lg:flex) */}
+          <div className="hidden lg:block">
+            <div className="tabs-wrapper process-wrapper reveal" data-step={activeTab} style={{ transitionDelay: '0.1s' }}>
+              <div className="grid lg:grid-cols-2 gap-8 items-center w-full">
+              <div className="flex flex-col relative w-full gap-[18px] lg:gap-[22px]">
                 <div className="process-progress-head">
                   <span className="process-progress-label">
                     <span>Faturando</span>
@@ -603,9 +630,6 @@ const Index = () => {
                       <p>Cadastre seus produtos e personalize sua loja com fotos, preços, variações e muito mais. Deixe sua vitrine com um visual único, profissional e a identidade do seu negócio.</p>
                     </div>
                   </button>
-                  <div className={`lg:hidden w-full overflow-hidden transition-all duration-500 ease-in-out ${activeTab === 1 ? 'max-h-[600px] opacity-100 mt-2 mb-6' : 'max-h-0 opacity-0 m-0'}`}>
-                    <CatalogAnimation />
-                  </div>
                   <button className={`tab-btn process-step ${activeTab === 2 ? 'active' : ''}`} data-tab="tab-2" data-step="2" aria-expanded={activeTab === 2} onClick={() => handleTabChange(2)}>
                     <span className="process-step-number">2</span>
                     <h3>Configure seus Pagamentos.</h3>
@@ -613,9 +637,6 @@ const Index = () => {
                       <p>Ative o recebimento via Pix. Ao selecionar o Pix automático, todo o fluxo de checkout e aprovação acontece de forma automática, sem a sua intervenção.</p>
                     </div>
                   </button>
-                  <div className={`lg:hidden w-full overflow-hidden transition-all duration-500 ease-in-out ${activeTab === 2 ? 'max-h-[600px] opacity-100 mt-2 mb-6' : 'max-h-0 opacity-0 m-0'}`}>
-                    <PaymentAnimation />
-                  </div>
                   <button className={`tab-btn process-step ${activeTab === 3 ? 'active' : ''}`} data-tab="tab-3" data-step="3" aria-expanded={activeTab === 3} onClick={() => handleTabChange(3)}>
                     <span className="process-step-number">3</span>
                     <h3>Envie do seu jeito.</h3>
@@ -623,17 +644,118 @@ const Index = () => {
                       <p>Ative e combine diferentes formas de entrega: retirada física, frete local por KM, região ou motor de cálculo que simula apps de entrega, e a praticidade do envio nacional.</p>
                     </div>
                   </button>
-                  <div className={`lg:hidden w-full overflow-hidden transition-all duration-500 ease-in-out ${activeTab === 3 ? 'max-h-[600px] opacity-100 mt-2 mb-6' : 'max-h-0 opacity-0 m-0'}`}>
-                    <ShippingAnimation />
-                  </div>
                 </div>
               </div>
 
-              <div className="hidden lg:flex w-full justify-center items-center">
+              <div className="w-full flex justify-center items-center">
                 {activeTab === 1 && <CatalogAnimation />}
                 {activeTab === 2 && <PaymentAnimation />}
                 {activeTab === 3 && <ShippingAnimation />}
               </div>
+            </div>
+          </div>
+        </div>
+
+          {/* MOBILE VERSION (lg:hidden) - Horizontal Swipe Carousel */}
+          <div className="lg:hidden w-full flex flex-col gap-4 mt-6 reveal">
+            {/* Progress Bar */}
+            <div className="w-full bg-orange-500/10 h-2 rounded-full overflow-hidden relative mx-1 mt-2">
+              <div 
+                className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${(activeTab / 3) * 100}%` }}
+              />
+            </div>
+
+            {/* Swipeable Cards Container */}
+            <div
+              ref={mobileScrollRef}
+              onScroll={handleMobileScroll}
+              className="flex overflow-x-auto snap-x snap-mandatory gap-4 px-6 py-3 no-scrollbar scroll-smooth -mx-6"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
+              {/* Card 1 */}
+              <div className="w-[82vw] max-w-[320px] shrink-0 snap-center rounded-2xl bg-white border border-orange-500/15 shadow-sm overflow-hidden flex flex-col justify-between">
+                <div className="bg-gradient-to-b from-gray-50 to-orange-50/20 overflow-hidden flex justify-center items-start h-[220px] relative border-b border-gray-100 pt-0">
+                  <div className="scale-[0.75] origin-top w-full flex justify-center items-start -mt-4">
+                    <CatalogAnimation />
+                  </div>
+                </div>
+                <div className="p-5 flex flex-col gap-2 bg-white">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-orange-100 text-orange-600 font-bold text-[12px] flex items-center justify-center shrink-0">
+                      1
+                    </span>
+                    <h3 className="text-[16px] font-bold text-gray-900 leading-snug">Crie seu Catálogo.</h3>
+                  </div>
+                  <p className="text-[13px] text-gray-600 leading-relaxed pl-8">
+                    Cadastre seus produtos e personalize sua loja com fotos, preços, variações e muito mais. Deixe sua vitrine com um visual único e profissional.
+                  </p>
+                </div>
+              </div>
+
+              {/* Card 2 */}
+              <div className="w-[82vw] max-w-[320px] shrink-0 snap-center rounded-2xl bg-white border border-orange-500/15 shadow-sm overflow-hidden flex flex-col justify-between">
+                <div className="bg-gradient-to-b from-gray-50 to-orange-50/20 overflow-hidden flex justify-center items-start h-[220px] relative border-b border-gray-100 pt-0">
+                  <div className="scale-[0.75] origin-top w-full flex justify-center items-start -mt-4">
+                    <PaymentAnimation />
+                  </div>
+                </div>
+                <div className="p-5 flex flex-col gap-2 bg-white">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-orange-100 text-orange-600 font-bold text-[12px] flex items-center justify-center shrink-0">
+                      2
+                    </span>
+                    <h3 className="text-[16px] font-bold text-gray-900 leading-snug">Configure seus Pagamentos.</h3>
+                  </div>
+                  <p className="text-[13px] text-gray-600 leading-relaxed pl-8">
+                    Ative o recebimento via Pix. Todo o fluxo de checkout e aprovação acontece de forma automática, sem a sua intervenção.
+                  </p>
+                </div>
+              </div>
+
+              {/* Card 3 */}
+              <div className="w-[82vw] max-w-[320px] shrink-0 snap-center rounded-2xl bg-white border border-orange-500/15 shadow-sm overflow-hidden flex flex-col justify-between">
+                <div className="bg-gradient-to-b from-gray-50 to-orange-50/20 overflow-hidden flex justify-center items-start h-[220px] relative border-b border-gray-100 pt-0">
+                  <div className="scale-[0.75] origin-top w-full flex justify-center items-start -mt-4">
+                    <ShippingAnimation />
+                  </div>
+                </div>
+                <div className="p-5 flex flex-col gap-2 bg-white">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-orange-100 text-orange-600 font-bold text-[12px] flex items-center justify-center shrink-0">
+                      3
+                    </span>
+                    <h3 className="text-[16px] font-bold text-gray-900 leading-snug">Envie do seu jeito.</h3>
+                  </div>
+                  <p className="text-[13px] text-gray-600 leading-relaxed pl-8">
+                    Ative e combine diferentes formas de entrega: retirada física, frete local por KM ou região e a praticidade do envio nacional.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Pagination Dots & Swipe Hint */}
+            <div className="flex flex-col items-center gap-1.5 mt-1">
+              <div className="flex items-center justify-center gap-2">
+                {[1, 2, 3].map((step) => (
+                  <button
+                    key={step}
+                    onClick={() => scrollToCard(step)}
+                    aria-label={`Ir para passo ${step}`}
+                    className={`transition-all duration-300 rounded-full ${
+                      activeTab === step
+                        ? 'w-7 h-2 bg-orange-500'
+                        : 'w-2 h-2 bg-gray-300 hover:bg-gray-400'
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-[11px] text-gray-400 font-medium flex items-center gap-1">
+                <span>Arraste para o lado</span>
+                <svg className="w-3.5 h-3.5 animate-pulse text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </span>
             </div>
           </div>
         </div>
@@ -657,7 +779,7 @@ const Index = () => {
                 <div className="price-container">
                   <div className="price">R$ 47<span>/mês</span></div>
                 </div>
-                <a href="#" onClick={(e) => handleOpenModal(e, 'Básico', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Básico%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', justifyContent: 'center', marginTop: '20px', marginBottom: '24px' }}>Assinar Básico</a>
+                <a href="#" onClick={(e) => handleOpenModal(e, 'Básico', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Básico%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center', marginTop: '20px', marginBottom: '24px' }}>Assinar Básico</a>
               </div>
               <ul className="pricing-features">
                 {[
@@ -683,7 +805,7 @@ const Index = () => {
                 <div className="price-container">
                   <div className="price">R$ 89<span>/mês</span></div>
                 </div>
-                <a href="#" onClick={(e) => handleOpenModal(e, 'Profissional', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Profissional%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', justifyContent: 'center', marginTop: '20px', marginBottom: '24px' }}>Assinar Profissional</a>
+                <a href="#" onClick={(e) => handleOpenModal(e, 'Profissional', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Profissional%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center', marginTop: '20px', marginBottom: '24px' }}>Assinar Profissional</a>
               </div>
               <ul className="pricing-features">
                 <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong style={{ color: 'var(--primary)' }}>Tudo do Básico, mais:</strong></li>
@@ -707,7 +829,7 @@ const Index = () => {
                 <div className="price-container">
                   <div className="price">R$ 159<span>/mês</span></div>
                 </div>
-                <a href="#" onClick={(e) => handleOpenModal(e, 'Pro', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Pro%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', justifyContent: 'center', marginTop: '20px', marginBottom: '24px' }}>Assinar Pro</a>
+                <a href="#" onClick={(e) => handleOpenModal(e, 'Pro', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Pro%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center', marginTop: '20px', marginBottom: '24px' }}>Assinar Pro</a>
               </div>
               <ul className="pricing-features">
                 <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>Tudo do Profissional, mais:</strong></li>
@@ -736,8 +858,34 @@ const Index = () => {
           </div>
           <div className="faq-container reveal" style={{ transitionDelay: '0.1s' }}>
             {[
-              { q: 'Preciso ter CNPJ para criar minha loja?', a: 'Não! Você pode começar a vender utilizando apenas o seu CPF. Caso seu negócio cresça, você pode alterar para um CNPJ a qualquer momento direto no painel da sua conta integrada do Mercado Pago.' },
-              { q: 'Existe limite de vendas ou cobrança de taxa por pedido?', a: 'Nossa plataforma não cobra taxa por transação ou limite de pedidos! Você paga apenas o valor fixo da sua assinatura. A única taxa de transação é a cobrada pelo próprio gateway de pagamento (Mercado Pago), que é de apenas 0,99% por Pix.' },
+              { 
+                q: 'Preciso de CNPJ para começar a vender?', 
+                a: 'Não! Você pode começar usando apenas o seu CPF. A ideia é eliminar a burocracia para que você coloque sua vitrine no ar hoje mesmo. Se a sua empresa crescer, você pode alterar para CNPJ depois, direto na sua conta do Mercado Pago.' 
+              },
+              { 
+                q: 'Vocês cobram comissão por venda ou limitam a quantidade de pedidos?', 
+                a: 'Diferente de aplicativos de delivery ou plataformas tradicionais, nós não cobramos nenhuma taxa sobre as suas vendas e seus pedidos são ilimitados! Você paga apenas a mensalidade fixa do seu plano. A única taxa que existe é a do próprio Mercado Pago para processar o Pix (0,99%). Todo o lucro do seu trabalho é 100% seu.' 
+              },
+              { 
+                q: 'Como funciona o Pix Automático? Preciso conferir comprovante?', 
+                a: 'Não precisa! Nosso Pix Automático, integrado oficialmente ao Mercado Pago, faz a verificação em tempo real. Assim que o cliente paga, o status do pedido muda para "Pago" sozinho no seu painel, acompanhado de um alerta sonoro. Adeus perda de tempo e risco de fraudes com comprovantes falsos no WhatsApp!' 
+              },
+              { 
+                q: 'O cliente precisa baixar algum aplicativo para comprar da minha loja?', 
+                a: 'Nenhum! Sua loja funciona como um site super leve, rápido e profissional que abre direto no navegador do celular do cliente. Ele acessa, escolhe os produtos, preenche os dados, seleciona a entrega e paga. Tudo na hora, sem atrito e sem instalar nada.' 
+              },
+              { 
+                q: 'Eu não entendo muito de tecnologia, consigo configurar a loja sozinho?', 
+                a: 'Com certeza. O Scalius foi desenhado para ser extremamente intuitivo, feito para quem precisa de praticidade. Em menos de 10 minutos você cadastra seus produtos, escolhe as cores da sua marca e conecta o seu Pix. E se precisar, nosso suporte no WhatsApp está sempre pronto para te ajudar.' 
+              },
+              { 
+                q: 'E se eu vender um produto na loja física, como fica o site?', 
+                a: 'É só acessar o painel pelo celular e dar baixa em segundos! O sistema gerencia seu estoque em tempo real. Se o produto acabar, ele automaticamente aparece como "Esgotado" na sua vitrine online, impedindo compras de itens sem estoque.' 
+              },
+              { 
+                q: 'Como funcionam as opções de entrega?', 
+                a: 'O Scalius te dá total controle logístico. Você pode configurar entrega própria (cobrando taxa por KM ou fixa por bairro), permitir "Retirada na Loja Física", ou usar a integração com o Melhor Envio para cotar automaticamente fretes via Correios e transportadoras, gerando a etiqueta com poucos cliques.' 
+              },
             ].map(({ q, a }) => (
               <div key={q} className="faq-item">
                 <button className="faq-question">{q}<span className="faq-icon">+</span></button>
@@ -759,9 +907,9 @@ const Index = () => {
         <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
           <a href="/politica-de-privacidade" style={{ color: '#fff', textDecoration: 'none' }}>Política de Privacidade</a>
           <a href="/termos-de-servico" style={{ color: '#fff', textDecoration: 'none' }}>Termos de Serviço</a>
-          <a href="https://www.instagram.com/scalius.com.br/" target="_blank" rel="noopener noreferrer" style={{ color: '#fff', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <a href="https://www.instagram.com/scaliusbr/" target="_blank" rel="noopener noreferrer" style={{ color: '#fff', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
             <Instagram size={16} />
-            @scalius.com.br
+            @scaliusbr
           </a>
         </div>
       </footer>

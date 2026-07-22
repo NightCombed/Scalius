@@ -58,6 +58,15 @@
       list-style: none;
     }
 
+.scalius-landing-wrapper .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+.scalius-landing-wrapper .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
     /* ==========================================================================
        2. UTILITIES & ANIMATIONS
        ========================================================================== */
@@ -75,6 +84,13 @@
       opacity: 0;
       transform: translateY(30px);
       transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @media (max-width: 768px) {
+      .scalius-landing-wrapper .reveal {
+        transform: translateY(15px);
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
     }
 
 .scalius-landing-wrapper .reveal.active{
@@ -236,6 +252,10 @@
     }
 
     @media (max-width: 900px) {
+.scalius-landing-wrapper .hero{
+        padding-top: 110px;
+        padding-bottom: 20px;
+      }
 .scalius-landing-wrapper .hero-container{
         grid-template-columns: 1fr;
         padding: 0 24px;
@@ -243,7 +263,7 @@
 .scalius-landing-wrapper .hero-visual{
         display: block;
         height: auto;
-        margin-top: 32px;
+        margin-top: 16px;
       }
     }
 
@@ -671,7 +691,7 @@
     @media (max-width: 768px) {
 .scalius-landing-wrapper .hero-visual{
         height: auto;
-        margin-top: 32px;
+        margin-top: 16px;
         margin-right: 0;
         display: block;
       }
@@ -707,8 +727,11 @@
       }
 
 .scalius-landing-wrapper .card-back-left, 
-.scalius-landing-wrapper .card-back-right,
 .scalius-landing-wrapper .card-main{
+        display: none !important;
+      }
+
+.scalius-landing-wrapper .card-back-right{
         display: block !important;
         position: absolute;
         top: 0;
@@ -717,19 +740,6 @@
         height: 100%;
         transform: none !important; /* Remove inclinação */
         box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        animation: mobileCardFade 9s infinite ease-in-out;
-      }
-
-.scalius-landing-wrapper .card-main {
-        animation-delay: 0s;
-      }
-
-.scalius-landing-wrapper .card-back-left {
-        animation-delay: -3s;
-      }
-
-.scalius-landing-wrapper .card-back-right {
-        animation-delay: -6s;
       }
 
 .scalius-landing-wrapper .stack-mobile{
@@ -743,21 +753,6 @@
         border-width: 4px;
       }
     }
-
-@keyframes mobileCardFade {
-  0%, 28% {
-    opacity: 1;
-    z-index: 10;
-  }
-  33%, 95% {
-    opacity: 0;
-    z-index: 1;
-  }
-  100% {
-    opacity: 1;
-    z-index: 10;
-  }
-}
 
     /* ==========================================================================
        5. PROBLEMA (Dark Mode com Grid - Estilo Ref 4)
@@ -962,8 +957,93 @@
     }
 
 .scalius-landing-wrapper .bento-feature{
-      background: #FFFFFF;
+      background: linear-gradient(160deg, var(--bg-surface) 0%, rgba(255, 94, 0, 0.02) 100%);
       min-height: 340px;
+      border: 1px solid rgba(255, 94, 0, 0.15);
+      box-shadow: 0 10px 30px -10px rgba(255, 94, 0, 0.1), inset 0 1px 0 rgba(255,255,255,0.8);
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+.scalius-landing-wrapper .bento-feature:hover {
+      box-shadow: 0 15px 40px -10px rgba(255, 94, 0, 0.15), inset 0 1px 0 rgba(255,255,255,1);
+      transform: translateY(-5px);
+    }
+
+.scalius-landing-wrapper .bento-feature::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(255, 94, 0, 0.08) 0%, rgba(255, 94, 0, 0) 70%);
+      border-radius: 50%;
+      transform: translate(10%, -10%) scale(1.2);
+      pointer-events: none;
+      z-index: -1;
+      transition: transform 0.6s ease;
+    }
+
+.scalius-landing-wrapper .bento-feature:hover::after {
+      transform: translate(10%, -10%) scale(1.3);
+    }
+
+/* Modern Icon */
+.scalius-landing-wrapper .bento-icon-wrapper.modern-icon {
+      background: var(--primary);
+      color: white;
+      border: 1px solid var(--primary);
+      box-shadow: 0 8px 20px rgba(255,94,0,0.25);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      margin-bottom: 24px;
+    }
+    
+.scalius-landing-wrapper .bento-feature:hover .bento-icon-wrapper.modern-icon {
+      transform: scale(1.1) rotate(5deg);
+    }
+
+/* Feature List */
+.scalius-landing-wrapper .feature-list {
+      list-style: none;
+      padding: 0;
+      margin: 24px 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+.scalius-landing-wrapper .feature-list-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.95rem;
+      color: var(--text-main);
+      font-weight: 500;
+      transition: color 0.3s;
+    }
+    
+.scalius-landing-wrapper .bento-feature:hover .feature-list-item {
+      color: var(--text-main);
+    }
+    
+.scalius-landing-wrapper .feature-list-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: white;
+      background-color: var(--primary);
+      transition: all 0.3s;
+    }
+    
+.scalius-landing-wrapper .bento-feature:hover .feature-list-icon {
+      transform: scale(1.1);
     }
 
 .scalius-landing-wrapper .palette-sync-row{
@@ -981,8 +1061,7 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      background-color: var(--primary-light);
-      color: var(--primary);
+      color: white;
       animation: paletteCycle 5s ease-in-out infinite;
     }
 
@@ -995,12 +1074,9 @@
     }
 
 @keyframes paletteCycle {
-  0%, 100% { color: var(--primary); }
-  33% { color: #7c3aed; }
-  66% { color: #0f766e; }
-  0%, 100% { background-color: var(--primary-light); }
-  33% { background-color: rgba(124, 58, 237, 0.16); }
-  66% { background-color: rgba(15, 118, 110, 0.16); }
+  0%, 100% { background-color: var(--primary); }
+  33% { background-color: #7c3aed; }
+  66% { background-color: #0f766e; }
 }
 
 @keyframes paletteCycleText {

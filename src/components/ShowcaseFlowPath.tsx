@@ -180,14 +180,18 @@ const ShowcaseFlowPath: React.FC<ShowcaseFlowPathProps> = ({ containerRef }) => 
 
         let progress = 0;
         if (isMobile) {
-          // No mobile, o caminho é muito longo. Ancoramos o dot a 60% da tela.
-          // A animação começa (progress=0) quando o TOPO do caminho (y1) atinge 60% do vh
-          // e termina (progress=1) quando o FIM do caminho (y2) atinge 60% do vh.
-          const anchorY = vh * 0.6;
-          const startY = sr.top + gradientBounds.y1;
-          const endY = sr.top + gradientBounds.y2;
+          // No mobile, o caminho é muito longo.
+          // Começa a desenhar quando o início do caminho (y1) atinge 85% do vh (mais cedo).
+          // Termina quando o fim do caminho (y2) atinge 30% do vh.
+          const startAnchor = vh * 0.85;
+          const endAnchor = vh * 0.3;
+          const pathHeight = gradientBounds.y2 - gradientBounds.y1;
           
-          const scrollP = (anchorY - startY) / (endY - startY || 1);
+          const startY = sr.top + gradientBounds.y1;
+          const startLimit = startAnchor;
+          const endLimit = endAnchor - pathHeight;
+          
+          const scrollP = (startLimit - startY) / (startLimit - endLimit || 1);
           progress = Math.max(0, Math.min(1, scrollP));
         } else {
           // Desktop: animação acelerada para terminar antes
