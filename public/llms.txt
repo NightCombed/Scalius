@@ -1,0 +1,10 @@
+# Scalius
+
+Este é o arquivo de orientação para modelos de linguagem grandes (LLMs) sobre como interagir com o Scalius.
+
+## Links Úteis
+
+- [Página Inicial](https://scalius.com.br/)
+- [Painel Admin](https://scalius.com.br/admin)
+- [Política de Privacidade](https://scalius.com.br/politica-de-privacidade)
+- [Termos de Serviço](https://scalius.com.br/termos-de-servico)
