@@ -166,7 +166,7 @@ export const ShippingAnimation = () => {
       <div className="w-full flex justify-center items-center relative p-6 md:p-12">
         <div className="absolute hidden md:block w-96 h-96 bg-orange-400 blur-[100px] opacity-20 rounded-full pointer-events-none"></div>
 
-        <div className="md:animate-float w-full max-w-sm bg-white rounded-2xl shadow-xl md:shadow-2xl border border-gray-200 overflow-hidden relative z-10 perspective-1000 flex flex-col h-[320px] md:h-[420px]">
+        <div className="md:animate-float w-full max-w-sm bg-white rounded-2xl shadow-xl md:shadow-2xl border border-gray-200 overflow-hidden relative z-10 perspective-1000 flex flex-col h-[280px] md:h-[420px]">
             <div className="flex flex-col w-full h-full md:h-[420px] origin-top md:scale-100">
 
             <div className="relative w-full flex-1 bg-gray-50/50 overflow-hidden">

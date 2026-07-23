@@ -53,7 +53,7 @@ const ShowcaseFlowPath: React.FC<ShowcaseFlowPathProps> = ({ containerRef }) => 
       };
     });
 
-    let d = `M ${pts[0].cx} ${pts[0].bot}`;
+    let d = `M ${pts[0].cx} ${pts[0].bot - 8}`;
     let pathMaxY = pts[0].bot;
     const pathMinY = pts[0].bot;
 
@@ -84,7 +84,7 @@ const ShowcaseFlowPath: React.FC<ShowcaseFlowPathProps> = ({ containerRef }) => 
 
         // Segmento "through-mockup" (escondido atrás do card)
         if (i < pts.length - 2) {
-          d += ` L ${pts[i + 1].cx} ${pts[i + 1].bot}`;
+          d += ` L ${pts[i + 1].cx} ${pts[i + 1].bot - 8}`;
           pathMaxY = Math.max(pathMaxY, pts[i + 1].bot);
         }
       } else if (!isDesktop) {
@@ -117,7 +117,7 @@ const ShowcaseFlowPath: React.FC<ShowcaseFlowPathProps> = ({ containerRef }) => 
 
         // Segmento "through-mockup" escondido
         if (i < pts.length - 2) {
-           d += ` L ${ex} ${pts[i + 1].bot}`;
+           d += ` L ${ex} ${pts[i + 1].bot - 8}`;
            pathMaxY = Math.max(pathMaxY, pts[i + 1].bot);
         }
       }

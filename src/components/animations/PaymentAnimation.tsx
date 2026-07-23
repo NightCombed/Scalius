@@ -101,7 +101,7 @@ export const PaymentAnimation = () => {
         <div className="absolute hidden md:block w-96 h-96 bg-orange-400 blur-[100px] opacity-20 rounded-full pointer-events-none"></div>
 
         {/* Mockup do Painel Flutuante */}
-        <div className="md:animate-float w-full max-w-sm bg-white rounded-2xl shadow-xl md:shadow-2xl border border-gray-200 overflow-hidden relative z-10 perspective-1000 flex flex-col h-[320px] md:h-[420px]">
+        <div className="md:animate-float w-full max-w-sm bg-white rounded-2xl shadow-xl md:shadow-2xl border border-gray-200 overflow-hidden relative z-10 perspective-1000 flex flex-col h-[280px] md:h-[420px]">
             <div className="flex flex-col w-full h-full md:h-[420px] origin-top md:scale-100">
 
                 {/* CONTAINER DE TELAS SOBREPOSTAS (Corpo do App) */}
