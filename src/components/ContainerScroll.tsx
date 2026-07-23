@@ -65,7 +65,7 @@ export const ContainerScroll: React.FC<ContainerScrollProps> = ({ titleComponent
   return (
     <div
       ref={containerRef}
-      className="relative pt-16 pb-[250px] md:pt-24 md:pb-[440px] px-4 overflow-visible"
+      className="relative pt-2 pb-[250px] md:pt-24 md:pb-[440px] px-4 overflow-visible"
       style={{ perspective: "1200px" }}
     >
       {/* Background Grid com degradê suave */}

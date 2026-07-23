@@ -361,7 +361,7 @@
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      margin-bottom: 36px;
+      margin-bottom: 16px;
       width: 100%;
     }
 
@@ -691,7 +691,7 @@
     @media (max-width: 768px) {
 .scalius-landing-wrapper .hero-visual{
         height: auto;
-        margin-top: 16px;
+        margin-top: -8px;
         margin-right: 0;
         display: block;
       }
@@ -708,7 +708,7 @@
         position: relative;
         width: 100%;
         aspect-ratio: 1.1;
-        margin-bottom: 26px;
+        margin-bottom: 8px;
       }
 
 .scalius-landing-wrapper .browser-frame {
