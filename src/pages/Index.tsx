@@ -859,7 +859,7 @@ const Index = () => {
             </h2>
             
             <p className="text-gray-600 text-[15px] md:text-[17px] max-w-2xl mb-8 leading-relaxed relative z-10">
-              Sabemos que gerenciar uma loja ou migrar de plataforma pode dar aquele frio na barriga. Por isso, <strong>estamos com você em cada etapa</strong>. Não precisa ser um especialista em tecnologia: nossa equipe é a sua equipe. Nós te guiamos para deixar sua loja no ar rapidamente e estaremos sempre aqui para dar todo o suporte que você precisar.
+              Sabemos que gerenciar uma loja ou usar uma nova plataforma pode dar aquele frio na barriga. Por isso, <strong>estamos com você em cada etapa</strong>. Não precisa ser um especialista em tecnologia: nossa equipe é a sua equipe. Nós te guiamos para deixar sua loja no ar rapidamente e estaremos sempre aqui para dar todo o suporte que você precisar.
             </p>
             
             <a 
