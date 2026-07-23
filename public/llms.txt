@@ -6,5 +6,4 @@ Este é o arquivo de orientação para modelos de linguagem grandes (LLMs) sobre
 
 - [Página Inicial](https://scalius.com.br/)
 - [Painel Admin](https://scalius.com.br/admin)
-- [Política de Privacidade](https://scalius.com.br/politica-de-privacidade)
-- [Termos de Serviço](https://scalius.com.br/termos-de-servico)
+- [Instagram @scaliusbr](https://www.instagram.com/scaliusbr/)
