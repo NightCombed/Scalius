@@ -6,7 +6,8 @@ import {
   Loader2, Store, Sparkles, Users, ShoppingBag, Check, ChevronDown,
   Plus, Pencil, X, UserPlus, Trash2, ExternalLink, Copy, RefreshCw,
   CheckCircle2, AlertCircle, Clock, Mail, AlertTriangle, Send, HardDrive,
-  Activity, Bug, Shield, Bell, ChevronRight, Filter, Search,
+  Activity, Bug, Shield, Bell, ChevronRight, Filter, Search, Download,
+  Phone, UserCheck,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -624,6 +625,315 @@ function MembersSheet({ store, onClose }: MembersSheetProps) {
   );
 }
 
+// ─── Leads Panel ────────────────────────────────────────────────────────────
+
+interface LeadRow {
+  id: string;
+  name: string;
+  whatsapp: string;
+  email: string | null;
+  plan_name: string;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_content: string | null;
+  fbclid: string | null;
+  created_at: string;
+}
+
+function LeadsPanel({
+  leads,
+  isLoading,
+  refetch,
+  onDelete,
+}: {
+  leads: LeadRow[];
+  isLoading: boolean;
+  refetch: () => void;
+  onDelete: (id: string) => void;
+}) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedLead, setSelectedLead] = useState<LeadRow | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+
+  const filteredLeads = leads.filter((l) => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      l.name.toLowerCase().includes(term) ||
+      (l.email ?? "").toLowerCase().includes(term) ||
+      l.whatsapp.toLowerCase().includes(term) ||
+      l.plan_name.toLowerCase().includes(term)
+    );
+  });
+
+  const exportToCSV = () => {
+    if (leads.length === 0) return;
+    const headers = [
+      "Data",
+      "Nome",
+      "WhatsApp",
+      "E-mail",
+      "Plano Escolhido",
+      "Source (Origem)",
+      "Medium (Midia)",
+      "Campaign (Campanha)",
+      "Content (Conteudo)",
+      "Facebook Click ID"
+    ];
+    const csvRows = [
+      headers.join(","),
+      ...leads.map((lead) => [
+        new Date(lead.created_at).toLocaleString("pt-BR"),
+        `"${lead.name.replace(/"/g, '""')}"`,
+        `"${lead.whatsapp}"`,
+        `"${lead.email || ''}"`,
+        `"${lead.plan_name}"`,
+        `"${lead.utm_source || ''}"`,
+        `"${lead.utm_medium || ''}"`,
+        `"${lead.utm_campaign || ''}"`,
+        `"${lead.utm_content || ''}"`,
+        `"${lead.fbclid || ''}"`
+      ].join(","))
+    ];
+    // UTF-8 BOM so Excel displays accents correctly
+    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `leads_scalius_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const getWhatsAppLink = (phone: string) => {
+    const cleanPhone = phone.replace(/\D/g, "");
+    return `https://wa.me/55${cleanPhone}`;
+  };
+
+  function formatTime(iso: string) {
+    return new Date(iso).toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  return (
+    <section className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
+      {/* Header */}
+      <div className="p-6 border-b border-border">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="space-y-1">
+            <h2 className="font-serif text-xl flex items-center gap-2">
+              <UserCheck className="h-5 w-5 text-indigo-600" />
+              Leads da Landing Page
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Acompanhe as pessoas que demonstraram interesse e preencheram o formulário de planos.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-400 dark:hover:bg-indigo-950/20"
+              onClick={exportToCSV}
+              disabled={leads.length === 0}
+            >
+              <Download className="h-4 w-4" />
+              Exportar CSV
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              onClick={refetch}
+              title="Recarregar"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="px-6 py-3 border-b border-border bg-muted/20 flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Filtrar por nome, e-mail, whatsapp ou plano…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-8 pr-3 py-1.5 text-sm bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+      </div>
+
+      {/* Table / List */}
+      {isLoading ? (
+        <div className="p-12 flex justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : filteredLeads.length === 0 ? (
+        <div className="p-12 text-center text-muted-foreground">
+          <UserCheck className="h-8 w-8 mx-auto mb-3 opacity-50" />
+          <p className="text-sm">
+            {searchTerm ? "Nenhum lead encontrado com esse filtro." : "Nenhum lead capturado até o momento."}
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead>
+              <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wide bg-muted/30">
+                <th className="py-3 px-5 font-medium">Nome</th>
+                <th className="py-3 px-5 font-medium">Contato</th>
+                <th className="py-3 px-5 font-medium">Plano</th>
+                <th className="py-3 px-5 font-medium">Rastreamento (UTMs)</th>
+                <th className="py-3 px-5 font-medium">Data</th>
+                <th className="py-3 px-5 font-medium text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {filteredLeads.map((lead) => (
+                <tr key={lead.id} className="hover:bg-muted/10 transition-colors">
+                  <td className="py-3.5 px-5 font-medium max-w-[200px] truncate">
+                    {lead.name}
+                  </td>
+                  <td className="py-3.5 px-5 space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-xs font-semibold">{lead.whatsapp}</span>
+                      <a
+                        href={getWhatsAppLink(lead.whatsapp)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center gap-0.5"
+                        title="Iniciar conversa no WhatsApp"
+                      >
+                        <Phone className="h-3 w-3 shrink-0" />
+                        WhatsApp
+                      </a>
+                    </div>
+                    {lead.email && (
+                      <div className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Mail className="h-3 w-3 shrink-0" />
+                        <span className="truncate max-w-[180px]">{lead.email}</span>
+                      </div>
+                    )}
+                  </td>
+                  <td className="py-3.5 px-5">
+                    <Badge variant="outline" className="bg-indigo-50 border-indigo-100 text-indigo-700 dark:bg-indigo-950/20 dark:border-indigo-900/50 dark:text-indigo-300 uppercase tracking-wider text-[10px] font-bold">
+                      {lead.plan_name}
+                    </Badge>
+                  </td>
+                  <td className="py-3.5 px-5 max-w-[220px]">
+                    {lead.utm_source || lead.utm_medium || lead.utm_campaign ? (
+                      <div className="flex flex-wrap gap-1">
+                        {lead.utm_source && (
+                          <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-mono" title={`Origem: ${lead.utm_source}`}>
+                            src:{lead.utm_source}
+                          </span>
+                        )}
+                        {lead.utm_medium && (
+                          <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded font-mono" title={`Mídia: ${lead.utm_medium}`}>
+                            med:{lead.utm_medium}
+                          </span>
+                        )}
+                        {lead.utm_campaign && (
+                          <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded truncate max-w-[120px] font-mono" title={`Campanha: ${lead.utm_campaign}`}>
+                            cmp:{lead.utm_campaign}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic">Direto / Orgânico</span>
+                    )}
+                  </td>
+                  <td className="py-3.5 px-5 text-xs text-muted-foreground whitespace-nowrap">
+                    {formatTime(lead.created_at)}
+                  </td>
+                  <td className="py-3.5 px-5 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${lead.name} - ${lead.whatsapp} ${lead.email ? `(${lead.email})` : ''} - Plano ${lead.plan_name}`);
+                          toast.success("Dados copiados para a área de transferência");
+                        }}
+                        title="Copiar dados básicos"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={() => {
+                          setSelectedLead(lead);
+                          setDeleteConfirmOpen(true);
+                        }}
+                        title="Excluir Lead"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Footer status */}
+      <div className="px-6 py-3 border-t border-border bg-muted/10 flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Mostrando {filteredLeads.length} leads de um total de {leads.length}
+        </p>
+      </div>
+
+      {/* Deletion Confirm Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl text-destructive">
+              Excluir Lead?
+            </DialogTitle>
+            <DialogDescription>
+              Esta ação removerá permanentemente o lead de <strong>{selectedLead?.name}</strong> do banco de dados. Esta operação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (selectedLead) {
+                  onDelete(selectedLead.id);
+                  setDeleteConfirmOpen(false);
+                  setSelectedLead(null);
+                }
+              }}
+            >
+              Excluir Lead
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </section>
+  );
+}
+
 // ─── Logs Monitor Panel ─────────────────────────────────────────────────────
 
 type LogsTab = "audit" | "errors";
@@ -1095,6 +1405,35 @@ export default function SuperAdminDashboard() {
     refetchInterval: 30_000,
   });
 
+  // ── Fetch Leads ───────────────────────────────────────────────────────────
+  const { data: leads = [], isLoading: loadingLeads, refetch: refetchLeads } = useQuery<LeadRow[]>({
+    queryKey: ["super-admin-leads"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("leads")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as LeadRow[];
+    },
+  });
+
+  // ── Mutation: delete lead ──────────────────────────────────────────────────
+  const deleteLead = useMutation({
+    mutationFn: async (leadId: string) => {
+      const { error } = await supabase
+        .from("leads")
+        .delete()
+        .eq("id", leadId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["super-admin-leads"] });
+      toast.success("Lead excluído com sucesso");
+    },
+    onError: (err: any) => toast.error("Erro ao excluir lead", { description: err.message }),
+  });
+
   // ── Mutation: update plan ─────────────────────────────────────────────────
   const updatePlan = useMutation({
     mutationFn: async ({ storeId, plan }: { storeId: string; plan: PlanId }) => {
@@ -1105,7 +1444,7 @@ export default function SuperAdminDashboard() {
       queryClient.invalidateQueries({ queryKey: ["super-admin-stores"] });
       toast.success(`Plano atualizado para ${PLAN_LABEL[plan]}`);
     },
-    onError: (err: any) => toast.error("Erro ao atualizar plano", { description: err.message }),
+    onError: (err: any) => toast.error("Erro ao atualizar plan", { description: err.message }),
   });
 
   // ── Mutation: update status ───────────────────────────────────────────────
@@ -1134,6 +1473,7 @@ export default function SuperAdminDashboard() {
     { label: "Trial",           value: stores.filter((s) => s.status === "trial").length,      icon: Clock,        color: "text-amber-600" },
     { label: "Plano Pro",       value: stores.filter((s) => s.plan === "pro").length,          icon: Sparkles,     color: "text-violet-600" },
     { label: "Total de pedidos", value: Object.values(counts).reduce((a, c) => a + c.orders, 0), icon: ShoppingBag, color: "text-primary" },
+    { label: "Leads Capturados", value: leads.length,                                          icon: UserCheck,    color: "text-indigo-600" },
   ];
 
   // ── Storage Sweep States & Handlers ───────────────────────────────────────
@@ -1213,7 +1553,7 @@ export default function SuperAdminDashboard() {
 
       {/* ── Summary cards ──────────────────────────────────────────────── */}
       {!isLoading && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {summaryCards.map(({ label, value, icon: Icon, color }) => (
             <div key={label} className="rounded-xl border border-border bg-card p-4 space-y-2 shadow-soft">
               <div className="flex items-center justify-between">
@@ -1654,6 +1994,14 @@ export default function SuperAdminDashboard() {
           </div>
         )}
       </section>
+
+      {/* ── Leads Panel ────────────────────────────────────────────────── */}
+      <LeadsPanel
+        leads={leads}
+        isLoading={loadingLeads}
+        refetch={refetchLeads}
+        onDelete={(id) => deleteLead.mutate(id)}
+      />
 
       {/* ── Logs Monitor Panel ──────────────────────────────────────────── */}
       <LogsMonitorPanel stores={stores} />
