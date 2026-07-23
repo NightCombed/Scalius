@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import '../scalius-landing.css';
 import { ContainerScroll } from '../components/ContainerScroll';
-import { Rocket, Instagram, ArrowRight } from 'lucide-react';
+import { PartyPopper, Rocket, Instagram, ArrowRight, ChevronDown } from 'lucide-react';
 import ShowcaseFlowPath from '../components/ShowcaseFlowPath';
 import { supabase } from '@/integrations/supabase/client';
 import { CatalogAnimation } from '../components/animations/CatalogAnimation';
@@ -13,6 +13,11 @@ const Index = () => {
   const showcaseContainerRef = useRef<HTMLDivElement>(null);
   const mobileScrollRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState(1);
+  const [expandedFeatures, setExpandedFeatures] = useState<number[]>([]);
+
+  const toggleFeature = (index: number) => {
+    setExpandedFeatures(prev => prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]);
+  };
 
   const handleTabChange = (newTab: number) => {
     setActiveTab(newTab);
@@ -245,7 +250,7 @@ const Index = () => {
       document.addEventListener('pointermove', syncPointer);
 
       // Rotating word in Hero
-      const palavras = ['independente.', 'automatizada.', 'profissional.', 'inteligente.', 'escalável.'];
+      const palavras = ['independente.', 'automatizada.', 'profissional.', 'inteligente.', 'escalável.', 'acessível.'];
       const elemento = document.querySelector('.palavra-rotativa .palavra') as HTMLElement;
       let index = 0;
       let intervalId: ReturnType<typeof setInterval> | null = null;
@@ -317,10 +322,10 @@ const Index = () => {
           <div className="hero-content reveal">
             <div className="hero-badge" style={{ border: '1px solid rgba(255, 94, 0, 0.15)' }}>
               <Rocket size={14} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-              Sua vitrine escalando
+              Seu negócio escalando
             </div>
             <h1>
-              Venda mais com sua loja online completa e{' '}
+              Venda mais com sua vitrine online completa e{' '}
               <span className="palavra-rotativa" style={{ display: 'inline-block' }}><span className="palavra">independente.</span></span>
             </h1>
             <p>Catálogo, Pix automático, frete inteligente e notificações em tempo real. Tudo em um só lugar, sem depender do WhatsApp.</p>
@@ -489,11 +494,21 @@ const Index = () => {
               <div className="hero-badge" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>Catálogo Sem Limites</div>
               <h2>Seu estoque sempre certo. Nunca mais passe vergonha.</h2>
               <p>Vendeu a última blusa tamanho G? Ela some da vitrine automaticamente. Nosso motor de variações rastreia variantes personalizadas e bloqueia a venda do que você não tem em mãos.</p>
-              <ul className="showcase-feature-list">
-                {['Produtos e pedidos 100% ilimitados', 'Criação de Variações dinâmicas (Ex: Tamanho, Cor, Material)', 'Rastreio e controle de estoque independente por variação', 'Produto some ou aparece "Esgotado" automaticamente quando estoque zera', 'Aviso de produtos esgotados e em baixo estoque', 'Upload avançado de imagens por produto', 'Destaque de produtos específicos'].map(item => (
-                  <li key={item}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {item}</li>
-                ))}
-              </ul>
+              <button 
+                onClick={() => toggleFeature(1)} 
+                className="flex md:hidden items-center gap-2 text-[15px] font-semibold mt-4 mb-2 transition-colors"
+                style={{ color: 'var(--primary)' }}
+              >
+                {expandedFeatures.includes(1) ? 'Ocultar detalhes' : 'Ver todos os detalhes'}
+                <ChevronDown size={18} className={`transition-transform duration-300 ${expandedFeatures.includes(1) ? 'rotate-180' : ''}`} />
+              </button>
+              <div className={`overflow-hidden transition-all duration-300 ease-in-out md:max-h-none md:opacity-100 md:mt-0 ${expandedFeatures.includes(1) ? 'max-h-[800px] opacity-100 mt-2' : 'max-h-0 opacity-0 mt-0'}`}>
+                <ul className="showcase-feature-list">
+                  {['Produtos e pedidos 100% ilimitados', 'Criação de Variações dinâmicas (Ex: Tamanho, Cor, Material)', 'Rastreio e controle de estoque independente por variação', 'Produto some ou aparece "Esgotado" automaticamente quando estoque zera', 'Aviso de produtos esgotados e em baixo estoque', 'Upload avançado de imagens por produto', 'Destaque de produtos específicos'].map(item => (
+                    <li key={item}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {item}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
             <div className="showcase-image">
               <video
@@ -513,11 +528,21 @@ const Index = () => {
               <div className="hero-badge" style={{ background: 'var(--success-light)', color: 'var(--success)' }}>Checkout de Alta Conversão</div>
               <h2>Como funciona o Pix com baixa Automática do Scalius?</h2>
               <p>1. Cliente fecha a compra na vitrine.<br />2. Sistema gera QR Code e Copia e Cola na hora.<br />3. Cliente paga e integração Mercado Pago aprova no mesmo instante.<br />4. Você é avisado e o status atualiza para "pago" sozinho.<br /><strong>Tudo isso sem você precisar dar um "bom dia".</strong></p>
-              <ul className="showcase-feature-list">
-                {['Integração Oficial Transparente com Mercado Pago', 'Aceita Pix nativo com verificação automática de baixa', 'Plano B garantido: Opção de Pix Manual (Cliente manda o comprovante e você atualiza o status manualmente no painel)', 'Mudança de Status instantânea'].map(item => (
-                  <li key={item}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {item}</li>
-                ))}
-              </ul>
+              <button 
+                onClick={() => toggleFeature(2)} 
+                className="flex md:hidden items-center gap-2 text-[15px] font-semibold mt-4 mb-2 transition-colors"
+                style={{ color: 'var(--success)' }}
+              >
+                {expandedFeatures.includes(2) ? 'Ocultar detalhes' : 'Ver todos os detalhes'}
+                <ChevronDown size={18} className={`transition-transform duration-300 ${expandedFeatures.includes(2) ? 'rotate-180' : ''}`} />
+              </button>
+              <div className={`overflow-hidden transition-all duration-300 ease-in-out md:max-h-none md:opacity-100 md:mt-0 ${expandedFeatures.includes(2) ? 'max-h-[800px] opacity-100 mt-2' : 'max-h-0 opacity-0 mt-0'}`}>
+                <ul className="showcase-feature-list">
+                  {['Integração Oficial Transparente com Mercado Pago', 'Aceita Pix nativo com verificação automática de baixa', 'Plano B garantido: Opção de Pix Manual (Cliente manda o comprovante e você atualiza o status manualmente no painel)', 'Mudança de Status instantânea'].map(item => (
+                    <li key={item}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {item}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
             <div className="showcase-image">
               <img src="/showcase-pix.png" alt="Print do checkout com Pix automático" />
@@ -530,11 +555,20 @@ const Index = () => {
               <div className="hero-badge" style={{ background: '#E0E7FF', color: '#4F46E5' }}>Central Logística</div>
               <h2>Cálculo de Frete Real e Etiqueta em 1 Clique</h2>
               <p>Integrado ao Melhor Envio (Envio Nacional). Cliente vê e paga o preço exato do frete no checkout, você gera a etiqueta completa em 1 clique, sem sair da plataforma.</p>
-              <ul className="showcase-feature-list">
-                {['Cálculo automático: Correios, Jadlog, Azul Cargo e etc', 'Lógica avançada de "Caixa Única" para múltiplos produtos', 'Geração de Etiqueta com 1 clique (Plano Pro)', 'Entrega local por KM, Taxa Fixa por bairro/região ou Motor de cálculo do Scalius (Simula apps de entrega)', 'Opção nativa de "Retirada na Loja Física"'].map(item => (
-                  <li key={item}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {item}</li>
-                ))}
-              </ul>
+              <button 
+                onClick={() => toggleFeature(3)} 
+                className="flex md:hidden items-center gap-2 text-[15px] font-semibold mt-4 mb-2 transition-colors text-[#4F46E5]"
+              >
+                {expandedFeatures.includes(3) ? 'Ocultar detalhes' : 'Ver todos os detalhes'}
+                <ChevronDown size={18} className={`transition-transform duration-300 ${expandedFeatures.includes(3) ? 'rotate-180' : ''}`} />
+              </button>
+              <div className={`overflow-hidden transition-all duration-300 ease-in-out md:max-h-none md:opacity-100 md:mt-0 ${expandedFeatures.includes(3) ? 'max-h-[800px] opacity-100 mt-2' : 'max-h-0 opacity-0 mt-0'}`}>
+                <ul className="showcase-feature-list">
+                  {['Cálculo automático: Correios, Jadlog, Azul Cargo e etc', 'Lógica avançada de "Caixa Única" para múltiplos produtos', 'Geração de Etiqueta com 1 clique (Plano Plus)', 'Entrega local por KM, Taxa Fixa por bairro/região ou Motor de cálculo do Scalius (Simula apps de entrega)', 'Opção nativa de "Retirada na Loja Física"'].map(item => (
+                    <li key={item}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {item}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
             <div className="showcase-image">
               <img src="/showcase-frete.png" alt="Print da logística com cálculo de frete e etiqueta" />
@@ -547,17 +581,26 @@ const Index = () => {
               <div className="hero-badge" style={{ background: '#FEF3C7', color: '#D97706' }}>Retenção de Clientes</div>
               <h2>Sua loja tem memória. Cliente volta mais.</h2>
               <p>Uma loja de verdade tem Login e Senha. Cliente pode criar conta, acompanhar o pedido, e na próxima compra o endereço já está lá. Menos atrito. Mais recompra.</p>
-              <ul className="showcase-feature-list">
-                {[
-                  'Login e cadastro direto na vitrine',
-                  'Histórico visual de todos os pedidos já feitos',
-                  'Link público de acompanhamento (sem precisar de login)',
-                  'Cria conta após comprar — dados já preenchidos',
-                  'Autopreenchimento de endereços em compras futuras'
-                ].map(item => (
-                  <li key={item}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {item}</li>
-                ))}
-              </ul>
+              <button 
+                onClick={() => toggleFeature(4)} 
+                className="flex md:hidden items-center gap-2 text-[15px] font-semibold mt-4 mb-2 transition-colors text-[#D97706]"
+              >
+                {expandedFeatures.includes(4) ? 'Ocultar detalhes' : 'Ver todos os detalhes'}
+                <ChevronDown size={18} className={`transition-transform duration-300 ${expandedFeatures.includes(4) ? 'rotate-180' : ''}`} />
+              </button>
+              <div className={`overflow-hidden transition-all duration-300 ease-in-out md:max-h-none md:opacity-100 md:mt-0 ${expandedFeatures.includes(4) ? 'max-h-[800px] opacity-100 mt-2' : 'max-h-0 opacity-0 mt-0'}`}>
+                <ul className="showcase-feature-list">
+                  {[
+                    'Login e cadastro direto na vitrine',
+                    'Histórico visual de todos os pedidos já feitos',
+                    'Link público de acompanhamento (sem precisar de login)',
+                    'Cria conta após comprar — dados já preenchidos',
+                    'Autopreenchimento de endereços em compras futuras'
+                  ].map(item => (
+                    <li key={item}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {item}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
             <div className="showcase-image">
               <img src="/showcase-portal-b2c.png" alt="Print do portal B2C com histórico de compras" />
@@ -565,23 +608,32 @@ const Index = () => {
           </div>
 
           {/* Row 5 */}
-          <div className="showcase-row reveal">
+          <div className="showcase-row reveal !mb-0">
             <div className="showcase-text">
               <div className="hero-badge" style={{ background: '#FCE7F3', color: '#DB2777' }}>Operação & Notificações</div>
               <h2>Centro de Comando e Alertas em Tempo Real</h2>
               <p>Som de alerta, aba piscando e email automático. Pedido novo entra, você sabe na hora. Mesmo estando longe do painel.</p>
-              <ul className="showcase-feature-list">
-                {[
-                  'Som de Alerta',
-                  'Aba do navegador pisca visualmente para não perder vendas',
-                  'Emails automáticos de alerta para a loja (novo pedido, pagamento confirmado e cancelamento)',
-                  'Emails automáticos para o cliente em cada etapa do pedido. (Plano Pro)',
-                  'Ative ou desative cada notificação específica individualmente',
-                  'Painel para alterar, cancelar e visualizar pedidos com extrema facilidade'
-                ].map(item => (
-                  <li key={item}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#DB2777" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {item}</li>
-                ))}
-              </ul>
+              <button 
+                onClick={() => toggleFeature(5)} 
+                className="flex md:hidden items-center gap-2 text-[15px] font-semibold mt-4 mb-2 transition-colors text-[#DB2777]"
+              >
+                {expandedFeatures.includes(5) ? 'Ocultar detalhes' : 'Ver todos os detalhes'}
+                <ChevronDown size={18} className={`transition-transform duration-300 ${expandedFeatures.includes(5) ? 'rotate-180' : ''}`} />
+              </button>
+              <div className={`overflow-hidden transition-all duration-300 ease-in-out md:max-h-none md:opacity-100 md:mt-0 ${expandedFeatures.includes(5) ? 'max-h-[800px] opacity-100 mt-2' : 'max-h-0 opacity-0 mt-0'}`}>
+                <ul className="showcase-feature-list">
+                  {[
+                    'Som de Alerta',
+                    'Aba do navegador pisca visualmente para não perder vendas',
+                    'Emails automáticos de alerta para a loja (novo pedido, pagamento confirmado e cancelamento)',
+                    'Emails automáticos para o cliente em cada etapa do pedido. (Plano Plus)',
+                    'Ative ou desative cada notificação específica individualmente',
+                    'Painel para alterar, cancelar e visualizar pedidos com extrema facilidade'
+                  ].map(item => (
+                    <li key={item}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#DB2777" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> {item}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
             <div className="showcase-image">
               <video
@@ -600,7 +652,7 @@ const Index = () => {
       </section>
 
       {/* COMO FUNCIONA - TABS */}
-      <section className="section" id="como-funciona" style={{ background: 'var(--bg-surface)' }}>
+      <section className="section !pt-4 md:!pt-8" id="como-funciona" style={{ background: 'var(--bg-surface)' }}>
         <div className="container">
           <div className="bento-header reveal">
             <h2>Seu negócio rodando no piloto automático.</h2>
@@ -614,8 +666,16 @@ const Index = () => {
               <div className="flex flex-col relative w-full gap-[18px] lg:gap-[22px]">
                 <div className="process-progress-head">
                   <span className="process-progress-label">
-                    <span>Faturando</span>
-                    <Rocket className="process-progress-rocket" aria-hidden="true" />
+                    <PartyPopper className="process-progress-icon" aria-hidden="true" />
+                    <div className="confetti-container">
+                      <div className="confetti-particle"></div>
+                      <div className="confetti-particle"></div>
+                      <div className="confetti-particle"></div>
+                      <div className="confetti-particle"></div>
+                      <div className="confetti-particle"></div>
+                      <div className="confetti-particle"></div>
+                      <div className="confetti-particle"></div>
+                    </div>
                   </span>
                 </div>
                 <div className="process-progress" aria-hidden="true">
@@ -659,9 +719,28 @@ const Index = () => {
           {/* MOBILE VERSION (lg:hidden) - Horizontal Swipe Carousel */}
           <div className="lg:hidden w-full flex flex-col gap-4 mt-6 reveal">
             {/* Progress Bar */}
-            <div className="w-full bg-orange-500/10 h-2 rounded-full overflow-hidden relative mx-1 mt-2">
+            <div className="w-full bg-orange-500/10 h-2 rounded-full relative mx-1 mt-4">
+              {/* Confetti fixed at the very end, positioned above the bar */}
               <div 
-                className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full transition-all duration-300 ease-out"
+                className="absolute right-0 bottom-full mb-1 flex items-center justify-center process-wrapper pointer-events-none" 
+                data-step={activeTab}
+                style={{ zIndex: 10, marginRight: '-14px' }}
+              >
+                <span className="process-progress-label">
+                  <PartyPopper className="process-progress-icon" aria-hidden="true" />
+                  <div className="confetti-container">
+                    <div className="confetti-particle"></div>
+                    <div className="confetti-particle"></div>
+                    <div className="confetti-particle"></div>
+                    <div className="confetti-particle"></div>
+                    <div className="confetti-particle"></div>
+                    <div className="confetti-particle"></div>
+                    <div className="confetti-particle"></div>
+                  </div>
+                </span>
+              </div>
+              <div 
+                className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full transition-all duration-300 ease-out relative"
                 style={{ width: `${(activeTab / 3) * 100}%` }}
               />
             </div>
@@ -735,7 +814,7 @@ const Index = () => {
             </div>
 
             {/* Pagination Dots & Swipe Hint */}
-            <div className="flex flex-col items-center gap-1.5 mt-1">
+            <div className="flex flex-col items-center gap-1.5 -mt-1.5">
               <div className="flex items-center justify-center gap-2">
                 {[1, 2, 3].map((step) => (
                   <button
@@ -761,6 +840,43 @@ const Index = () => {
         </div>
       </section>
 
+      {/* SUPPORT BANNER */}
+      <section className="section" id="suporte-parceiro">
+        <div className="container">
+          <div className="reveal flex flex-col items-center text-center p-8 md:p-14 rounded-[2rem] relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(255, 140, 0, 0.08) 0%, rgba(255, 94, 0, 0.03) 100%)', border: '1px solid rgba(255, 94, 0, 0.15)' }}>
+            
+            {/* Soft background glow */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-32 bg-orange-500/10 blur-[80px] rounded-full pointer-events-none"></div>
+
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 relative z-10" style={{ background: 'linear-gradient(135deg, var(--primary), #FF8C00)', boxShadow: '0 8px 16px -4px rgba(255,94,0,0.3)' }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+            </div>
+            
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5 tracking-tight relative z-10">
+              A tecnologia é nossa. <span style={{ color: 'var(--primary)' }}>A parceria é com você.</span>
+            </h2>
+            
+            <p className="text-gray-600 text-[15px] md:text-[17px] max-w-2xl mb-8 leading-relaxed relative z-10">
+              Sabemos que gerenciar uma loja ou migrar de plataforma pode dar aquele frio na barriga. Por isso, <strong>estamos com você em cada etapa</strong>. Não precisa ser um especialista em tecnologia: nossa equipe é a sua equipe. Nós te guiamos para deixar sua loja no ar rapidamente e estaremos sempre aqui para dar todo o suporte que você precisar.
+            </p>
+            
+            <a 
+              href="https://wa.me/5563984142775?text=Olá!%20Gostaria%20de%20saber%20mais%20sobre%20o%20Scalius."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-brand flex items-center gap-2 px-8 py-3.5 text-[15px] relative z-10 shadow-lg shadow-orange-500/25 transition-transform hover:-translate-y-0.5"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+              </svg>
+              Fale com nosso time (WhatsApp)
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* PRICING */}
       <section className="section" id="precos">
         <div className="container">
@@ -779,7 +895,7 @@ const Index = () => {
                 <div className="price-container">
                   <div className="price">R$ 47<span>/mês</span></div>
                 </div>
-                <a href="#" onClick={(e) => handleOpenModal(e, 'Básico', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Básico%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center', marginTop: '20px', marginBottom: '24px' }}>Assinar Básico</a>
+                <a href="#" onClick={(e) => handleOpenModal(e, 'Básico', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Básico%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center', marginTop: '20px', marginBottom: '24px', padding: '14px' }}>Assinar Básico</a>
               </div>
               <ul className="pricing-features">
                 {[
@@ -805,7 +921,7 @@ const Index = () => {
                 <div className="price-container">
                   <div className="price">R$ 89<span>/mês</span></div>
                 </div>
-                <a href="#" onClick={(e) => handleOpenModal(e, 'Profissional', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Profissional%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center', marginTop: '20px', marginBottom: '24px' }}>Assinar Profissional</a>
+                <a href="#" onClick={(e) => handleOpenModal(e, 'Profissional', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Profissional%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center', marginTop: '20px', marginBottom: '24px', padding: '14px' }}>Assinar Profissional</a>
               </div>
               <ul className="pricing-features">
                 <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong style={{ color: 'var(--primary)' }}>Tudo do Básico, mais:</strong></li>
@@ -821,15 +937,15 @@ const Index = () => {
               </ul>
             </div>
 
-            {/* Pro */}
+            {/* Plus */}
             <div className="pricing-card reveal" style={{ transitionDelay: '0.2s' }}>
               <div>
-                <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Pro</h3>
+                <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Plus</h3>
                 <p style={{ color: 'var(--text-muted)', margin: '8px 0 32px 0', fontSize: '1rem' }}>Para quem quer escala e automação completa.</p>
                 <div className="price-container">
                   <div className="price">R$ 159<span>/mês</span></div>
                 </div>
-                <a href="#" onClick={(e) => handleOpenModal(e, 'Pro', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Pro%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center', marginTop: '20px', marginBottom: '24px' }}>Assinar Pro</a>
+                <a href="#" onClick={(e) => handleOpenModal(e, 'Plus', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Plus%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center', marginTop: '20px', marginBottom: '24px', padding: '14px' }}>Assinar Plus</a>
               </div>
               <ul className="pricing-features">
                 <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>Tudo do Profissional, mais:</strong></li>
