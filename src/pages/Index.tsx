@@ -49,9 +49,11 @@ const Index = () => {
   const [leadName, setLeadName] = useState('');
   const [leadWhatsApp, setLeadWhatsApp] = useState('');
   const [leadEmail, setLeadEmail] = useState('');
-  const [selectedPlan, setSelectedPlan] = useState<{ name: string; url: string } | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<{ name: string; planId: string; whatsappUrl: string } | null>(null);
   const [formErrors, setFormErrors] = useState<{ name?: string; whatsapp?: string }>({});
   const [isSubmittingLead, setIsSubmittingLead] = useState(false);
+  const [modalStep, setModalStep] = useState<'form' | 'choice' | 'loading'>('form');
+  const [savedLeadId, setSavedLeadId] = useState<string | null>(null);
 
   const formatWhatsApp = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -65,9 +67,11 @@ const Index = () => {
     setLeadWhatsApp(formatWhatsApp(e.target.value));
   };
 
-  const handleOpenModal = (e: React.MouseEvent, planName: string, whatsappUrl: string) => {
+  const handleOpenModal = (e: React.MouseEvent, planName: string, planId: string, whatsappUrl: string) => {
     e.preventDefault();
-    setSelectedPlan({ name: planName, url: whatsappUrl });
+    setSelectedPlan({ name: planName, planId, whatsappUrl });
+    setModalStep('form');
+    setSavedLeadId(null);
     setIsModalOpen(true);
   };
 
@@ -77,6 +81,8 @@ const Index = () => {
     setLeadWhatsApp('');
     setLeadEmail('');
     setFormErrors({});
+    setModalStep('form');
+    setSavedLeadId(null);
   };
 
   const handleLeadSubmit = async (e: React.FormEvent) => {
@@ -100,14 +106,14 @@ const Index = () => {
     setIsSubmittingLead(true);
 
     try {
-      // 1. Salvar na base
       const utmSource = sessionStorage.getItem('utm_source');
       const utmMedium = sessionStorage.getItem('utm_medium');
       const utmCampaign = sessionStorage.getItem('utm_campaign');
       const utmContent = sessionStorage.getItem('utm_content');
       const fbclid = sessionStorage.getItem('fbclid');
 
-      const { error } = await supabase.from('leads').insert({
+      // 1. Salvar lead na base
+      const { data: leadData, error } = await supabase.from('leads').insert({
         name: leadName.trim(),
         whatsapp: leadWhatsApp,
         email: leadEmail.trim() || null,
@@ -117,65 +123,116 @@ const Index = () => {
         utm_campaign: utmCampaign,
         utm_content: utmContent,
         fbclid: fbclid
-      });
+      }).select('id').single();
 
       if (error) {
         console.error('Erro ao salvar lead:', error);
+      } else {
+        setSavedLeadId(leadData?.id ?? null);
       }
 
-      // 2. Disparar pixel
+      // 2. Disparar pixel Meta
       const nameParts = leadName.trim().split(/\s+/);
       const firstName = nameParts[0] || '';
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
-
       const phoneInput = document.getElementById('lead-whatsapp') as HTMLInputElement;
       const emailInput = document.getElementById('lead-email') as HTMLInputElement;
-
-      const cleanPhone = '55' + phoneInput.value.replace(/\D/g, '');
+      const cleanPhone = '55' + (phoneInput?.value ?? leadWhatsApp).replace(/\D/g, '');
       const emailValue = emailInput ? emailInput.value.trim().toLowerCase() : '';
 
       if (typeof window !== 'undefined' && window.fbq) {
-        // Set user data for Advanced Matching without re-initializing the Pixel
         window.fbq('set', 'userData', {
           ph: cleanPhone,
           fn: firstName,
           ln: lastName,
           ...(emailValue ? { em: emailValue } : {})
         });
-
-        // Track Lead event with standard parameters
         window.fbq('track', 'Lead', {
           content_name: 'Plano ' + selectedPlan.name
         });
       }
 
-      // 3. Redirecionar após 300ms
-      setTimeout(() => {
-        let finalUrl = selectedPlan.url;
-        try {
-          const urlObj = new URL(finalUrl);
-          
-          if (utmSource) urlObj.searchParams.set('utm_source', utmSource);
-          if (utmMedium) urlObj.searchParams.set('utm_medium', utmMedium);
-          if (utmCampaign) urlObj.searchParams.set('utm_campaign', utmCampaign);
-          if (utmContent) urlObj.searchParams.set('utm_content', utmContent);
-          if (fbclid) urlObj.searchParams.set('fbclid', fbclid);
-          
-          finalUrl = urlObj.toString();
-        } catch (e) {
-          console.error('Erro ao injetar UTMs no link do WhatsApp:', e);
-        }
-
-        window.open(finalUrl, '_blank', 'noopener,noreferrer');
-        handleCloseModal();
-        setIsSubmittingLead(false);
-      }, 300);
+      // 3. Mostrar etapa de escolha em vez de redirecionar
+      setModalStep('choice');
 
     } catch (err) {
       console.error('Erro inesperado no fluxo de lead:', err);
+    } finally {
       setIsSubmittingLead(false);
     }
   };
+
+  const handleAssinarAgora = async () => {
+    if (!selectedPlan) return;
+    setModalStep('loading');
+
+    try {
+      const utmSource = sessionStorage.getItem('utm_source');
+      const utmMedium = sessionStorage.getItem('utm_medium');
+      const utmCampaign = sessionStorage.getItem('utm_campaign');
+      const utmContent = sessionStorage.getItem('utm_content');
+      const fbclid = sessionStorage.getItem('fbclid');
+
+      const res = await supabase.functions.invoke('create-subscription-checkout', {
+        body: {
+          plan_id: selectedPlan.planId,
+          lead_id: savedLeadId,
+          name: leadName.trim(),
+          whatsapp: leadWhatsApp,
+          email: leadEmail.trim() || null,
+          utm_source: utmSource,
+          utm_medium: utmMedium,
+          utm_campaign: utmCampaign,
+          utm_content: utmContent,
+          fbclid,
+        },
+      });
+
+      if (res.error || !res.data?.checkout_url) {
+        console.error('Erro ao criar checkout:', res.error, res.data);
+        setModalStep('choice');
+        return;
+      }
+
+      // Disparar pixel de InitiateCheckout
+      if (typeof window !== 'undefined' && window.fbq) {
+        window.fbq('track', 'InitiateCheckout', {
+          content_name: 'Plano ' + selectedPlan.name,
+          value: selectedPlan.planId === 'basico' ? 47 : selectedPlan.planId === 'profissional' ? 89 : 159,
+          currency: 'BRL',
+        });
+      }
+
+      window.location.href = res.data.checkout_url;
+    } catch (err) {
+      console.error('Erro ao redirecionar para checkout:', err);
+      setModalStep('choice');
+    }
+  };
+
+  const handleFalarEquipe = () => {
+    if (!selectedPlan) return;
+
+    const utmSource = sessionStorage.getItem('utm_source');
+    const utmMedium = sessionStorage.getItem('utm_medium');
+    const utmCampaign = sessionStorage.getItem('utm_campaign');
+    const utmContent = sessionStorage.getItem('utm_content');
+    const fbclid = sessionStorage.getItem('fbclid');
+
+    try {
+      const urlObj = new URL(selectedPlan.whatsappUrl);
+      if (utmSource) urlObj.searchParams.set('utm_source', utmSource);
+      if (utmMedium) urlObj.searchParams.set('utm_medium', utmMedium);
+      if (utmCampaign) urlObj.searchParams.set('utm_campaign', utmCampaign);
+      if (utmContent) urlObj.searchParams.set('utm_content', utmContent);
+      if (fbclid) urlObj.searchParams.set('fbclid', fbclid);
+      window.open(urlObj.toString(), '_blank', 'noopener,noreferrer');
+    } catch {
+      window.open(selectedPlan.whatsappUrl, '_blank', 'noopener,noreferrer');
+    }
+    handleCloseModal();
+  };
+
 
   useEffect(() => {
     try {
@@ -895,7 +952,7 @@ const Index = () => {
                 <div className="price-container">
                   <div className="price">R$ 47<span>/mês</span></div>
                 </div>
-                <a href="#" onClick={(e) => handleOpenModal(e, 'Básico', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Básico%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center', marginTop: '20px', marginBottom: '24px', padding: '14px' }}>Assinar Básico</a>
+                <a href="#" onClick={(e) => handleOpenModal(e, 'Básico', 'basico', 'https://wa.me/5563984142775?text=Olá!%20Tenho%20interesse%20no%20plano%20Básico%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center', marginTop: '20px', marginBottom: '24px', padding: '14px' }}>Assinar Básico</a>
               </div>
               <ul className="pricing-features">
                 {[
@@ -921,7 +978,7 @@ const Index = () => {
                 <div className="price-container">
                   <div className="price">R$ 89<span>/mês</span></div>
                 </div>
-                <a href="#" onClick={(e) => handleOpenModal(e, 'Profissional', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Profissional%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center', marginTop: '20px', marginBottom: '24px', padding: '14px' }}>Assinar Profissional</a>
+                <a href="#" onClick={(e) => handleOpenModal(e, 'Profissional', 'profissional', 'https://wa.me/5563984142775?text=Olá!%20Tenho%20interesse%20no%20plano%20Profissional%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center', marginTop: '20px', marginBottom: '24px', padding: '14px' }}>Assinar Profissional</a>
               </div>
               <ul className="pricing-features">
                 <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong style={{ color: 'var(--primary)' }}>Tudo do Básico, mais:</strong></li>
@@ -945,7 +1002,7 @@ const Index = () => {
                 <div className="price-container">
                   <div className="price">R$ 159<span>/mês</span></div>
                 </div>
-                <a href="#" onClick={(e) => handleOpenModal(e, 'Plus', 'https://wa.me/5563984142775?text=Olá!%20Quero%20assinar%20o%20plano%20Plus%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center', marginTop: '20px', marginBottom: '24px', padding: '14px' }}>Assinar Plus</a>
+                <a href="#" onClick={(e) => handleOpenModal(e, 'Plus', 'plus', 'https://wa.me/5563984142775?text=Olá!%20Tenho%20interesse%20no%20plano%20Plus%20do%20Scalius.')} className="btn btn-brand" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', textAlign: 'center', marginTop: '20px', marginBottom: '24px', padding: '14px' }}>Assinar Plus</a>
               </div>
               <ul className="pricing-features">
                 <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> <strong>Tudo do Profissional, mais:</strong></li>
@@ -1062,59 +1119,134 @@ const Index = () => {
             <div className="lead-modal-logo-wrapper">
               <img src="/scalius-logo-dark.png" alt="Scalius" className="lead-modal-logo" />
             </div>
-            <div className="lead-modal-header">
-              <div className="lead-modal-badge">
-                Vamos <span className="highlight">começar</span>
-              </div>
-              <h2>Informe os dados abaixo para prosseguir.</h2>
-              <p>Você será redirecionado para concluir seu atendimento no WhatsApp.</p>
-            </div>
-            <form onSubmit={handleLeadSubmit} className="lead-modal-form">
-              <div className="form-group">
-                <label htmlFor="lead-name">Nome Completo <span className="required">*</span></label>
-                <input
-                  type="text"
-                  id="lead-name"
-                  value={leadName}
-                  onChange={(e) => setLeadName(e.target.value)}
-                  placeholder="Seu nome completo"
-                  className={formErrors.name ? 'input-error' : ''}
-                  disabled={isSubmittingLead}
-                />
-                {formErrors.name && <span className="error-message">{formErrors.name}</span>}
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="lead-whatsapp">WhatsApp <span className="required">*</span></label>
-                <input
-                  type="text"
-                  id="lead-whatsapp"
-                  value={leadWhatsApp}
-                  onChange={handleWhatsAppChange}
-                  placeholder="(00) 00000-0000"
-                  className={formErrors.whatsapp ? 'input-error' : ''}
-                  maxLength={15}
-                  disabled={isSubmittingLead}
-                />
-                {formErrors.whatsapp && <span className="error-message">{formErrors.whatsapp}</span>}
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="lead-email">E-mail <span className="optional">(Opcional)</span></label>
-                <input
-                  type="email"
-                  id="lead-email"
-                  value={leadEmail}
-                  onChange={(e) => setLeadEmail(e.target.value)}
-                  placeholder="seu.email@exemplo.com"
-                  disabled={isSubmittingLead}
-                />
-              </div>
-              
-              <button type="submit" className="btn btn-brand btn-submit-lead" disabled={isSubmittingLead}>
-                {isSubmittingLead ? 'Processando...' : 'Avançar para o WhatsApp'}
-              </button>
-            </form>
+
+            {/* ── ETAPA 1: Formulário ── */}
+            {modalStep === 'form' && (
+              <>
+                <div className="lead-modal-header">
+                  <div className="lead-modal-badge">
+                    Vamos <span className="highlight">começar</span>
+                  </div>
+                  <h2>Informe os dados abaixo para prosseguir.</h2>
+                  <p>Plano <strong>{selectedPlan?.name}</strong> selecionado.</p>
+                </div>
+                <form onSubmit={handleLeadSubmit} className="lead-modal-form">
+                  <div className="form-group">
+                    <label htmlFor="lead-name">Nome Completo <span className="required">*</span></label>
+                    <input
+                      type="text"
+                      id="lead-name"
+                      value={leadName}
+                      onChange={(e) => setLeadName(e.target.value)}
+                      placeholder="Seu nome completo"
+                      className={formErrors.name ? 'input-error' : ''}
+                      disabled={isSubmittingLead}
+                    />
+                    {formErrors.name && <span className="error-message">{formErrors.name}</span>}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="lead-whatsapp">WhatsApp <span className="required">*</span></label>
+                    <input
+                      type="text"
+                      id="lead-whatsapp"
+                      value={leadWhatsApp}
+                      onChange={handleWhatsAppChange}
+                      placeholder="(00) 00000-0000"
+                      className={formErrors.whatsapp ? 'input-error' : ''}
+                      maxLength={15}
+                      disabled={isSubmittingLead}
+                    />
+                    {formErrors.whatsapp && <span className="error-message">{formErrors.whatsapp}</span>}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="lead-email">E-mail <span className="optional">(Opcional)</span></label>
+                    <input
+                      type="email"
+                      id="lead-email"
+                      value={leadEmail}
+                      onChange={(e) => setLeadEmail(e.target.value)}
+                      placeholder="seu.email@exemplo.com"
+                      disabled={isSubmittingLead}
+                    />
+                  </div>
+
+                  <button type="submit" className="btn btn-brand btn-submit-lead" disabled={isSubmittingLead}>
+                    {isSubmittingLead ? 'Processando...' : 'Continuar'}
+                  </button>
+                </form>
+              </>
+            )}
+
+            {/* ── ETAPA 2: Escolha de caminho ── */}
+            {(modalStep === 'choice' || modalStep === 'loading') && (
+              <>
+                <div className="lead-modal-header">
+                  <div className="lead-modal-badge">
+                    Como deseja <span className="highlight">prosseguir?</span>
+                  </div>
+                  <h2>Escolha como quer contratar o plano <strong>{selectedPlan?.name}</strong>.</h2>
+                  <p>Você pode assinar agora pelo site ou conversar com nossa equipe.</p>
+                </div>
+                <div className="lead-modal-form" style={{ gap: '12px' }}>
+                  {/* Botão Assinar Agora */}
+                  <button
+                    onClick={handleAssinarAgora}
+                    disabled={modalStep === 'loading'}
+                    className="btn btn-brand btn-submit-lead"
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+                  >
+                    {modalStep === 'loading' ? (
+                      <>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                        </svg>
+                        Redirecionando...
+                      </>
+                    ) : (
+                      <>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                          <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                        Assinar agora
+                      </>
+                    )}
+                  </button>
+
+                  {/* Divisor */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '4px 0' }}>
+                    <div style={{ flex: 1, height: '1px', background: 'rgba(0,0,0,0.1)' }} />
+                    <span style={{ fontSize: '13px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>ou</span>
+                    <div style={{ flex: 1, height: '1px', background: 'rgba(0,0,0,0.1)' }} />
+                  </div>
+
+                  {/* Botão Falar com a Equipe */}
+                  <button
+                    onClick={handleFalarEquipe}
+                    disabled={modalStep === 'loading'}
+                    className="btn"
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                      padding: '14px', width: '100%', borderRadius: '12px', fontWeight: 600, fontSize: '15px',
+                      border: '1.5px solid rgba(37, 211, 102, 0.4)',
+                      background: 'rgba(37, 211, 102, 0.06)',
+                      color: '#128C7E', cursor: 'pointer',
+                    }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.455 5.703 1.458h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                    </svg>
+                    Falar com a equipe
+                  </button>
+
+                  <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    Ao assinar agora, você será redirecionado para o ambiente seguro do Mercado Pago.
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -10,9 +10,11 @@ import { useActiveStore } from "@/hooks/useActiveStore";
 import { hasFeature, type PlanFeature, type PlanId } from "@/lib/plan";
 
 export interface UsePlanReturn {
-  /** The plan of the active store. Defaults to 'essencial' while loading. */
+  /** The plan of the active store. Defaults to 'profissional' while loading. */
   plan: PlanId;
-  /** Convenience shortcut: true when plan === 'pro' */
+  /** Convenience shortcut: true when plan === 'plus' */
+  isPlus: boolean;
+  /** @deprecated Use isPlus instead */
   isPro: boolean;
   /** Check if the active store's plan gives access to a specific feature */
   checkFeature: (feature: PlanFeature) => boolean;
@@ -20,18 +22,20 @@ export interface UsePlanReturn {
 
 /**
  * Returns the plan info for the currently active store.
- * Defaults to 'essencial' (most restrictive) when store is not yet loaded.
+ * Defaults to 'profissional' (most restrictive non-basico) when store is not yet loaded.
  */
 export function usePlan(): UsePlanReturn {
   const store = useActiveStore();
-  const plan: PlanId = store?.plan ?? "essencial";
+  const plan: PlanId = store?.plan ?? "profissional";
 
   return useMemo<UsePlanReturn>(
     () => ({
       plan,
-      isPro: plan === "pro",
+      isPlus: plan === "plus",
+      isPro: plan === "plus", // backwards compat alias
       checkFeature: (feature: PlanFeature) => hasFeature(plan, feature),
     }),
     [plan],
   );
 }
+

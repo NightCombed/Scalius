@@ -224,11 +224,12 @@ export default function PublicCart() {
                         ) : null}
                       </div>
                       <button
+                        type="button"
                         onClick={() => remove(it.cartKey)}
                         className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0"
-                        aria-label="Remover"
+                        aria-label={`Remover ${it.name} do carrinho`}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                       </button>
                     </div>
                     <p className="text-sm text-muted-foreground">{formatBRL(it.unit_price_cents)} cada</p>

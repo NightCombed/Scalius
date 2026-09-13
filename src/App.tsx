@@ -16,6 +16,7 @@ import SetPassword from "./pages/SetPassword";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
 import TermsOfService from "./pages/legal/TermsOfService";
+import Obrigado from "./pages/Obrigado";
 
 import PublicStoreLayout from "@/components/layouts/PublicStoreLayout";
 import PublicStoreHome from "@/pages/public/PublicStoreHome";
@@ -99,6 +100,7 @@ const App = () => {
 
                     <Route path="/login" element={<Login />} />
                     <Route path="/set-password" element={<SetPassword />} />
+                    <Route path="/obrigado" element={<Obrigado />} />
                     <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
                     <Route path="/termos-de-servico" element={<TermsOfService />} />
 
@@ -128,6 +130,7 @@ const App = () => {
                     <Route path="/" element={<Index />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/set-password" element={<SetPassword />} />
+                    <Route path="/obrigado" element={<Obrigado />} />
                     <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
                     <Route path="/termos-de-servico" element={<TermsOfService />} />
 

@@ -174,22 +174,22 @@ function Timeline({
   };
 
   return (
-    <div className="relative">
+    <div className="relative" role="region" aria-label="Progresso do pedido">
       {/* Vertical line */}
-      <div className="absolute left-[19px] top-5 bottom-5 w-0.5 bg-border" />
+      <div className="absolute left-[19px] top-5 bottom-5 w-0.5 bg-border" aria-hidden="true" />
       <ol className="space-y-5 relative">
         {steps.map((step, i) => {
           const done   = !cancelled && i < currentIdx;
           const active = !cancelled && i === currentIdx;
           const future = cancelled || i > currentIdx;
           return (
-            <li key={step} className="flex items-start gap-4">
+            <li key={step} className="flex items-start gap-4" aria-current={active ? "step" : undefined}>
               {/* Dot */}
               <div className={`relative z-10 h-10 w-10 rounded-full border-2 grid place-items-center shrink-0 transition-colors ${
                 done   ? "bg-primary border-primary text-primary-foreground" :
                 active ? "bg-primary/10 border-primary text-primary" :
                          "bg-background border-border text-muted-foreground"
-              }`}>
+              }`} aria-hidden="true">
                 {done ? (
                   <CheckCircle2 className="h-5 w-5" />
                 ) : active ? (
@@ -201,10 +201,10 @@ function Timeline({
               {/* Label */}
               <div className="pt-2">
                 <p className={`text-sm font-medium leading-none ${future ? "text-muted-foreground" : "text-foreground"}`}>
-                  {labels[step]}
+                  {labels[step]} {done && <span className="sr-only">(Concluído)</span>} {active && <span className="sr-only">(Etapa atual)</span>}
                 </p>
                 {active && (
-                  <p className="text-xs text-primary font-medium mt-1">
+                  <p className="text-xs text-primary font-medium mt-1" aria-live="polite">
                     {getActiveStepSubtext(step)}
                   </p>
                 )}

@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           slug: r.store!.slug,
           name: r.store!.name,
           status: r.store!.status as Store["status"],
-          plan: (r.store!.plan ?? "essencial") as Store["plan"],
+          plan: (r.store!.plan ?? "profissional") as Store["plan"],
           created_at: r.store!.created_at,
         },
         role: r.role as StoreRole,

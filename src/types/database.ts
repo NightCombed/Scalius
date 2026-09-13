@@ -47,7 +47,7 @@ export interface MercadoPagoOAuthData {
 
 export type PlatformRole = "super_admin"; // global Scalius staff
 export type StoreRole = "owner" | "admin" | "staff";
-export type PlanId = "basico" | "essencial" | "pro";
+export type PlanId = "basico" | "profissional" | "plus";
 
 export interface PlatformUser {
   id: UUID;
@@ -63,7 +63,7 @@ export interface Store {
   name: string;
   custom_domain?: string | null;
   status: "active" | "trial" | "suspended";
-  plan: PlanId;              // subscription plan — 'essencial' | 'pro'
+  plan: PlanId;              // subscription plan — 'basico' | 'profissional' | 'plus'
   created_at: ISODate;
   trial_started_at: ISODate;
 }

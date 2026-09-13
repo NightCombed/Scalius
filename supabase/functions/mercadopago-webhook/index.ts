@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
     }
     const { order_id, payment_status: simStatus = "approved" } = body;
     if (!order_id) return new Response(JSON.stringify({ error: "Missing order_id" }), { status: 400 });
-    const result = await processPaymentStatus(supabase, null, order_id, simStatus);
+    const result = await processOrderPaymentStatus(supabase, null, order_id, simStatus);
     return new Response(JSON.stringify({ ok: true, result }), { headers: { "Content-Type": "application/json" } });
   }
 
@@ -61,7 +61,6 @@ Deno.serve(async (req) => {
 
   if (!signatureValid) {
     console.warn("[webhook] invalid signature, logging and returning 200");
-    // Still log it so it shows up in the admin panel
     await supabase.from("webhook_logs").insert({
       provider: "mercadopago",
       external_id: dataIdFromUrl,
@@ -73,69 +72,187 @@ Deno.serve(async (req) => {
     return new Response("ok", { status: 200 });
   }
 
-  // ── Find order by payment ID ─────────────────────────────────────────
-  const { data: order, error: orderErr } = await supabase
+  // ── Determinar o tipo de pagamento (assinatura da plataforma vs pedido de loja) ──
+
+  // 1. Verificar se já existe um subscription_payment com este payment_id
+  const { data: existingSubPayment } = await supabase
+    .from("subscription_payments")
+    .select("id, status, plan_id")
+    .eq("mp_payment_id", dataIdFromUrl)
+    .maybeSingle();
+
+  if (existingSubPayment) {
+    // Já processamos este pagamento de assinatura antes — idempotência
+    if (existingSubPayment.status === "paid") {
+      console.log("[webhook] subscription already paid:", existingSubPayment.id);
+      return new Response("ok", { status: 200 });
+    }
+  }
+
+  // ── Buscar token para consultar o MP ──────────────────────────────────
+  // Para assinaturas: usa token da plataforma Scalius
+  // Para pedidos de loja: usa token da loja específica
+  const platformToken = Deno.env.get("MP_PLATFORM_ACCESS_TOKEN");
+
+  // 2. Verificar se é um pedido de loja (busca na tabela orders)
+  const { data: order } = await supabase
     .from("orders")
     .select("id, store_id, payment_status")
     .eq("external_payment_id", dataIdFromUrl)
     .maybeSingle();
 
-  console.log("[webhook] order lookup result:", order ? `found ${order.id}` : "not found", orderErr ? JSON.stringify(orderErr) : "");
+  console.log("[webhook] order lookup:", order ? `found ${order.id}` : "not found");
 
-  if (!order) {
-    await supabase.from("webhook_logs").insert({
-      provider: "mercadopago",
-      external_id: dataIdFromUrl,
-      event_type: eventType,
-      raw_status: "no_order",
-      processed: false,
-      error: "Order not found for this payment_id",
+  // ── Processar pagamento de PEDIDO DE LOJA ────────────────────────────
+  if (order) {
+    if (order.payment_status === "paid") {
+      await supabase.from("webhook_logs").insert({
+        store_id: order.store_id, order_id: order.id,
+        provider: "mercadopago", external_id: dataIdFromUrl,
+        event_type: eventType, raw_status: "already_paid", processed: false,
+      });
+      return new Response("ok", { status: 200 });
+    }
+
+    // Obter access token da loja
+    const { data: secrets } = await supabase
+      .from("store_secrets")
+      .select("mp_access_token")
+      .eq("store_id", order.store_id)
+      .maybeSingle();
+
+    if (!secrets?.mp_access_token) {
+      console.error("[webhook] no MP token for store:", order.store_id);
+      await supabase.from("webhook_logs").insert({
+        store_id: order.store_id, order_id: order.id,
+        provider: "mercadopago", external_id: dataIdFromUrl,
+        event_type: eventType, processed: false, error: "No MP access token",
+      });
+      return new Response("ok", { status: 200 });
+    }
+
+    // Confirmar status com o MP usando token da loja
+    const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${dataIdFromUrl}`, {
+      headers: { Authorization: `Bearer ${secrets.mp_access_token}` },
     });
-    return new Response("ok", { status: 200 });
-  }
+    const mpPayment = await mpRes.json();
+    const mpStatus: string = mpPayment.status ?? "unknown";
+    console.log("[webhook] MP confirmed status (store order):", mpStatus);
 
-  // ── Idempotency ───────────────────────────────────────────────────────
-  if (order.payment_status === "paid") {
+    const result = await processOrderPaymentStatus(supabase, order, null, mpStatus);
+
     await supabase.from("webhook_logs").insert({
       store_id: order.store_id, order_id: order.id,
       provider: "mercadopago", external_id: dataIdFromUrl,
-      event_type: eventType, raw_status: "already_paid", processed: false,
+      event_type: eventType, raw_status: mpStatus,
+      processed: result.processed, error: result.error ?? null,
     });
+
     return new Response("ok", { status: 200 });
   }
 
-  // ── Get store access token ──────────────────────────────────────────────
-  const { data: secrets } = await supabase
-    .from("store_secrets")
-    .select("mp_access_token")
-    .eq("store_id", order.store_id)
-    .maybeSingle();
-
-  if (!secrets?.mp_access_token) {
-    console.error("[webhook] no MP token for store:", order.store_id);
+  // ── Processar pagamento de ASSINATURA DA PLATAFORMA ──────────────────
+  // Nenhum pedido de loja encontrado — verificar se é assinatura via token da plataforma
+  if (!platformToken) {
+    console.warn("[webhook] MP_PLATFORM_ACCESS_TOKEN não configurado — não é possível processar assinaturas");
     await supabase.from("webhook_logs").insert({
-      store_id: order.store_id, order_id: order.id,
       provider: "mercadopago", external_id: dataIdFromUrl,
-      event_type: eventType, processed: false, error: "No MP access token",
+      event_type: eventType, raw_status: "no_platform_token",
+      processed: false, error: "No platform token to process subscription",
     });
     return new Response("ok", { status: 200 });
   }
 
-  // ── Double-check with MP API ─────────────────────────────────────────────
-  const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${dataIdFromUrl}`, {
-    headers: { Authorization: `Bearer ${secrets.mp_access_token}` },
+  // Confirmar status com o MP usando token da plataforma
+  const mpPlatformRes = await fetch(`https://api.mercadopago.com/v1/payments/${dataIdFromUrl}`, {
+    headers: { Authorization: `Bearer ${platformToken}` },
   });
-  const mpPayment = await mpRes.json();
-  const mpStatus: string = mpPayment.status ?? "unknown";
-  console.log("[webhook] MP confirmed status:", mpStatus);
+  const mpPlatformPayment = await mpPlatformRes.json();
+  const mpPlatformStatus: string = mpPlatformPayment.status ?? "unknown";
+  const metadata = mpPlatformPayment.metadata ?? {};
+  const preferenceId: string = mpPlatformPayment.preference_id ?? "";
 
-  const result = await processPaymentStatus(supabase, order, null, mpStatus);
+  console.log("[webhook] MP platform payment status:", mpPlatformStatus, "type:", metadata.type, "preference_id:", preferenceId);
+
+  // Se o metadata.type não for 'subscription', não é um pagamento da plataforma
+  if (metadata.type !== "subscription") {
+    // Pagamento não reconhecido — logar e ignorar
+    await supabase.from("webhook_logs").insert({
+      provider: "mercadopago", external_id: dataIdFromUrl,
+      event_type: eventType, raw_status: "unrecognized",
+      processed: false, error: "Payment not linked to any order or subscription",
+    });
+    return new Response("ok", { status: 200 });
+  }
+
+  // Encontrar o subscription_payment pela preference_id (criado no checkout)
+  let subPaymentId: string | null = null;
+
+  if (existingSubPayment) {
+    subPaymentId = existingSubPayment.id;
+  } else if (preferenceId) {
+    const { data: subByPref } = await supabase
+      .from("subscription_payments")
+      .select("id, status")
+      .eq("mp_preference_id", preferenceId)
+      .maybeSingle();
+
+    if (subByPref) {
+      subPaymentId = subByPref.id;
+      if (subByPref.status === "paid") {
+        console.log("[webhook] subscription already paid via preference:", preferenceId);
+        return new Response("ok", { status: 200 });
+      }
+    }
+  }
+
+  // Determinar novo status
+  let newStatus: string | null = null;
+  if (mpPlatformStatus === "approved") newStatus = "paid";
+  else if (mpPlatformStatus === "rejected" || mpPlatformStatus === "cancelled") newStatus = "failed";
+  else if (mpPlatformStatus === "pending" || mpPlatformStatus === "in_process") newStatus = "pending";
+
+  if (subPaymentId && newStatus) {
+    const { error: updateErr } = await supabase
+      .from("subscription_payments")
+      .update({
+        mp_payment_id: dataIdFromUrl,
+        mp_status: mpPlatformStatus,
+        status: newStatus,
+      })
+      .eq("id", subPaymentId);
+
+    if (updateErr) {
+      console.error("[webhook] Erro ao atualizar subscription_payment:", updateErr.message);
+    } else {
+      console.log(`✅ [webhook] subscription_payment ${subPaymentId} → status=${newStatus}`);
+    }
+  } else if (!subPaymentId) {
+    // Pagamento de assinatura sem registro prévio — criar registro retroativo
+    console.warn("[webhook] subscription payment sem registro prévio, criando retroativamente");
+    const { error: insertErr } = await supabase.from("subscription_payments").insert({
+      name: metadata.name ?? "Desconhecido",
+      whatsapp: metadata.whatsapp ?? "",
+      email: metadata.email ?? null,
+      plan_id: metadata.plan_id ?? "profissional",
+      plan_price_cents: Math.round((mpPlatformPayment.transaction_amount ?? 0) * 100),
+      mp_preference_id: preferenceId,
+      mp_payment_id: dataIdFromUrl,
+      mp_status: mpPlatformStatus,
+      status: newStatus ?? "pending",
+      utm_source: metadata.utm_source ?? null,
+      utm_medium: metadata.utm_medium ?? null,
+      utm_campaign: metadata.utm_campaign ?? null,
+      utm_content: metadata.utm_content ?? null,
+      fbclid: metadata.fbclid ?? null,
+    });
+    if (insertErr) console.error("[webhook] Erro ao criar subscription_payment retroativo:", insertErr.message);
+  }
 
   await supabase.from("webhook_logs").insert({
-    store_id: order.store_id, order_id: order.id,
     provider: "mercadopago", external_id: dataIdFromUrl,
-    event_type: eventType, raw_status: mpStatus,
-    processed: result.processed, error: result.error ?? null,
+    event_type: eventType, raw_status: mpPlatformStatus,
+    processed: !!newStatus, error: null,
   });
 
   return new Response("ok", { status: 200 });
@@ -156,7 +273,7 @@ async function validateSignature(
       console.warn("[sig] Running locally, skipping signature validation.");
       return true;
     }
-    return false; // Enforce signature verification in production
+    return false;
   }
   if (!signature) {
     console.warn("[sig] no x-signature header present");
@@ -190,8 +307,8 @@ async function validateSignature(
   }
 }
 
-// ─── Process Payment Status ────────────────────────────────────────────────────
-async function processPaymentStatus(
+// ─── Process Order Payment Status ────────────────────────────────────────────────
+async function processOrderPaymentStatus(
   supabase: any,
   order: { id: string; store_id: string; payment_status: string } | null,
   orderId: string | null,
@@ -220,13 +337,12 @@ async function processPaymentStatus(
   if (updateErr) return { processed: false, error: updateErr.message };
 
   console.log(`✅ [webhook] Order ${targetOrder.id} → payment_status=${paymentStatus}${orderStatus ? `, status=${orderStatus}` : ""}`);
-  
+
   if (paymentStatus === "paid") {
-    // Notify customer about payment confirmed!
     supabase.functions.invoke("send-notification", {
       body: { event: "payment_confirmed", order_id: targetOrder.id }
     }).catch((err: any) => console.error("Failed to invoke send-notification", err));
   }
-  
+
   return { processed: true };
 }

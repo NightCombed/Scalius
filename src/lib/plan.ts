@@ -1,12 +1,10 @@
 /**
  * Scalius — Plan definitions and feature gates.
  *
- * The plan is stored on the `stores.plan` column and controlled exclusively
- * by platform super-admins. No automatic billing for now.
- *
- * Plans:
- *   - essencial: base plan — store-only emails, max 2 admin users, no ME label
- *   - pro:       full access — customer emails, unlimited users, ME 1-click label
+ * Plans (aligned with landing page names):
+ *   - basico:       entry plan — 40 products, 1 admin, 1 session
+ *   - profissional: mid plan  — unlimited products, 2 admins, 2 sessions, custom domain
+ *   - plus:         top plan  — all features, unlimited admins/sessions, 1-click labels, emails
  */
 
 import type { PlanId } from "@/types/database";
@@ -27,22 +25,22 @@ export const PLAN_FEATURE_LABELS: Record<PlanFeature, { title: string; descripti
   customer_emails: {
     title: "E-mails automáticos para o cliente",
     description:
-      "Envie confirmações e atualizações de pedido direto para o e-mail do cliente. Disponível no Plano Pro.",
+      "Envie confirmações e atualizações de pedido direto para o e-mail do cliente. Disponível no Plano Plus.",
   },
   melhorenvio_label: {
     title: "Etiqueta Melhor Envio 1-clique",
     description:
-      "Gere e envie pedidos ao carrinho do Melhor Envio com um único clique. Disponível no Plano Pro.",
+      "Gere e envie pedidos ao carrinho do Melhor Envio com um único clique. Disponível no Plano Plus.",
   },
   unlimited_users: {
     title: "Usuários ilimitados no admin",
     description:
-      "Adicione quantos colaboradores precisar ao painel da loja. Disponível no Plano Pro.",
+      "Adicione quantos colaboradores precisar ao painel da loja. Disponível no Plano Plus.",
   },
   advanced_analytics: {
     title: "Métricas avançadas",
     description:
-      "Acesse relatórios completos de faturamento, produtos, clientes e logística com gráficos interativos. Disponível no Plano Pro.",
+      "Acesse relatórios completos de faturamento, produtos, clientes e logística com gráficos interativos. Disponível no Plano Plus.",
   },
 };
 
@@ -54,10 +52,10 @@ const PLAN_ACCESS: Record<PlanId, Set<PlanFeature>> = {
   basico: new Set([
     // basico has no premium features
   ]),
-  essencial: new Set([
-    // essencial has no premium features (corresponds to Profissional)
+  profissional: new Set([
+    // profissional has no premium features (custom domain & portal handled by DB/infra)
   ]),
-  pro: new Set([
+  plus: new Set([
     "customer_emails",
     "melhorenvio_label",
     "unlimited_users",
@@ -75,22 +73,29 @@ export function hasFeature(plan: PlanId, feature: PlanFeature): boolean {
 /** Max admin users allowed per plan. Unlimited = Infinity */
 export const MAX_USERS_BY_PLAN: Record<PlanId, number> = {
   basico: 1,
-  essencial: 2,
-  pro: Infinity,
+  profissional: 2,
+  plus: Infinity,
 };
 
 /** Display name for each plan */
 export const PLAN_LABEL: Record<PlanId, string> = {
   basico: "Básico",
-  essencial: "Profissional",
-  pro: "Pro",
+  profissional: "Profissional",
+  plus: "Plus",
 };
 
 /** Badge color classes for each plan (Tailwind) */
 export const PLAN_BADGE_CLASSES: Record<PlanId, string> = {
   basico:
     "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-  essencial:
+  profissional:
     "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
-  pro: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
+  plus: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
+};
+
+/** Monthly price in cents for each plan (used for subscription checkout) */
+export const PLAN_PRICE_CENTS: Record<PlanId, number> = {
+  basico: 4700,
+  profissional: 8900,
+  plus: 15900,
 };

@@ -135,7 +135,7 @@ function StoreDialog({ open, onClose, initial, onSaved }: StoreDialogProps) {
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [slugEdited, setSlugEdited] = useState(isEdit);
   const [status, setStatus] = useState<StoreStatus>(initial?.status ?? "trial");
-  const [plan, setPlan] = useState<PlanId>(initial?.plan ?? "essencial");
+  const [plan, setPlan] = useState<PlanId>(initial?.plan ?? "profissional");
   const [saving, setSaving] = useState(false);
 
   // Auto-generate slug from name when not manually edited
@@ -261,8 +261,8 @@ function StoreDialog({ open, onClose, initial, onSaved }: StoreDialogProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="basico">Básico</SelectItem>
-                  <SelectItem value="essencial">Profissional</SelectItem>
-                  <SelectItem value="pro">Pro ✨</SelectItem>
+                  <SelectItem value="profissional">Profissional</SelectItem>
+                  <SelectItem value="plus">Plus ✨</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1694,13 +1694,13 @@ export default function SuperAdminDashboard() {
                           )}
                           disabled={updatePlan.isPending}
                         >
-                          {store.plan === "pro" && <Sparkles className="h-3 w-3" />}
+                          {store.plan === "plus" && <Sparkles className="h-3 w-3" />}
                           {PLAN_LABEL[store.plan]}
                           <ChevronDown className="h-3 w-3 ml-0.5" />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="w-44">
-                        {(["basico", "essencial", "pro"] as PlanId[]).map((p) => (
+                        {(["basico", "profissional", "plus"] as PlanId[]).map((p) => (
                           <DropdownMenuItem
                             key={p}
                             onClick={() => updatePlan.mutate({ storeId: store.id, plan: p })}
@@ -1708,7 +1708,7 @@ export default function SuperAdminDashboard() {
                             className="flex items-center justify-between"
                           >
                             <span className="flex items-center gap-2">
-                              {p === "pro" && <Sparkles className="h-3.5 w-3.5 text-violet-500" />}
+                              {p === "plus" && <Sparkles className="h-3.5 w-3.5 text-violet-500" />}
                               {PLAN_LABEL[p]}
                             </span>
                             {store.plan === p && <Check className="h-3.5 w-3.5 text-primary" />}
@@ -2016,7 +2016,7 @@ export default function SuperAdminDashboard() {
                 <th className="pb-3 pr-6 font-medium">Feature</th>
                 <th className="pb-3 px-4 font-medium text-center">Básico</th>
                 <th className="pb-3 px-4 font-medium text-center">Profissional</th>
-                <th className="pb-3 px-4 font-medium text-center text-violet-600 dark:text-violet-400">Pro</th>
+                <th className="pb-3 px-4 font-medium text-center text-violet-600 dark:text-violet-400">Plus</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -2028,7 +2028,7 @@ export default function SuperAdminDashboard() {
                 ["Limite de produtos", "40", "Ilimitado", "Ilimitado"],
                 ["Domínio personalizado", false, true, true],
                 ["Portal do cliente", false, true, true],
-              ].map(([feature, basico, essencial, pro]) => (
+              ].map(([feature, basico, profissional, plus]) => (
                 <tr key={feature as string} className="hover:bg-muted/20 transition-colors">
                   <td className="py-3 pr-6 font-medium">{feature as string}</td>
                   <td className="py-3 px-4 text-center">
@@ -2039,17 +2039,17 @@ export default function SuperAdminDashboard() {
                     )}
                   </td>
                   <td className="py-3 px-4 text-center">
-                    {typeof essencial === "boolean" ? (
-                      essencial ? <Check className="h-4 w-4 text-emerald-500 mx-auto" /> : <span className="text-muted-foreground text-xs">—</span>
+                    {typeof profissional === "boolean" ? (
+                      profissional ? <Check className="h-4 w-4 text-emerald-500 mx-auto" /> : <span className="text-muted-foreground text-xs">—</span>
                     ) : (
-                      <span className="text-sm font-medium">{essencial}</span>
+                      <span className="text-sm font-medium">{profissional}</span>
                     )}
                   </td>
                   <td className="py-3 px-4 text-center">
-                    {typeof pro === "boolean" ? (
-                      pro ? <Check className="h-4 w-4 text-emerald-500 mx-auto" /> : <span className="text-muted-foreground text-xs">—</span>
+                    {typeof plus === "boolean" ? (
+                      plus ? <Check className="h-4 w-4 text-emerald-500 mx-auto" /> : <span className="text-muted-foreground text-xs">—</span>
                     ) : (
-                      <span className="text-sm font-semibold text-violet-600 dark:text-violet-400">{pro}</span>
+                      <span className="text-sm font-semibold text-violet-600 dark:text-violet-400">{plus}</span>
                     )}
                   </td>
                 </tr>

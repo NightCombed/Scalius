@@ -194,8 +194,8 @@ export async function registerSession(
         ok: false,
         reason: "limit_exceeded",
         message:
-          "Limite de dispositivos atingido para o plano Essencial. " +
-          "Faça logout em outro dispositivo ou faça upgrade para o Plano Pro.",
+          "Limite de dispositivos atingido para o plano Profissional. " +
+          "Faça logout em outro dispositivo ou faça upgrade para o Plano Plus.",
       };
     }
 

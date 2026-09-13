@@ -97,7 +97,7 @@ export default function AdminOrders() {
       </header>
 
       {/* Filter chips — horizontally scrollable on mobile */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap scrollbar-none">
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap scrollbar-none" role="tablist" aria-label="Filtro de pedidos por status">
         {FILTERS.map((f) => {
           const count = f === "all"
             ? orders.length
@@ -105,6 +105,9 @@ export default function AdminOrders() {
           return (
             <button
               key={f}
+              type="button"
+              role="tab"
+              aria-selected={filter === f}
               onClick={() => setFilter(f)}
               className={cn(
                 "px-3 py-1.5 rounded-full text-sm border transition-colors shrink-0 min-h-[36px]",
@@ -121,9 +124,10 @@ export default function AdminOrders() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
         <Input
           placeholder="Buscar por cliente, telefone ou ID..."
+          aria-label="Buscar pedidos por cliente, telefone ou ID"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-9 h-11"
