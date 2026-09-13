@@ -2253,7 +2253,7 @@
   border: 1px solid var(--border-light);
   border-radius: 16px;
   width: 100%;
-  max-width: 480px;
+  max-width: 600px;
   padding: 40px 32px 32px 32px;
   position: relative;
   box-shadow: var(--shadow-lg);
@@ -2330,6 +2330,18 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.scalius-landing-wrapper .lead-modal-form .form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 540px) {
+  .scalius-landing-wrapper .lead-modal-form .form-row-2 {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 .scalius-landing-wrapper .lead-modal-form .form-group {

@@ -1232,34 +1232,36 @@ const Index = () => {
                     {formErrors.name && <span className="error-message">{formErrors.name}</span>}
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="lead-whatsapp">WhatsApp <span className="required">*</span></label>
-                    <input
-                      type="text"
-                      id="lead-whatsapp"
-                      value={leadWhatsApp}
-                      onChange={handleWhatsAppChange}
-                      placeholder="(00) 00000-0000"
-                      className={formErrors.whatsapp ? 'input-error' : ''}
-                      maxLength={15}
-                    />
-                    {formErrors.whatsapp && <span className="error-message">{formErrors.whatsapp}</span>}
+                  <div className="form-row-2">
+                    <div className="form-group">
+                      <label htmlFor="lead-whatsapp">WhatsApp <span className="required">*</span></label>
+                      <input
+                        type="text"
+                        id="lead-whatsapp"
+                        value={leadWhatsApp}
+                        onChange={handleWhatsAppChange}
+                        placeholder="(00) 00000-0000"
+                        className={formErrors.whatsapp ? 'input-error' : ''}
+                        maxLength={15}
+                      />
+                      {formErrors.whatsapp && <span className="error-message">{formErrors.whatsapp}</span>}
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="lead-email">E-mail de Acesso <span className="required">*</span></label>
+                      <input
+                        type="email"
+                        id="lead-email"
+                        value={leadEmail}
+                        onChange={(e) => setLeadEmail(e.target.value)}
+                        placeholder="seu.email@exemplo.com"
+                        className={formErrors.email ? 'input-error' : ''}
+                      />
+                      {formErrors.email && <span className="error-message">{formErrors.email}</span>}
+                    </div>
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="lead-email">E-mail de Acesso <span className="required">*</span></label>
-                    <input
-                      type="email"
-                      id="lead-email"
-                      value={leadEmail}
-                      onChange={(e) => setLeadEmail(e.target.value)}
-                      placeholder="seu.email@exemplo.com"
-                      className={formErrors.email ? 'input-error' : ''}
-                    />
-                    {formErrors.email && <span className="error-message">{formErrors.email}</span>}
-                  </div>
-
-                  <button type="submit" className="btn btn-brand btn-submit-lead" style={{ marginTop: '8px' }}>
+                  <button type="submit" className="btn btn-brand btn-submit-lead" style={{ marginTop: '4px' }}>
                     Próximo: Dados da Loja ➔
                   </button>
                 </form>
@@ -1277,131 +1279,116 @@ const Index = () => {
                   <p>Sua conta já será criada e pronta para acesso.</p>
                 </div>
                 <form onSubmit={handleStep2Submit} className="lead-modal-form">
-                  {/* Card de Lembrete do E-mail e Senha */}
-                  <div style={{
-                    background: 'rgba(37, 99, 235, 0.06)',
-                    border: '1px solid rgba(37, 99, 235, 0.2)',
-                    borderRadius: '10px',
-                    padding: '10px 14px',
-                    fontSize: '12px',
-                    color: '#1E40AF',
-                    lineHeight: '1.4'
-                  }}>
-                    🔑 <strong>Seus dados de acesso ao painel:</strong><br />
-                    E-mail: <strong>{leadEmail}</strong><br />
-                    <span style={{ fontSize: '11px', opacity: 0.9 }}>Guarde seu e-mail e a senha que definirá abaixo. Você usará eles para acessar sua loja!</span>
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="store-name">Nome da Sua Loja <span className="required">*</span></label>
-                    <input
-                      type="text"
-                      id="store-name"
-                      value={storeName}
-                      onChange={(e) => handleStoreNameChange(e.target.value)}
-                      placeholder="Ex: Rosa Bela Boutique"
-                      className={formErrors.storeName ? 'input-error' : ''}
-                    />
-                    {formErrors.storeName && <span className="error-message">{formErrors.storeName}</span>}
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="store-slug">Subdomínio Gratuito <span className="required">*</span></label>
-                    <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+                  <div className="form-row-2">
+                    <div className="form-group">
+                      <label htmlFor="store-name">Nome da Sua Loja <span className="required">*</span></label>
                       <input
                         type="text"
-                        id="store-slug"
-                        value={storeSlug}
-                        onChange={(e) => handleSlugChange(e.target.value)}
-                        placeholder="rosabela"
-                        className={formErrors.storeSlug ? 'input-error' : ''}
-                        style={{ paddingRight: '140px' }}
+                        id="store-name"
+                        value={storeName}
+                        onChange={(e) => handleStoreNameChange(e.target.value)}
+                        placeholder="Ex: Rosa Bela Boutique"
+                        className={formErrors.storeName ? 'input-error' : ''}
                       />
-                      <span style={{ position: 'absolute', right: '12px', fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600, pointerEvents: 'none' }}>
-                        .scalius.com.br
-                      </span>
+                      {formErrors.storeName && <span className="error-message">{formErrors.storeName}</span>}
                     </div>
 
-                    {/* Status da checagem do subdomínio */}
-                    {isCheckingSlug && (
-                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>Verificando disponibilidade...</span>
-                    )}
-                    {!isCheckingSlug && slugAvailable === true && storeSlug.length >= 3 && (
-                      <span style={{ fontSize: '12px', color: '#10B981', fontWeight: 600, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        ✓ Subdomínio livre para uso!
-                      </span>
-                    )}
-                    {!isCheckingSlug && slugAvailable === false && (
-                      <span style={{ fontSize: '12px', color: '#EF4444', fontWeight: 600, marginTop: '4px' }}>
-                        ✕ Este subdomínio já está em uso. Escolha outro.
-                      </span>
-                    )}
-                    {formErrors.storeSlug && <span className="error-message">{formErrors.storeSlug}</span>}
+                    <div className="form-group">
+                      <label htmlFor="store-slug">Subdomínio Gratuito <span className="required">*</span></label>
+                      <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+                        <input
+                          type="text"
+                          id="store-slug"
+                          value={storeSlug}
+                          onChange={(e) => handleSlugChange(e.target.value)}
+                          placeholder="rosabela"
+                          className={formErrors.storeSlug ? 'input-error' : ''}
+                          style={{ paddingRight: '110px' }}
+                        />
+                        <span style={{ position: 'absolute', right: '10px', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, pointerEvents: 'none' }}>
+                          .scalius.com.br
+                        </span>
+                      </div>
+
+                      {/* Status da checagem do subdomínio */}
+                      {isCheckingSlug && (
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>Verificando disponibilidade...</span>
+                      )}
+                      {!isCheckingSlug && slugAvailable === true && storeSlug.length >= 3 && (
+                        <span style={{ fontSize: '11px', color: '#10B981', fontWeight: 600, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          ✓ Subdomínio livre para uso!
+                        </span>
+                      )}
+                      {!isCheckingSlug && slugAvailable === false && (
+                        <span style={{ fontSize: '11px', color: '#EF4444', fontWeight: 600, marginTop: '2px' }}>
+                          ✕ Este subdomínio já está em uso. Escolha outro.
+                        </span>
+                      )}
+                      {formErrors.storeSlug && <span className="error-message">{formErrors.storeSlug}</span>}
+                    </div>
                   </div>
 
                   {/* Dica de Domínio Personalizado (.com.br) */}
-                  <div style={{
-                    background: 'rgba(99, 102, 241, 0.06)',
-                    border: '1px solid rgba(99, 102, 241, 0.2)',
-                    borderRadius: '10px',
-                    padding: '10px 14px',
-                    fontSize: '12px',
-                    color: '#4338CA',
-                    lineHeight: '1.4'
-                  }}>
-                    💡 <strong>Quer usar seu próprio domínio (ex: <code>sualoja.com.br</code>)?</strong><br />
-                    Você receberá o link gratuito <code>{storeSlug || 'sualoja'}.scalius.com.br</code> e nossa equipe configurará o seu domínio próprio gratuitamente após a contratação!
-                  </div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '-4px 0 0 0', lineHeight: '1.3' }}>
+                    💡 <strong>Domínio próprio (.com.br)?</strong> Você usará <code>{storeSlug || 'sualoja'}.scalius.com.br</code> e nossa equipe conectará seu domínio próprio gratuitamente após a contratação.
+                  </p>
 
-                  <div className="form-group">
-                    <label htmlFor="account-password">Senha de Acesso ao Painel <span className="required">*</span></label>
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        id="account-password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Mínimo 6 caracteres"
-                        className={formErrors.password ? 'input-error' : ''}
-                        style={{ paddingRight: '40px' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
-                        tabIndex={-1}
-                      >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
+                  <div className="form-row-2">
+                    <div className="form-group">
+                      <label htmlFor="account-password">Senha de Acesso <span className="required">*</span></label>
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          id="account-password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="Mínimo 6 caracteres"
+                          className={formErrors.password ? 'input-error' : ''}
+                          style={{ paddingRight: '36px' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                          tabIndex={-1}
+                        >
+                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                      {formErrors.password && <span className="error-message">{formErrors.password}</span>}
                     </div>
-                    {formErrors.password && <span className="error-message">{formErrors.password}</span>}
-                  </div>
 
-                  <div className="form-group">
-                    <label htmlFor="confirm-password">Confirmar Senha <span className="required">*</span></label>
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        type={showConfirmPassword ? "text" : "password"}
-                        id="confirm-password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Digite a mesma senha novamente"
-                        className={formErrors.confirmPassword ? 'input-error' : ''}
-                        style={{ paddingRight: '40px' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
-                        tabIndex={-1}
-                      >
-                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
+                    <div className="form-group">
+                      <label htmlFor="confirm-password">Confirmar Senha <span className="required">*</span></label>
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          type={showConfirmPassword ? "text" : "password"}
+                          id="confirm-password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Digite a senha novamente"
+                          className={formErrors.confirmPassword ? 'input-error' : ''}
+                          style={{ paddingRight: '36px' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                          tabIndex={-1}
+                        >
+                          {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                      {formErrors.confirmPassword && <span className="error-message">{formErrors.confirmPassword}</span>}
                     </div>
-                    {formErrors.confirmPassword && <span className="error-message">{formErrors.confirmPassword}</span>}
                   </div>
 
-                  <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                  {/* Lembrete de Acesso Compacto e Transparente Debaixo das Senhas */}
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', margin: '2px 0 0 0', lineHeight: '1.3' }}>
+                    🔑 Lembre-se: seu e-mail de acesso é <strong>{leadEmail}</strong>. Você usará este e-mail e sua senha para entrar na sua loja!
+                  </p>
+
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
                     <button
                       type="button"
                       onClick={() => setModalStep('step1_personal')}
