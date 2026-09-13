@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
       ],
       payer: {
         name: name.trim(),
-        ...(email ? { email: email.trim() } : {}),
+        email: email && email.trim() ? email.trim() : `cliente.${whatsapp.replace(/\D/g, "")}@scalius.com.br`,
       },
       back_urls: {
         success: `${baseUrl}/obrigado`,
