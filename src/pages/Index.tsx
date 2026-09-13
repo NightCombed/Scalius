@@ -1329,8 +1329,8 @@ const Index = () => {
                   </div>
 
                   {/* Dica de Domínio Personalizado (.com.br) */}
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '-4px 0 0 0', lineHeight: '1.3' }}>
-                    💡 <strong>Domínio próprio (.com.br)?</strong> Você usará <code>{storeSlug || 'sualoja'}.scalius.com.br</code> e nossa equipe conectará seu domínio próprio gratuitamente após a contratação.
+                  <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: '-2px 0 0 0', lineHeight: '1.35' }}>
+                    <strong>Domínio próprio (.com.br)?</strong> Você usará <code>{storeSlug || 'sualoja'}.scalius.com.br</code> e nossa equipe conectará seu domínio próprio gratuitamente após a contratação.
                   </p>
 
                   <div className="form-row-2">
@@ -1383,9 +1383,9 @@ const Index = () => {
                     </div>
                   </div>
 
-                  {/* Lembrete de Acesso Compacto e Transparente Debaixo das Senhas */}
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', margin: '2px 0 0 0', lineHeight: '1.3' }}>
-                    🔑 Lembre-se: seu e-mail de acesso é <strong>{leadEmail}</strong>. Você usará este e-mail e sua senha para entrar na sua loja!
+                  {/* Lembrete de Acesso Compacto Debaixo das Senhas */}
+                  <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', textAlign: 'center', margin: '2px 0 0 0', lineHeight: '1.35' }}>
+                    Lembre-se: seu e-mail de acesso é <strong>{leadEmail}</strong>. Você usará este e-mail e sua senha para entrar na sua loja!
                   </p>
 
                   <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
