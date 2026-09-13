@@ -61,7 +61,9 @@ const Index = () => {
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
   const [isCheckingSlug, setIsCheckingSlug] = useState(false);
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [savedLeadId, setSavedLeadId] = useState<string | null>(null);
@@ -149,6 +151,7 @@ const Index = () => {
     setStoreSlugEdited(false);
     setSlugAvailable(null);
     setPassword('');
+    setConfirmPassword('');
     setFormErrors({});
     setModalStep('step1_personal');
     setSavedLeadId(null);
@@ -192,6 +195,9 @@ const Index = () => {
     }
     if (!password || password.length < 6) {
       errors.password = 'Defina uma senha de pelo menos 6 caracteres.';
+    }
+    if (password !== confirmPassword) {
+      errors.confirmPassword = 'As senhas não coincidem. Digite a mesma senha novamente.';
     }
 
     if (Object.keys(errors).length > 0) {
@@ -1271,6 +1277,21 @@ const Index = () => {
                   <p>Sua conta já será criada e pronta para acesso.</p>
                 </div>
                 <form onSubmit={handleStep2Submit} className="lead-modal-form">
+                  {/* Card de Lembrete do E-mail e Senha */}
+                  <div style={{
+                    background: 'rgba(37, 99, 235, 0.06)',
+                    border: '1px solid rgba(37, 99, 235, 0.2)',
+                    borderRadius: '10px',
+                    padding: '10px 14px',
+                    fontSize: '12px',
+                    color: '#1E40AF',
+                    lineHeight: '1.4'
+                  }}>
+                    🔑 <strong>Seus dados de acesso ao painel:</strong><br />
+                    E-mail: <strong>{leadEmail}</strong><br />
+                    <span style={{ fontSize: '11px', opacity: 0.9 }}>Guarde seu e-mail e a senha que definirá abaixo. Você usará eles para acessar sua loja!</span>
+                  </div>
+
                   <div className="form-group">
                     <label htmlFor="store-name">Nome da Sua Loja <span className="required">*</span></label>
                     <input
@@ -1354,6 +1375,30 @@ const Index = () => {
                       </button>
                     </div>
                     {formErrors.password && <span className="error-message">{formErrors.password}</span>}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="confirm-password">Confirmar Senha <span className="required">*</span></label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        id="confirm-password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Digite a mesma senha novamente"
+                        className={formErrors.confirmPassword ? 'input-error' : ''}
+                        style={{ paddingRight: '40px' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                        tabIndex={-1}
+                      >
+                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                    {formErrors.confirmPassword && <span className="error-message">{formErrors.confirmPassword}</span>}
                   </div>
 
                   <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
