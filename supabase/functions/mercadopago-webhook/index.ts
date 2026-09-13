@@ -213,19 +213,29 @@ Deno.serve(async (req) => {
   else if (mpPlatformStatus === "pending" || mpPlatformStatus === "in_process") newStatus = "pending";
 
   if (subPaymentId && newStatus) {
-    const { error: updateErr } = await supabase
+    const { data: subPaymentData, error: updateErr } = await supabase
       .from("subscription_payments")
       .update({
         mp_payment_id: dataIdFromUrl,
         mp_status: mpPlatformStatus,
         status: newStatus,
       })
-      .eq("id", subPaymentId);
+      .eq("id", subPaymentId)
+      .select("store_id")
+      .single();
 
     if (updateErr) {
       console.error("[webhook] Erro ao atualizar subscription_payment:", updateErr.message);
     } else {
       console.log(`✅ [webhook] subscription_payment ${subPaymentId} → status=${newStatus}`);
+      const targetStoreId = subPaymentData?.store_id || metadata.store_id;
+      if (newStatus === "paid" && targetStoreId) {
+        await supabase
+          .from("stores")
+          .update({ status: "active" })
+          .eq("id", targetStoreId);
+        console.log(`🚀 [webhook] Loja ${targetStoreId} ativada com sucesso!`);
+      }
     }
   } else if (!subPaymentId) {
     // Pagamento de assinatura sem registro prévio — criar registro retroativo

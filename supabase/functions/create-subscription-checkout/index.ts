@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
         .insert({
           name: store_name.trim(),
           slug: cleanSlug,
-          status: "trial",
+          status: "pending",
           plan: plan_id,
           trial_started_at: new Date().toISOString(),
         } as any)
