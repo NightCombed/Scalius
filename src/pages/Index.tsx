@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import '../scalius-landing.css';
 import { ContainerScroll } from '../components/ContainerScroll';
-import { PartyPopper, Rocket, Instagram, ArrowRight, ChevronDown } from 'lucide-react';
+import { PartyPopper, Rocket, Instagram, ArrowRight, ChevronDown, Eye, EyeOff, CheckCircle2, Globe, Lock, Store as StoreIcon } from 'lucide-react';
 import ShowcaseFlowPath from '../components/ShowcaseFlowPath';
 import { supabase } from '@/integrations/supabase/client';
 import { CatalogAnimation } from '../components/animations/CatalogAnimation';
@@ -46,13 +46,24 @@ const Index = () => {
     }
   };
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalStep, setModalStep] = useState<'step1_personal' | 'step2_store' | 'step3_choice' | 'loading'>('step1_personal');
+  const [selectedPlan, setSelectedPlan] = useState<{ name: string; planId: string; whatsappUrl: string } | null>(null);
+
+  // Step 1 - Dados Pessoais
   const [leadName, setLeadName] = useState('');
   const [leadWhatsApp, setLeadWhatsApp] = useState('');
   const [leadEmail, setLeadEmail] = useState('');
-  const [selectedPlan, setSelectedPlan] = useState<{ name: string; planId: string; whatsappUrl: string } | null>(null);
-  const [formErrors, setFormErrors] = useState<{ name?: string; whatsapp?: string }>({});
-  const [isSubmittingLead, setIsSubmittingLead] = useState(false);
-  const [modalStep, setModalStep] = useState<'form' | 'choice' | 'loading'>('form');
+
+  // Step 2 - Dados da Loja e Senha
+  const [storeName, setStoreName] = useState('');
+  const [storeSlug, setStoreSlug] = useState('');
+  const [storeSlugEdited, setStoreSlugEdited] = useState(false);
+  const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
+  const [isCheckingSlug, setIsCheckingSlug] = useState(false);
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [savedLeadId, setSavedLeadId] = useState<string | null>(null);
 
   const formatWhatsApp = (value: string) => {
@@ -67,10 +78,63 @@ const Index = () => {
     setLeadWhatsApp(formatWhatsApp(e.target.value));
   };
 
+  const slugify = (text: string) =>
+    text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
+
+  const checkSlugAvailability = async (slugToCheck: string) => {
+    const clean = slugToCheck.toLowerCase().trim().replace(/[^a-z0-9-]/g, '');
+    if (!clean || clean.length < 3) {
+      setSlugAvailable(null);
+      return;
+    }
+    setIsCheckingSlug(true);
+    try {
+      const { data } = await supabase
+        .from('stores')
+        .select('id')
+        .eq('slug', clean)
+        .maybeSingle();
+      setSlugAvailable(!data);
+    } catch (err) {
+      console.error('Erro ao verificar subdomínio:', err);
+    } finally {
+      setIsCheckingSlug(false);
+    }
+  };
+
+  const handleStoreNameChange = (val: string) => {
+    setStoreName(val);
+    if (!storeSlugEdited) {
+      const generated = slugify(val);
+      setStoreSlug(generated);
+      if (generated.length >= 3) {
+        checkSlugAvailability(generated);
+      } else {
+        setSlugAvailable(null);
+      }
+    }
+  };
+
+  const handleSlugChange = (val: string) => {
+    const clean = val.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    setStoreSlug(clean);
+    setStoreSlugEdited(true);
+    if (clean.length >= 3) {
+      checkSlugAvailability(clean);
+    } else {
+      setSlugAvailable(null);
+    }
+  };
+
   const handleOpenModal = (e: React.MouseEvent, planName: string, planId: string, whatsappUrl: string) => {
     e.preventDefault();
     setSelectedPlan({ name: planName, planId, whatsappUrl });
-    setModalStep('form');
+    setModalStep('step1_personal');
     setSavedLeadId(null);
     setIsModalOpen(true);
   };
@@ -80,16 +144,20 @@ const Index = () => {
     setLeadName('');
     setLeadWhatsApp('');
     setLeadEmail('');
+    setStoreName('');
+    setStoreSlug('');
+    setStoreSlugEdited(false);
+    setSlugAvailable(null);
+    setPassword('');
     setFormErrors({});
-    setModalStep('form');
+    setModalStep('step1_personal');
     setSavedLeadId(null);
   };
 
-  const handleLeadSubmit = async (e: React.FormEvent) => {
+  const handleStep1Submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedPlan) return;
+    const errors: Record<string, string> = {};
 
-    const errors: { name?: string; whatsapp?: string } = {};
     if (!leadName.trim()) {
       errors.name = 'Nome completo é obrigatório.';
     }
@@ -97,13 +165,41 @@ const Index = () => {
     if (!leadWhatsApp.trim() || cleanPhoneDigits.length < 10) {
       errors.whatsapp = 'WhatsApp válido é obrigatório.';
     }
+    if (!leadEmail.trim() || !/\S+@\S+\.\S+/.test(leadEmail.trim())) {
+      errors.email = 'E-mail válido é obrigatório.';
+    }
 
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
       return;
     }
 
-    setIsSubmittingLead(true);
+    setFormErrors({});
+    setModalStep('step2_store');
+  };
+
+  const handleStep2Submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const errors: Record<string, string> = {};
+
+    if (!storeName.trim()) {
+      errors.storeName = 'Nome da loja é obrigatório.';
+    }
+    if (!storeSlug.trim() || storeSlug.length < 3) {
+      errors.storeSlug = 'Subdomínio válido (mínimo 3 caracteres) é obrigatório.';
+    } else if (slugAvailable === false) {
+      errors.storeSlug = 'Este subdomínio já está em uso. Escolha outro.';
+    }
+    if (!password || password.length < 6) {
+      errors.password = 'Defina uma senha de pelo menos 6 caracteres.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    setFormErrors({});
 
     try {
       const utmSource = sessionStorage.getItem('utm_source');
@@ -112,53 +208,33 @@ const Index = () => {
       const utmContent = sessionStorage.getItem('utm_content');
       const fbclid = sessionStorage.getItem('fbclid');
 
-      // 1. Salvar lead na base
-      const { data: leadData, error } = await supabase.from('leads').insert({
+      // Salvar Lead no banco
+      const { data: leadData } = await supabase.from('leads').insert({
         name: leadName.trim(),
         whatsapp: leadWhatsApp,
-        email: leadEmail.trim() || null,
-        plan_name: selectedPlan.name,
+        email: leadEmail.trim(),
+        plan_name: selectedPlan?.name ?? '',
         utm_source: utmSource,
         utm_medium: utmMedium,
         utm_campaign: utmCampaign,
         utm_content: utmContent,
-        fbclid: fbclid
+        fbclid: fbclid,
       }).select('id').single();
 
-      if (error) {
-        console.error('Erro ao salvar lead:', error);
-      } else {
-        setSavedLeadId(leadData?.id ?? null);
+      if (leadData?.id) {
+        setSavedLeadId(leadData.id);
       }
 
-      // 2. Disparar pixel Meta
-      const nameParts = leadName.trim().split(/\s+/);
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
-      const phoneInput = document.getElementById('lead-whatsapp') as HTMLInputElement;
-      const emailInput = document.getElementById('lead-email') as HTMLInputElement;
-      const cleanPhone = '55' + (phoneInput?.value ?? leadWhatsApp).replace(/\D/g, '');
-      const emailValue = emailInput ? emailInput.value.trim().toLowerCase() : '';
-
+      // Disparar pixel Meta Lead
       if (typeof window !== 'undefined' && window.fbq) {
-        window.fbq('set', 'userData', {
-          ph: cleanPhone,
-          fn: firstName,
-          ln: lastName,
-          ...(emailValue ? { em: emailValue } : {})
-        });
-        window.fbq('track', 'Lead', {
-          content_name: 'Plano ' + selectedPlan.name
-        });
+        window.fbq('track', 'Lead', { content_name: 'Plano ' + selectedPlan?.name });
       }
 
-      // 3. Mostrar etapa de escolha em vez de redirecionar
-      setModalStep('choice');
+      setModalStep('step3_choice');
 
     } catch (err) {
-      console.error('Erro inesperado no fluxo de lead:', err);
-    } finally {
-      setIsSubmittingLead(false);
+      console.error('Erro ao salvar lead:', err);
+      setModalStep('step3_choice');
     }
   };
 
@@ -179,7 +255,10 @@ const Index = () => {
           lead_id: savedLeadId,
           name: leadName.trim(),
           whatsapp: leadWhatsApp,
-          email: leadEmail.trim() || null,
+          email: leadEmail.trim(),
+          store_name: storeName.trim(),
+          slug: storeSlug.trim().toLowerCase(),
+          password: password,
           utm_source: utmSource,
           utm_medium: utmMedium,
           utm_campaign: utmCampaign,
@@ -190,7 +269,9 @@ const Index = () => {
 
       if (res.error || !res.data?.checkout_url) {
         console.error('Erro ao criar checkout:', res.error, res.data);
-        setModalStep('choice');
+        const errMsg = res.data?.error || res.error?.message || 'Erro ao criar preferência de pagamento';
+        setFormErrors({ general: errMsg });
+        setModalStep('step3_choice');
         return;
       }
 
@@ -206,30 +287,24 @@ const Index = () => {
       window.location.href = res.data.checkout_url;
     } catch (err) {
       console.error('Erro ao redirecionar para checkout:', err);
-      setModalStep('choice');
+      setModalStep('step3_choice');
     }
   };
 
   const handleFalarEquipe = () => {
     if (!selectedPlan) return;
+    const cleanSlug = storeSlug.toLowerCase().trim();
+    const msgText =
+      `Olá! Tenho interesse no plano ${selectedPlan.name} do Scalius.\n\n` +
+      `Meus dados para criação da loja:\n` +
+      `• Responsável: ${leadName}\n` +
+      `• WhatsApp: ${leadWhatsApp}\n` +
+      `• E-mail: ${leadEmail}\n` +
+      `• Nome da Loja: ${storeName}\n` +
+      `• Domínio Desejado: ${cleanSlug ? cleanSlug + '.scalius.com.br' : 'A definir'}`;
 
-    const utmSource = sessionStorage.getItem('utm_source');
-    const utmMedium = sessionStorage.getItem('utm_medium');
-    const utmCampaign = sessionStorage.getItem('utm_campaign');
-    const utmContent = sessionStorage.getItem('utm_content');
-    const fbclid = sessionStorage.getItem('fbclid');
-
-    try {
-      const urlObj = new URL(selectedPlan.whatsappUrl);
-      if (utmSource) urlObj.searchParams.set('utm_source', utmSource);
-      if (utmMedium) urlObj.searchParams.set('utm_medium', utmMedium);
-      if (utmCampaign) urlObj.searchParams.set('utm_campaign', utmCampaign);
-      if (utmContent) urlObj.searchParams.set('utm_content', utmContent);
-      if (fbclid) urlObj.searchParams.set('fbclid', fbclid);
-      window.open(urlObj.toString(), '_blank', 'noopener,noreferrer');
-    } catch {
-      window.open(selectedPlan.whatsappUrl, '_blank', 'noopener,noreferrer');
-    }
+    const whatsappUrl = `https://wa.me/5563984142775?text=${encodeURIComponent(msgText)}`;
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
     handleCloseModal();
   };
 
@@ -1120,17 +1195,24 @@ const Index = () => {
               <img src="/scalius-logo-dark.png" alt="Scalius" className="lead-modal-logo" />
             </div>
 
-            {/* ── ETAPA 1: Formulário ── */}
-            {modalStep === 'form' && (
+            {/* Progress indicator */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '16px' }}>
+              <span style={{ height: '6px', width: modalStep === 'step1_personal' ? '24px' : '12px', borderRadius: '3px', background: 'var(--primary)', transition: 'all 0.3s' }} />
+              <span style={{ height: '6px', width: modalStep === 'step2_store' ? '24px' : '12px', borderRadius: '3px', background: modalStep === 'step2_store' || modalStep === 'step3_choice' || modalStep === 'loading' ? 'var(--primary)' : 'rgba(0,0,0,0.1)', transition: 'all 0.3s' }} />
+              <span style={{ height: '6px', width: modalStep === 'step3_choice' || modalStep === 'loading' ? '24px' : '12px', borderRadius: '3px', background: modalStep === 'step3_choice' || modalStep === 'loading' ? 'var(--primary)' : 'rgba(0,0,0,0.1)', transition: 'all 0.3s' }} />
+            </div>
+
+            {/* ── ETAPA 1: Dados do Responsável ── */}
+            {modalStep === 'step1_personal' && (
               <>
                 <div className="lead-modal-header">
                   <div className="lead-modal-badge">
-                    Vamos <span className="highlight">começar</span>
+                    Passo 1 de 2 • <span className="highlight">Seus dados</span>
                   </div>
-                  <h2>Informe os dados abaixo para prosseguir.</h2>
+                  <h2>Quem será o responsável pela loja?</h2>
                   <p>Plano <strong>{selectedPlan?.name}</strong> selecionado.</p>
                 </div>
-                <form onSubmit={handleLeadSubmit} className="lead-modal-form">
+                <form onSubmit={handleStep1Submit} className="lead-modal-form">
                   <div className="form-group">
                     <label htmlFor="lead-name">Nome Completo <span className="required">*</span></label>
                     <input
@@ -1138,9 +1220,8 @@ const Index = () => {
                       id="lead-name"
                       value={leadName}
                       onChange={(e) => setLeadName(e.target.value)}
-                      placeholder="Seu nome completo"
+                      placeholder="Ex: Ana Maria Silva"
                       className={formErrors.name ? 'input-error' : ''}
-                      disabled={isSubmittingLead}
                     />
                     {formErrors.name && <span className="error-message">{formErrors.name}</span>}
                   </div>
@@ -1155,54 +1236,174 @@ const Index = () => {
                       placeholder="(00) 00000-0000"
                       className={formErrors.whatsapp ? 'input-error' : ''}
                       maxLength={15}
-                      disabled={isSubmittingLead}
                     />
                     {formErrors.whatsapp && <span className="error-message">{formErrors.whatsapp}</span>}
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="lead-email">E-mail <span className="optional">(Opcional)</span></label>
+                    <label htmlFor="lead-email">E-mail de Acesso <span className="required">*</span></label>
                     <input
                       type="email"
                       id="lead-email"
                       value={leadEmail}
                       onChange={(e) => setLeadEmail(e.target.value)}
                       placeholder="seu.email@exemplo.com"
-                      disabled={isSubmittingLead}
+                      className={formErrors.email ? 'input-error' : ''}
                     />
+                    {formErrors.email && <span className="error-message">{formErrors.email}</span>}
                   </div>
 
-                  <button type="submit" className="btn btn-brand btn-submit-lead" disabled={isSubmittingLead}>
-                    {isSubmittingLead ? 'Processando...' : 'Continuar'}
+                  <button type="submit" className="btn btn-brand btn-submit-lead" style={{ marginTop: '8px' }}>
+                    Próximo: Dados da Loja ➔
                   </button>
                 </form>
               </>
             )}
 
-            {/* ── ETAPA 2: Escolha de caminho ── */}
-            {(modalStep === 'choice' || modalStep === 'loading') && (
+            {/* ── ETAPA 2: Dados da Loja e Senha ── */}
+            {modalStep === 'step2_store' && (
               <>
                 <div className="lead-modal-header">
                   <div className="lead-modal-badge">
-                    Como deseja <span className="highlight">prosseguir?</span>
+                    Passo 2 de 2 • <span className="highlight">Sua Loja</span>
                   </div>
-                  <h2>Escolha como quer contratar o plano <strong>{selectedPlan?.name}</strong>.</h2>
-                  <p>Você pode assinar agora pelo site ou conversar com nossa equipe.</p>
+                  <h2>Configure o nome e o link da sua vitrine</h2>
+                  <p>Sua conta já será criada e pronta para acesso.</p>
                 </div>
+                <form onSubmit={handleStep2Submit} className="lead-modal-form">
+                  <div className="form-group">
+                    <label htmlFor="store-name">Nome da Sua Loja <span className="required">*</span></label>
+                    <input
+                      type="text"
+                      id="store-name"
+                      value={storeName}
+                      onChange={(e) => handleStoreNameChange(e.target.value)}
+                      placeholder="Ex: Rosa Bela Boutique"
+                      className={formErrors.storeName ? 'input-error' : ''}
+                    />
+                    {formErrors.storeName && <span className="error-message">{formErrors.storeName}</span>}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="store-slug">Subdomínio Gratuito <span className="required">*</span></label>
+                    <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+                      <input
+                        type="text"
+                        id="store-slug"
+                        value={storeSlug}
+                        onChange={(e) => handleSlugChange(e.target.value)}
+                        placeholder="rosabela"
+                        className={formErrors.storeSlug ? 'input-error' : ''}
+                        style={{ paddingRight: '140px' }}
+                      />
+                      <span style={{ position: 'absolute', right: '12px', fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600, pointerEvents: 'none' }}>
+                        .scalius.com.br
+                      </span>
+                    </div>
+
+                    {/* Status da checagem do subdomínio */}
+                    {isCheckingSlug && (
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>Verificando disponibilidade...</span>
+                    )}
+                    {!isCheckingSlug && slugAvailable === true && storeSlug.length >= 3 && (
+                      <span style={{ fontSize: '12px', color: '#10B981', fontWeight: 600, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        ✓ Subdomínio livre para uso!
+                      </span>
+                    )}
+                    {!isCheckingSlug && slugAvailable === false && (
+                      <span style={{ fontSize: '12px', color: '#EF4444', fontWeight: 600, marginTop: '4px' }}>
+                        ✕ Este subdomínio já está em uso. Escolha outro.
+                      </span>
+                    )}
+                    {formErrors.storeSlug && <span className="error-message">{formErrors.storeSlug}</span>}
+                  </div>
+
+                  {/* Dica de Domínio Personalizado (.com.br) */}
+                  <div style={{
+                    background: 'rgba(99, 102, 241, 0.06)',
+                    border: '1px solid rgba(99, 102, 241, 0.2)',
+                    borderRadius: '10px',
+                    padding: '10px 14px',
+                    fontSize: '12px',
+                    color: '#4338CA',
+                    lineHeight: '1.4'
+                  }}>
+                    💡 <strong>Quer usar seu próprio domínio (ex: <code>sualoja.com.br</code>)?</strong><br />
+                    Você receberá o link gratuito <code>{storeSlug || 'sualoja'}.scalius.com.br</code> e nossa equipe configurará o seu domínio próprio gratuitamente após a contratação!
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="account-password">Senha de Acesso ao Painel <span className="required">*</span></label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        id="account-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Mínimo 6 caracteres"
+                        className={formErrors.password ? 'input-error' : ''}
+                        style={{ paddingRight: '40px' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                        tabIndex={-1}
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                    {formErrors.password && <span className="error-message">{formErrors.password}</span>}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setModalStep('step1_personal')}
+                      className="btn"
+                      style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.15)', background: 'transparent', fontWeight: 600 }}
+                    >
+                      ← Voltar
+                    </button>
+                    <button type="submit" className="btn btn-brand btn-submit-lead" style={{ flex: 2 }}>
+                      Próximo: Pagamento ➔
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
+
+            {/* ── ETAPA 3: Escolha do Método de Pagamento ── */}
+            {(modalStep === 'step3_choice' || modalStep === 'loading') && (
+              <>
+                <div className="lead-modal-header">
+                  <div className="lead-modal-badge">
+                    Finalização • <span className="highlight">{selectedPlan?.name}</span>
+                  </div>
+                  <h2>Sua loja <strong>{storeName}</strong> está pronta para ser ativada!</h2>
+                  <p>Endereço: <code>{storeSlug}.scalius.com.br</code></p>
+                </div>
+
+                {formErrors.general && (
+                  <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', color: '#991B1B', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '12px' }}>
+                    {formErrors.general}
+                  </div>
+                )}
+
                 <div className="lead-modal-form" style={{ gap: '12px' }}>
                   {/* Botão Assinar Agora */}
                   <button
                     onClick={handleAssinarAgora}
                     disabled={modalStep === 'loading'}
                     className="btn btn-brand btn-submit-lead"
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '16px' }}
                   >
                     {modalStep === 'loading' ? (
                       <>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
                           <path d="M21 12a9 9 0 1 1-6.219-8.56" />
                         </svg>
-                        Redirecionando...
+                        Gerando pagamento seguro...
                       </>
                     ) : (
                       <>
@@ -1210,7 +1411,7 @@ const Index = () => {
                           <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
                           <line x1="1" y1="10" x2="23" y2="10"></line>
                         </svg>
-                        Assinar agora
+                        Assinar agora (Checkout Seguro)
                       </>
                     )}
                   </button>
@@ -1238,12 +1439,18 @@ const Index = () => {
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.455 5.703 1.458h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                     </svg>
-                    Falar com a equipe
+                    Falar com a equipe pelo WhatsApp
                   </button>
 
-                  <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    Ao assinar agora, você será redirecionado para o ambiente seguro do Mercado Pago.
-                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginTop: '4px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setModalStep('step2_store')}
+                      style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '13px', textDecoration: 'underline', cursor: 'pointer' }}
+                    >
+                      Editar dados da loja
+                    </button>
+                  </div>
                 </div>
               </>
             )}

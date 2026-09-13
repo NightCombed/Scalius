@@ -33,6 +33,9 @@ Deno.serve(async (req) => {
       name,
       whatsapp,
       email,
+      store_name,
+      slug,
+      password,
       utm_source,
       utm_medium,
       utm_campaign,
@@ -57,6 +60,100 @@ Deno.serve(async (req) => {
       );
     }
 
+    let createdStoreId: string | null = null;
+    let createdUserId: string | null = null;
+
+    // Se os dados da loja e senha foram informados, realiza o pré-cadastro da conta e da loja
+    if (store_name && slug && password && email) {
+      const cleanSlug = slug.toLowerCase().trim().replace(/[^a-z0-9-]/g, "");
+
+      // 1. Verificar se slug já existe
+      const { data: existingStore } = await supabase
+        .from("stores")
+        .select("id")
+        .eq("slug", cleanSlug)
+        .maybeSingle();
+
+      if (existingStore) {
+        return new Response(
+          JSON.stringify({ error: `O subdomínio "${cleanSlug}" já está em uso por outra loja.` }),
+          { status: 400, headers: CORS_HEADERS }
+        );
+      }
+
+      // 2. Criar ou buscar Usuário no Supabase Auth
+      let authUser = null;
+      const { data: newUser, error: createAuthErr } = await supabase.auth.admin.createUser({
+        email: email.trim().toLowerCase(),
+        password: password,
+        email_confirm: true,
+        user_metadata: { name: name.trim(), whatsapp },
+      });
+
+      if (createAuthErr) {
+        if (createAuthErr.message.includes("already registered") || createAuthErr.status === 422) {
+          // Usuário já cadastrado com este e-mail — tenta atualizar senha
+          const { data: listUsers } = await supabase.auth.admin.listUsers();
+          const found = listUsers.users.find((u) => u.email?.toLowerCase() === email.trim().toLowerCase());
+          if (found) {
+            authUser = found;
+            await supabase.auth.admin.updateUserById(found.id, { password });
+          } else {
+            return new Response(
+              JSON.stringify({ error: "E-mail já cadastrado no sistema." }),
+              { status: 400, headers: CORS_HEADERS }
+            );
+          }
+        } else {
+          console.error("[checkout] Erro ao criar conta de usuário:", createAuthErr);
+          return new Response(
+            JSON.stringify({ error: `Erro ao criar conta de usuário: ${createAuthErr.message}` }),
+            { status: 400, headers: CORS_HEADERS }
+          );
+        }
+      } else {
+        authUser = newUser.user;
+      }
+
+      createdUserId = authUser.id;
+
+      // 3. Criar a Loja (status 'trial' até a confirmação do pagamento pelo webhook)
+      const { data: newStore, error: createStoreErr } = await supabase
+        .from("stores")
+        .insert({
+          name: store_name.trim(),
+          slug: cleanSlug,
+          status: "trial",
+          plan: plan_id,
+          trial_started_at: new Date().toISOString(),
+        } as any)
+        .select("id")
+        .single();
+
+      if (createStoreErr) {
+        console.error("[checkout] Erro ao criar loja:", createStoreErr);
+        return new Response(
+          JSON.stringify({ error: `Erro ao criar loja: ${createStoreErr.message}` }),
+          { status: 400, headers: CORS_HEADERS }
+        );
+      }
+
+      createdStoreId = newStore.id;
+
+      // 4. Vincular o usuário como dono da loja em store_members
+      const { error: memberErr } = await supabase
+        .from("store_members")
+        .insert({
+          store_id: createdStoreId,
+          user_id: createdUserId,
+          role: "owner",
+        } as any);
+
+      if (memberErr) {
+        console.error("[checkout] Erro ao vincular store_member:", memberErr);
+      }
+    }
+
     // Obter access token da conta Scalius no Mercado Pago
     const mpAccessToken = Deno.env.get("MP_PLATFORM_ACCESS_TOKEN");
     if (!mpAccessToken) {
@@ -70,6 +167,8 @@ Deno.serve(async (req) => {
     // Montar URL de retorno (success/failure/pending)
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const baseUrl = "https://scalius.com.br";
+
+    const payerEmail = email && email.trim() ? email.trim() : `cliente.${whatsapp.replace(/\D/g, "")}@scalius.com.br`;
 
     // Criar preferência de pagamento no Mercado Pago Checkout Pro
     const mpPayload = {
@@ -85,7 +184,7 @@ Deno.serve(async (req) => {
       ],
       payer: {
         name: name.trim(),
-        email: email && email.trim() ? email.trim() : `cliente.${whatsapp.replace(/\D/g, "")}@scalius.com.br`,
+        email: payerEmail,
       },
       back_urls: {
         success: `${baseUrl}/obrigado`,
@@ -99,7 +198,9 @@ Deno.serve(async (req) => {
         plan_id,
         name: name.trim(),
         whatsapp,
-        ...(email ? { email: email.trim() } : {}),
+        email: payerEmail,
+        store_id: createdStoreId,
+        user_id: createdUserId,
         ...(utm_source ? { utm_source } : {}),
         ...(utm_medium ? { utm_medium } : {}),
         ...(utm_campaign ? { utm_campaign } : {}),
@@ -160,10 +261,7 @@ Deno.serve(async (req) => {
 
     if (insertErr) {
       console.error("[checkout] Erro ao salvar subscription_payment:", JSON.stringify(insertErr));
-      // Não bloquear o fluxo — retornar URL mesmo se a persistência falhar
     }
-
-    console.log("[checkout] subscription_payment criado:", payment?.id, "→ checkout_url gerado");
 
     return new Response(
       JSON.stringify({
@@ -171,6 +269,8 @@ Deno.serve(async (req) => {
         checkout_url: checkoutUrl,
         preference_id: preferenceId,
         subscription_payment_id: payment?.id ?? null,
+        store_id: createdStoreId,
+        user_id: createdUserId,
       }),
       { headers: CORS_HEADERS }
     );
