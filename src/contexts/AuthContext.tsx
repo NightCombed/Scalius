@@ -17,7 +17,7 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import type { PlatformUser, Store, StoreRole } from "@/types/database";
+import type { PlatformUser, Store, StoreRole, Affiliate } from "@/types/database";
 
 interface SessionStore {
   store: Store;
@@ -28,6 +28,8 @@ interface AuthContextValue {
   user: PlatformUser | null;
   session: Session | null;
   isSuperAdmin: boolean;
+  isAffiliate: boolean;
+  affiliateProfile: Affiliate | null;
   memberships: SessionStore[];
   signIn: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   signUp: (
@@ -62,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<PlatformUser | null>(null);
   const [memberships, setMemberships] = useState<SessionStore[]>([]);
+  const [affiliateProfile, setAffiliateProfile] = useState<Affiliate | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Hidrata profile + memberships para um auth user.
@@ -70,11 +73,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!authUser) {
       setUser(null);
       setMemberships([]);
+      setAffiliateProfile(null);
       localStorage.removeItem("scalius_session_token");
       return;
     }
 
-    const [profileRes, membersRes] = await Promise.all([
+    const [profileRes, membersRes, affiliateRes] = await Promise.all([
       supabase
         .from("profiles")
         .select("id, full_name, is_super_admin, created_at")
@@ -84,6 +88,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from("store_members")
         .select("role, store:stores(id, slug, name, status, plan, created_at)")
         .eq("user_id", authUser.id),
+      supabase
+        .from("affiliates")
+        .select("id, user_id, demo_store_id, code, commission_rate, status, pix_key, notes, created_at, updated_at")
+        .eq("user_id", authUser.id)
+        .maybeSingle(),
     ]);
 
     if (profileRes.error) {
@@ -94,6 +103,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     setUser(toPlatformUser(authUser, (profileRes.data as ProfileRow | null) ?? null));
+
+    // Set affiliate profile if this user is a partner
+    setAffiliateProfile((affiliateRes.data as Affiliate | null) ?? null);
 
     const rows = (membersRes.data ?? []) as Array<{
       role: string;
@@ -256,13 +268,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       session,
       isSuperAdmin: user?.platform_role === "super_admin",
+      isAffiliate: !!affiliateProfile && affiliateProfile.status === "active",
+      affiliateProfile,
       memberships,
       signIn,
       signUp,
       signOut,
       loading,
     }),
-    [user, session, memberships, signIn, signUp, signOut, loading],
+    [user, session, affiliateProfile, memberships, signIn, signUp, signOut, loading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

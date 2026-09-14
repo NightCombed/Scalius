@@ -101,6 +101,21 @@
   }
 }
 
+/* ── Vitrine pública e Admin: headings respeitam a fonte escolhida pela loja ── */
+.store-public h1,
+.store-public h2,
+.store-public h3,
+.store-public h4,
+.store-public h5,
+.store-admin h1,
+.store-admin h2,
+.store-admin h3,
+.store-admin h4,
+.store-admin h5 {
+  font-family: var(--store-font-family, 'Fraunces', Georgia, serif);
+  letter-spacing: -0.025em;
+}
+
 @layer utilities {
   .bg-gradient-botanical { background: var(--gradient-botanical); }
   .bg-gradient-bloom { background: var(--gradient-bloom); }

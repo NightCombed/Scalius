@@ -28,6 +28,7 @@ import {
 import { toast } from "sonner";
 import { PLAN_LABEL, PLAN_BADGE_CLASSES, type PlanId } from "@/lib/plan";
 import { cn } from "@/lib/utils";
+import { AffiliatesPanel } from "./components/AffiliatesPanel";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -1994,6 +1995,9 @@ export default function SuperAdminDashboard() {
           </div>
         )}
       </section>
+
+      {/* ── Affiliates Panel ────────────────────────────────────────────── */}
+      <AffiliatesPanel />
 
       {/* ── Leads Panel ────────────────────────────────────────────────── */}
       <LeadsPanel

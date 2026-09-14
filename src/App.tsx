@@ -41,6 +41,7 @@ import MercadoPagoCallback from "@/pages/admin/MercadoPagoCallback";
 import { PlaceholderPage } from "@/components/PlaceholderPage";
 import SuperAdminLayout from "@/components/layouts/SuperAdminLayout";
 import SuperAdminDashboard from "@/pages/super-admin/SuperAdminDashboard";
+import AffiliateDashboard from "@/pages/affiliate/AffiliateDashboard";
 import { resolveTenantSlug } from "@/lib/tenant";
 
 const queryClient = new QueryClient();
@@ -104,7 +105,15 @@ const App = () => {
                     <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
                     <Route path="/termos-de-servico" element={<TermsOfService />} />
 
-                    {/* Store admin accessible on subdomain */}
+                    {/* Affiliate partner dashboard on subdomain */}
+                    <Route
+                      path="/affiliate"
+                      element={
+                        <ProtectedRoute>
+                          <AffiliateDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route
                       path="/admin"
                       element={
@@ -134,7 +143,15 @@ const App = () => {
                     <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
                     <Route path="/termos-de-servico" element={<TermsOfService />} />
 
-                    {/* Fallback route-based storefront for easy testing/sharing */}
+                    {/* Affiliate partner dashboard */}
+                    <Route
+                      path="/affiliate"
+                      element={
+                        <ProtectedRoute>
+                          <AffiliateDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route
                       path="/loja/:slug"
                       element={

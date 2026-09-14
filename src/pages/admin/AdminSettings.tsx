@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Save, Store, MapPin, Loader2, Users, AlertTriangle, Package, Lightbulb } from "lucide-react";
+import { Save, Store, MapPin, Loader2, Users, AlertTriangle, Package, Lightbulb, Palette, CreditCard, Bell, ShieldCheck } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useActiveStore } from "@/hooks/useActiveStore";
 import { useMockData } from "@/hooks/useMockData";
@@ -28,6 +28,7 @@ import { ImageUpload } from "@/components/ui/image-upload";
 import { hexToHsl, hslToHex } from "@/lib/utils";
 import { geocodeAddress, buildAddressString } from "@/lib/distance";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const HEX_REGEX = /^#[0-9A-Fa-f]{6}$/;
 
@@ -110,6 +111,7 @@ const schema = z.object({
   category_style: z.enum(["pill", "compact"]).default("pill"),
   show_category_images: z.boolean().default(false),
   show_revenue_to_staff: z.boolean().default(true),
+  store_font: z.enum(["fraunces", "inter", "reddit-sans", "poppins", "lato", "playfair"]).default("fraunces"),
 }).superRefine((data, ctx) => {
   if (data.national_shipping_enabled) {
     if (!data.melhorenvio_token || data.melhorenvio_token.length === 0) {
@@ -212,6 +214,7 @@ export default function AdminSettings() {
       category_style: "pill" as const,
       show_category_images: false,
       show_revenue_to_staff: true,
+      store_font: "fraunces" as const,
     },
   });
 
@@ -307,6 +310,7 @@ export default function AdminSettings() {
       category_style: (settings.category_style as "pill" | "compact") ?? "pill",
       show_category_images: settings.show_category_images ?? false,
       show_revenue_to_staff: settings.show_revenue_to_staff ?? true,
+      store_font: (settings.store_font as "fraunces" | "inter" | "reddit-sans" | "poppins" | "lato" | "playfair") ?? "fraunces",
     });
   }, [settings, form]);
 
@@ -398,6 +402,7 @@ export default function AdminSettings() {
           category_style: values.category_style,
           show_category_images: values.show_category_images,
           show_revenue_to_staff: values.show_revenue_to_staff,
+          store_font: values.store_font,
         }, { onConflict: "store_id" });
 
       const secretsPromise = supabase
@@ -436,17 +441,50 @@ export default function AdminSettings() {
   return (
     <RoleGuard permission="manage_settings">
       <div className="max-w-4xl space-y-6">
-      <div>
-        <h1 className="font-serif text-3xl">Configurações da loja</h1>
-        <p className="text-muted-foreground mt-1">
-          Personalize identidade, contato e mensagem da {store.name}.
-        </p>
-      </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h1 className="font-serif text-3xl">Configurações da loja</h1>
+                <p className="text-muted-foreground mt-1">
+                  Personalize identidade, contatos, pagamentos e preferências da {store.name}.
+                </p>
+              </div>
+              <Button type="submit" disabled={saving} size="lg" className="w-full sm:w-auto shadow-sm">
+                <Save className="h-4 w-4 mr-2" /> {saving ? "Salvando..." : "Salvar alterações"}
+              </Button>
+            </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Identidade */}
-          <section className="rounded-xl border border-border bg-card p-6 space-y-5 shadow-soft">
+            <Tabs defaultValue="appearance" className="w-full space-y-6">
+              <div className="overflow-x-auto pb-1 scrollbar-none">
+                <TabsList className="inline-flex h-11 items-center justify-start rounded-xl bg-muted/70 p-1.5 text-muted-foreground border border-border/50 min-w-max sm:w-full sm:grid sm:grid-cols-5">
+                  <TabsTrigger value="appearance" className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                    <Palette className="w-4 h-4 text-primary" />
+                    <span>Aparência</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="store_info" className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                    <Store className="w-4 h-4 text-primary" />
+                    <span>Dados da Loja</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="payments" className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                    <CreditCard className="w-4 h-4 text-primary" />
+                    <span>Pagamentos</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="notifications" className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                    <Bell className="w-4 h-4 text-primary" />
+                    <span>Notificações</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="security" className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                    <ShieldCheck className="w-4 h-4 text-primary" />
+                    <span>Equipe & Segurança</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+
+              {/* ABA 1: APARÊNCIA */}
+              <TabsContent value="appearance" className="space-y-6">
+                {/* Identidade */}
+                <section className="rounded-xl border border-border bg-card p-6 space-y-5 shadow-soft">
             <h2 className="font-serif text-xl">Identidade</h2>
 
             <FormField
@@ -657,11 +695,91 @@ export default function AdminSettings() {
                 <span className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground">
                   <Store className="h-4 w-4" />
                 </span>
-                <span className="font-serif text-lg">{watched.display_name || store.name}</span>
+                <span className="font-serif text-lg"
+                  style={{
+                    fontFamily:
+                      watched.store_font === 'fraunces'    ? '"Fraunces", Georgia, serif' :
+                      watched.store_font === 'reddit-sans' ? '"Reddit Sans", sans-serif' :
+                      watched.store_font === 'poppins'     ? '"Poppins", sans-serif' :
+                      watched.store_font === 'lato'        ? '"Lato", sans-serif' :
+                      watched.store_font === 'playfair'    ? '"Playfair Display", serif' :
+                      '"Inter", sans-serif'
+                  }}
+                >{watched.display_name || store.name}</span>
                 <Button type="button" size="sm">Botão principal</Button>
                 <Button type="button" size="sm" variant="outline">Secundário</Button>
               </div>
             </div>
+          </section>
+
+          {/* Tipografia da vitrine */}
+          <section className="rounded-xl border border-border bg-card p-6 space-y-5 shadow-soft">
+            <h2 className="font-serif text-xl">Tipografia da vitrine</h2>
+            <p className="text-sm text-muted-foreground -mt-2">
+              Escolha a fonte principal exibida na sua loja pública.
+            </p>
+
+            <FormField
+              control={form.control}
+              name="store_font"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Fonte da loja</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma fonte" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="fraunces">Fraunces — Padrão (Elegante e serifada)</SelectItem>
+                      <SelectItem value="inter">Inter — Limpa e moderna</SelectItem>
+                      <SelectItem value="reddit-sans">Reddit Sans — Amigável e contemporânea</SelectItem>
+                      <SelectItem value="poppins">Poppins — Geométrica e versátil</SelectItem>
+                      <SelectItem value="lato">Lato — Humanista e legível</SelectItem>
+                      <SelectItem value="playfair">Playfair Display — Elegante e editorial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    A fonte é aplicada nos títulos e textos da vitrine pública da sua loja e no painel admin.
+                  </FormDescription>
+                  <FormMessage />
+
+                  {/* Font preview */}
+                  <div className="rounded-lg border border-border p-4 bg-background space-y-2">
+                    <div className="text-xs uppercase tracking-widest text-muted-foreground">Pré-visualização</div>
+                    <p
+                      className="text-2xl font-bold"
+                      style={{
+                        fontFamily:
+                          field.value === 'fraunces'    ? '"Fraunces", Georgia, serif' :
+                          field.value === 'reddit-sans' ? '"Reddit Sans", sans-serif' :
+                          field.value === 'poppins'     ? '"Poppins", sans-serif' :
+                          field.value === 'lato'        ? '"Lato", sans-serif' :
+                          field.value === 'playfair'    ? '"Playfair Display", serif' :
+                          '"Inter", sans-serif'
+                      }}
+                    >
+                      {watched.display_name || store.name}
+                    </p>
+                    <p
+                      className="text-sm text-muted-foreground"
+                      style={{
+                        fontFamily:
+                          field.value === 'fraunces'    ? '"Fraunces", Georgia, serif' :
+                          field.value === 'reddit-sans' ? '"Reddit Sans", sans-serif' :
+                          field.value === 'poppins'     ? '"Poppins", sans-serif' :
+                          field.value === 'lato'        ? '"Lato", sans-serif' :
+                          field.value === 'playfair'    ? '"Playfair Display", serif' :
+                          '"Inter", sans-serif'
+                      }}
+                    >
+                      Confira nossos produtos e ofertas especiais.
+                    </p>
+                  </div>
+                </FormItem>
+              )}
+            />
           </section>
 
           {/* Layout das categorias */}
@@ -719,7 +837,10 @@ export default function AdminSettings() {
               />
             </div>
           </section>
+        </TabsContent>
 
+        {/* ABA 2: DADOS DA LOJA */}
+        <TabsContent value="store_info" className="space-y-6">
           {/* Contato */}
           <section className="rounded-xl border border-border bg-card p-6 space-y-5 shadow-soft">
             <h2 className="font-serif text-xl">Contato</h2>
@@ -769,14 +890,19 @@ export default function AdminSettings() {
               )}
             />
           </section>
+        </TabsContent>
 
-          {/* Pagamentos */}
+        {/* ABA 3: PAGAMENTOS */}
+        <TabsContent value="payments" className="space-y-6">
           <PaymentSettingsSection
             form={form}
             storeId={store.id}
             savedProvider={settings?.payment_provider as "manual" | "mercadopago" | "infinitepay" | undefined}
           />
+        </TabsContent>
 
+        {/* ABA 2 (CONTINUAÇÃO): DADOS DA LOJA - Gestão de Estoque & Frete */}
+        <TabsContent value="store_info" className="space-y-6">
           {/* Gestão de Estoque */}
           <section className="rounded-xl border border-border bg-card p-6 space-y-5 shadow-soft">
             <h2 className="font-serif text-xl">Gestão de estoque</h2>
@@ -1515,11 +1641,15 @@ export default function AdminSettings() {
               </div>
             </div>
           </section>
+        </TabsContent>
 
-          {/* Notificações */}
+        {/* ABA 4: NOTIFICAÇÕES */}
+        <TabsContent value="notifications" className="space-y-6">
           <NotificationsSettingsSection storeId={store.id} />
+        </TabsContent>
 
-          {/* Equipe e Sessões (visível apenas para Gerentes/Donos) */}
+        {/* ABA 5: EQUIPE & SEGURANÇA */}
+        <TabsContent value="security" className="space-y-6">
           {isManager && (
             <section className="rounded-xl border border-border bg-card p-6 space-y-6 shadow-soft">
               <h2 className="font-serif text-xl flex items-center gap-2">
@@ -1561,20 +1691,22 @@ export default function AdminSettings() {
             </section>
           )}
 
-          <div className="flex items-center justify-end gap-3 sticky bottom-0 bg-background/80 backdrop-blur py-3">
-            <Button type="submit" disabled={saving} size="lg">
-              <Save className="h-4 w-4" /> {saving ? "Salvando..." : "Salvar configurações"}
-            </Button>
-          </div>
-        </form>
-      </Form>
+          {isManager && (
+            <div className="mt-6">
+              <AuditLogsPanel storeId={store.id} />
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
-      {isManager && (
-        <div className="mt-8 pt-8 border-t border-border">
-          <AuditLogsPanel storeId={store.id} />
-        </div>
-      )}
+      <div className="flex items-center justify-end gap-3 sticky bottom-0 bg-background/80 backdrop-blur py-3 border-t border-border/50">
+        <Button type="submit" disabled={saving} size="lg" className="shadow-md">
+          <Save className="h-4 w-4 mr-2" /> {saving ? "Salvando..." : "Salvar configurações"}
+        </Button>
       </div>
+    </form>
+  </Form>
+</div>
     </RoleGuard>
   );
 }

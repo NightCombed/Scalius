@@ -31,7 +31,7 @@ function PublicStoreShell() {
     }
   }, [store, settings]);
 
-  // Apply per-store brand colors to document root so Portals (Sheets, Modals) inherit them
+  // Apply per-store brand colors AND font to document root so Portals (Sheets, Modals) inherit them
   useEffect(() => {
     const root = document.documentElement;
     if (settings?.brand_color) {
@@ -41,19 +41,31 @@ function PublicStoreShell() {
       root.style.removeProperty('--primary');
       root.style.removeProperty('--ring');
     }
-    
     if (settings?.secondary_color) {
       root.style.setProperty('--accent', settings.secondary_color);
     } else {
       root.style.removeProperty('--accent');
     }
-
+    // Store font: map value to CSS font-family string, default Fraunces
+    const fontMap: Record<string, string> = {
+      'fraunces':    '"Fraunces", Georgia, serif',
+      'reddit-sans': '"Reddit Sans", sans-serif',
+      'poppins':     '"Poppins", sans-serif',
+      'lato':        '"Lato", sans-serif',
+      'playfair':    '"Playfair Display", serif',
+      'inter':       '"Inter", sans-serif',
+    };
+    const fontFamily = settings?.store_font
+      ? (fontMap[settings.store_font] ?? '"Fraunces", Georgia, serif')
+      : '"Fraunces", Georgia, serif';
+    root.style.setProperty('--store-font-family', fontFamily);
     return () => {
       root.style.removeProperty('--primary');
       root.style.removeProperty('--ring');
       root.style.removeProperty('--accent');
+      root.style.removeProperty('--store-font-family');
     };
-  }, [settings?.brand_color, settings?.secondary_color]);
+  }, [settings?.brand_color, settings?.secondary_color, settings?.store_font]);
 
   if (isLoading) {
     return (
@@ -94,7 +106,7 @@ function PublicStoreShell() {
     `Olá, ${settings?.display_name ?? store.name}! Gostaria de fazer um pedido.`;
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-soft">
+    <div className="store-public min-h-screen flex flex-col bg-gradient-soft">
       <header className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-30">
         <div className="container flex h-16 items-center justify-between gap-3">
           <Link to={getStoreLink("", store.slug)} className="flex items-center gap-2 min-w-0 md:flex-1 md:justify-start">

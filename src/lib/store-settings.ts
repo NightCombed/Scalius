@@ -33,6 +33,7 @@ export function mapStoreSettings(data: any): StoreSettings {
     timezone: "America/Sao_Paulo",
     category_style: data.category_style ?? "pill",
     show_category_images: data.show_category_images ?? false,
+    store_font: data.store_font ?? "inter",
     
     // National Shipping
     national_shipping_enabled: data.national_shipping_enabled ?? false,

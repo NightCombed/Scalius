@@ -221,7 +221,7 @@ Deno.serve(async (req) => {
         status: newStatus,
       })
       .eq("id", subPaymentId)
-      .select("store_id")
+      .select("store_id, affiliate_id, plan_id, plan_price_cents")
       .single();
 
     if (updateErr) {
@@ -230,11 +230,54 @@ Deno.serve(async (req) => {
       console.log(`✅ [webhook] subscription_payment ${subPaymentId} → status=${newStatus}`);
       const targetStoreId = subPaymentData?.store_id || metadata.store_id;
       if (newStatus === "paid" && targetStoreId) {
+        // Ativar loja
         await supabase
           .from("stores")
           .update({ status: "active" })
           .eq("id", targetStoreId);
         console.log(`🚀 [webhook] Loja ${targetStoreId} ativada com sucesso!`);
+
+        // ── Gerar comissão de afiliado (idempotente) ───────────────────────
+        const affiliateId = subPaymentData?.affiliate_id || metadata.affiliate_id;
+        if (affiliateId) {
+          // Buscar taxa de comissão do afiliado
+          const { data: affiliateRow } = await supabase
+            .from("affiliates")
+            .select("id, commission_rate, status")
+            .eq("id", affiliateId)
+            .maybeSingle();
+
+          if (affiliateRow && affiliateRow.status === "active") {
+            const paymentAmountCents = subPaymentData?.plan_price_cents
+              ?? Math.round((mpPlatformPayment.transaction_amount ?? 0) * 100);
+            const commissionRate = Number(affiliateRow.commission_rate);
+            const commissionAmountCents = Math.floor(paymentAmountCents * commissionRate / 100);
+
+            const { error: commErr } = await supabase
+              .from("affiliate_commissions")
+              .insert({
+                affiliate_id: affiliateId,
+                store_id: targetStoreId,
+                payment_id: subPaymentId,
+                plan_id: subPaymentData?.plan_id ?? metadata.plan_id ?? "profissional",
+                payment_amount_cents: paymentAmountCents,
+                commission_rate: commissionRate,
+                commission_amount_cents: commissionAmountCents,
+                status: "available",
+              });
+
+            if (commErr) {
+              // Unique constraint violation = já gerou comissão (idempotência)
+              if (commErr.code === "23505") {
+                console.log("[webhook] Comissão já gerada para este pagamento, ignorando.");
+              } else {
+                console.error("[webhook] Erro ao gerar comissão de afiliado:", commErr.message);
+              }
+            } else {
+              console.log(`💜 [webhook] Comissão R$ ${(commissionAmountCents / 100).toFixed(2)} gerada para afiliado ${affiliateId}`);
+            }
+          }
+        }
       }
     }
   } else if (!subPaymentId) {
@@ -255,6 +298,7 @@ Deno.serve(async (req) => {
       utm_campaign: metadata.utm_campaign ?? null,
       utm_content: metadata.utm_content ?? null,
       fbclid: metadata.fbclid ?? null,
+      ...(metadata.affiliate_id ? { affiliate_id: metadata.affiliate_id } : {}),
     });
     if (insertErr) console.error("[webhook] Erro ao criar subscription_payment retroativo:", insertErr.message);
   }
@@ -267,6 +311,7 @@ Deno.serve(async (req) => {
 
   return new Response("ok", { status: 200 });
 });
+
 
 // ─── Signature Validation ────────────────────────────────────────────────────────
 async function validateSignature(

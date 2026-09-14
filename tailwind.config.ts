@@ -15,6 +15,7 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         serif: ['Fraunces', 'Georgia', 'serif'],
+        'reddit-sans': ['"Reddit Sans"', 'Inter', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

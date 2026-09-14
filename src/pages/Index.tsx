@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import '../scalius-landing.css';
 import { ContainerScroll } from '../components/ContainerScroll';
 import { PartyPopper, Rocket, Instagram, ArrowRight, ChevronDown, Eye, EyeOff, CheckCircle2, Globe, Lock, Store as StoreIcon } from 'lucide-react';
@@ -64,6 +65,7 @@ const Index = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [affiliateCode, setAffiliateCode] = useState('');
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [savedLeadId, setSavedLeadId] = useState<string | null>(null);
@@ -265,6 +267,7 @@ const Index = () => {
           store_name: storeName.trim(),
           slug: storeSlug.trim().toLowerCase(),
           password: password,
+          affiliate_code: affiliateCode.trim() || undefined,
           utm_source: utmSource,
           utm_medium: utmMedium,
           utm_campaign: utmCampaign,
@@ -330,8 +333,20 @@ const Index = () => {
       if (uCampaign) sessionStorage.setItem('utm_campaign', uCampaign);
       if (uContent) sessionStorage.setItem('utm_content', uContent);
       if (fclid) sessionStorage.setItem('fbclid', fclid);
+
+      const refParam = searchParams.get('ref') || searchParams.get('affiliate') || searchParams.get('cupom');
+      if (refParam) {
+        sessionStorage.setItem('scalius_ref', refParam);
+        localStorage.setItem('scalius_ref', refParam);
+        setAffiliateCode(refParam.toUpperCase());
+      } else {
+        const savedRef = sessionStorage.getItem('scalius_ref') || localStorage.getItem('scalius_ref');
+        if (savedRef) {
+          setAffiliateCode(savedRef.toUpperCase());
+        }
+      }
     } catch (e) {
-      console.error('Erro ao extrair parâmetros UTM e fbclid:', e);
+      console.error('Erro ao extrair parâmetros UTM, fbclid e ref:', e);
     }
   }, []);
 
@@ -448,6 +463,9 @@ const Index = () => {
             <a href="#precos">Planos</a>
           </div>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <Link to="/login" className="btn" style={{ padding: '9px 18px', fontSize: '13px', border: '1px solid rgba(0,0,0,0.12)', background: 'transparent', color: 'var(--text-main)', fontWeight: 600 }}>
+              Entrar
+            </Link>
             <a href="#precos" className="btn btn-primary" style={{ padding: '10px 20px', fontSize: '13px', boxShadow: 'none' }}>Criar Loja</a>
           </div>
         </nav>
@@ -1381,6 +1399,21 @@ const Index = () => {
                       </div>
                       {formErrors.confirmPassword && <span className="error-message">{formErrors.confirmPassword}</span>}
                     </div>
+                  </div>
+
+                  {/* Campo Opcional: Cupom / Código de Indicação */}
+                  <div className="form-group" style={{ marginTop: '2px' }}>
+                    <label htmlFor="affiliate-code" style={{ fontSize: '13px' }}>
+                      Cupom ou Código de Indicação <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="affiliate-code"
+                      value={affiliateCode}
+                      onChange={(e) => setAffiliateCode(e.target.value.toUpperCase())}
+                      placeholder="Ex: SILVA10"
+                      style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}
+                    />
                   </div>
 
                   {/* Lembrete de Acesso Compacto Debaixo das Senhas */}

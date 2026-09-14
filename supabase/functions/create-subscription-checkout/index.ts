@@ -41,7 +41,26 @@ Deno.serve(async (req) => {
       utm_campaign,
       utm_content,
       fbclid,
+      referral_code,
     } = body;
+
+    // Resolve affiliate_id from referral_code (link/cupom)
+    let resolvedAffiliateId: string | null = null;
+    if (referral_code) {
+      const cleanCode = String(referral_code).toUpperCase().trim();
+      const { data: affiliateRow } = await supabase
+        .from("affiliates")
+        .select("id")
+        .eq("code", cleanCode)
+        .eq("status", "active")
+        .maybeSingle();
+      if (affiliateRow) {
+        resolvedAffiliateId = affiliateRow.id;
+        console.log("[checkout] Afiliado resolvido:", cleanCode, "→", resolvedAffiliateId);
+      } else {
+        console.log("[checkout] Código de afiliado inválido ou inativo:", cleanCode);
+      }
+    }
 
     // Validar plan_id
     const planInfo = PLAN_PRICES[plan_id];
@@ -117,16 +136,20 @@ Deno.serve(async (req) => {
 
       createdUserId = authUser.id;
 
-      // 3. Criar a Loja (status 'trial' até a confirmação do pagamento pelo webhook)
+      // 3. Criar a Loja (status 'pending' até a confirmação do pagamento pelo webhook)
+      const storeInsertData: any = {
+        name: store_name.trim(),
+        slug: cleanSlug,
+        status: "pending",
+        plan: plan_id,
+        trial_started_at: new Date().toISOString(),
+      };
+      // Atribuição única de afiliado: gravar somente se válido
+      if (resolvedAffiliateId) storeInsertData.affiliate_id = resolvedAffiliateId;
+
       const { data: newStore, error: createStoreErr } = await supabase
         .from("stores")
-        .insert({
-          name: store_name.trim(),
-          slug: cleanSlug,
-          status: "pending",
-          plan: plan_id,
-          trial_started_at: new Date().toISOString(),
-        } as any)
+        .insert(storeInsertData)
         .select("id")
         .single();
 
@@ -201,6 +224,8 @@ Deno.serve(async (req) => {
         email: payerEmail,
         store_id: createdStoreId,
         user_id: createdUserId,
+        ...(resolvedAffiliateId ? { affiliate_id: resolvedAffiliateId } : {}),
+        ...(referral_code ? { referral_code: String(referral_code).toUpperCase().trim() } : {}),
         ...(utm_source ? { utm_source } : {}),
         ...(utm_medium ? { utm_medium } : {}),
         ...(utm_campaign ? { utm_campaign } : {}),
@@ -237,25 +262,30 @@ Deno.serve(async (req) => {
     const checkoutUrl: string = mpData.init_point;
     const preferenceId: string = mpData.id;
 
-    // Salvar registro em subscription_payments
+    // Salvar registro em subscription_payments (com affiliate_id e store_id se disponíveis)
+    const paymentInsertData: any = {
+      lead_id: lead_id ?? null,
+      name: name.trim(),
+      whatsapp,
+      email: email?.trim() ?? null,
+      plan_id,
+      plan_price_cents: planInfo.price_cents,
+      mp_preference_id: preferenceId,
+      checkout_url: checkoutUrl,
+      utm_source: utm_source ?? null,
+      utm_medium: utm_medium ?? null,
+      utm_campaign: utm_campaign ?? null,
+      utm_content: utm_content ?? null,
+      fbclid: fbclid ?? null,
+      status: "pending",
+    };
+    if (resolvedAffiliateId) paymentInsertData.affiliate_id = resolvedAffiliateId;
+    if (createdStoreId) paymentInsertData.store_id = createdStoreId;
+    if (referral_code) paymentInsertData.affiliate_code = String(referral_code).toUpperCase().trim();
+
     const { data: payment, error: insertErr } = await supabase
       .from("subscription_payments")
-      .insert({
-        lead_id: lead_id ?? null,
-        name: name.trim(),
-        whatsapp,
-        email: email?.trim() ?? null,
-        plan_id,
-        plan_price_cents: planInfo.price_cents,
-        mp_preference_id: preferenceId,
-        checkout_url: checkoutUrl,
-        utm_source: utm_source ?? null,
-        utm_medium: utm_medium ?? null,
-        utm_campaign: utm_campaign ?? null,
-        utm_content: utm_content ?? null,
-        fbclid: fbclid ?? null,
-        status: "pending",
-      })
+      .insert(paymentInsertData)
       .select("id")
       .single();
 

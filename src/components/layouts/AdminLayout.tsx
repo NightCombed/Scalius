@@ -1,10 +1,10 @@
 import { useEffect, useState, useRef } from "react";
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { AdminSidebar } from "./AdminSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, ExternalLink, LayoutDashboard, Package, ShoppingBag, Truck, Settings, Menu, X, Tag, Users, Flower2, BarChart3, Lock, Sun, Moon } from "lucide-react";
+import { LogOut, ExternalLink, LayoutDashboard, Package, ShoppingBag, Truck, Settings, Menu, X, Tag, Users, Flower2, BarChart3, Lock, Sun, Moon, Handshake } from "lucide-react";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -91,7 +91,8 @@ function isCurrentTimeInSilentHours(start: string, end: string): boolean {
 
 
 export default function AdminLayout() {
-  const { user, memberships, signOut, isSuperAdmin } = useAuth();
+  const { user, memberships, signOut, isSuperAdmin, isAffiliate } = useAuth();
+  const navigate = useNavigate();
   const activeStore = memberships[0]?.store;
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -178,6 +179,21 @@ export default function AdminLayout() {
     if (secondary) {
       root.style.setProperty("--accent", secondary);
     }
+    const fontMap: Record<string, string> = {
+      'fraunces':    '"Fraunces", Georgia, serif',
+      'reddit-sans': '"Reddit Sans", sans-serif',
+      'poppins':     '"Poppins", sans-serif',
+      'lato':        '"Lato", sans-serif',
+      'playfair':    '"Playfair Display", serif',
+      'inter':       '"Inter", sans-serif',
+    };
+    const fontFamily = settings?.store_font
+      ? (fontMap[settings.store_font] ?? '"Fraunces", Georgia, serif')
+      : '"Fraunces", Georgia, serif';
+    root.style.setProperty('--store-font-family', fontFamily);
+    return () => {
+      root.style.removeProperty('--store-font-family');
+    };
   }, [settings]);
 
   // Close drawer on navigation
@@ -282,7 +298,7 @@ export default function AdminLayout() {
   }, [activeStore?.id, settings]);
 
   return (
-    <div className="min-h-screen flex w-full bg-background text-foreground">
+    <div className="store-admin min-h-screen flex w-full bg-background text-foreground">
       {/* ── Desktop Sidebar (hidden on mobile) ── */}
       <div className="hidden md:block">
         <SidebarProvider>
@@ -446,6 +462,17 @@ export default function AdminLayout() {
             {isSuperAdmin && (
               <Button asChild variant="outline" size="sm" className="hidden sm:flex">
                 <Link to="/super-admin">Super admin</Link>
+              </Button>
+            )}
+            {isAffiliate && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/affiliate")}
+                className="hidden sm:flex gap-1.5 border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-900/20"
+              >
+                <Handshake className="h-4 w-4" />
+                <span className="hidden lg:inline">Painel do Parceiro</span>
               </Button>
             )}
             <span className="hidden lg:block text-sm text-muted-foreground px-2">{user?.full_name}</span>

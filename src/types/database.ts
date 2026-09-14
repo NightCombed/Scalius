@@ -48,6 +48,8 @@ export interface MercadoPagoOAuthData {
 export type PlatformRole = "super_admin"; // global Scalius staff
 export type StoreRole = "owner" | "admin" | "staff";
 export type PlanId = "basico" | "profissional" | "plus";
+export type AffiliateStatus = "active" | "suspended" | "terminated";
+export type AffiliateCommissionStatus = "pending" | "available" | "paid" | "cancelled";
 
 export interface PlatformUser {
   id: UUID;
@@ -57,16 +59,49 @@ export interface PlatformUser {
   created_at: ISODate;
 }
 
+/** Perfil de parceiro/afiliado do Programa de Indicação do Scalius */
+export interface Affiliate {
+  id: UUID;
+  user_id: UUID;
+  demo_store_id: UUID | null;
+  code: string;                   // Código único (link/cupom)
+  commission_rate: number;         // % de comissão recorrente
+  status: AffiliateStatus;
+  pix_key: string | null;
+  notes: string | null;
+  created_at: ISODate;
+  updated_at: ISODate;
+}
+
+/** Registro de comissão gerado a partir de um pagamento de assinatura confirmado */
+export interface AffiliateCommission {
+  id: UUID;
+  affiliate_id: UUID;
+  store_id: UUID;
+  payment_id: UUID;
+  plan_id: string;
+  payment_amount_cents: number;
+  commission_rate: number;
+  commission_amount_cents: number;
+  status: AffiliateCommissionStatus;
+  paid_at: ISODate | null;
+  notes: string | null;
+  created_at: ISODate;
+  updated_at: ISODate;
+}
+
 export interface Store {
   id: UUID;
   slug: string;              // subdomain key — e.g. "rosa-bela"
   name: string;
   custom_domain?: string | null;
-  status: "active" | "trial" | "suspended";
+  status: "active" | "trial" | "suspended" | "pending";
   plan: PlanId;              // subscription plan — 'basico' | 'profissional' | 'plus'
   created_at: ISODate;
   trial_started_at: ISODate;
+  affiliate_id?: UUID | null;
 }
+
 
 export interface StoreMember {
   id: UUID;
@@ -105,6 +140,7 @@ export interface StoreSettings {
   timezone: string;            // "America/Sao_Paulo"
   category_style?: "pill" | "compact";
   show_category_images?: boolean;
+  store_font?: "inter" | "reddit-sans" | "poppins" | "lato" | "playfair" | null;
 
   // National Shipping (Melhor Envio)
   national_shipping_enabled?: boolean;
