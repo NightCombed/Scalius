@@ -42,6 +42,7 @@ import { PlaceholderPage } from "@/components/PlaceholderPage";
 import SuperAdminLayout from "@/components/layouts/SuperAdminLayout";
 import SuperAdminDashboard from "@/pages/super-admin/SuperAdminDashboard";
 import AffiliateDashboard from "@/pages/affiliate/AffiliateDashboard";
+import ProgramaAfiliados from "@/pages/public/ProgramaAfiliados";
 import { resolveTenantSlug } from "@/lib/tenant";
 
 const queryClient = new QueryClient();
@@ -142,10 +143,19 @@ const App = () => {
                     <Route path="/obrigado" element={<Obrigado />} />
                     <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
                     <Route path="/termos-de-servico" element={<TermsOfService />} />
+                    <Route path="/programa-afiliados" element={<ProgramaAfiliados />} />
 
                     {/* Affiliate partner dashboard */}
                     <Route
                       path="/affiliate"
+                      element={
+                        <ProtectedRoute>
+                          <AffiliateDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/affiliates"
                       element={
                         <ProtectedRoute>
                           <AffiliateDashboard />

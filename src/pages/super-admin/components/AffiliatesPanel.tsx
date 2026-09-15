@@ -52,10 +52,10 @@ interface ReferredStore {
 interface CommissionItem {
   id: string;
   store_id: string;
-  payment_amount: number;
+  payment_amount_cents: number;
   commission_rate: number;
-  commission_amount: number;
-  status: "pending" | "paid" | "canceled";
+  commission_amount_cents: number;
+  status: "available" | "pending" | "paid" | "canceled" | "reverted";
   created_at: string;
   paid_at: string | null;
   store_name?: string;
@@ -64,9 +64,10 @@ interface CommissionItem {
 function getStoreMonthlyPrice(planName: string, status: string): number {
   if (status !== "active" && status !== "trial") return 0;
   const p = (planName || "").toLowerCase();
-  if (p.includes("enterprise") || p.includes("avançado") || p.includes("avancado")) return 197;
-  if (p.includes("essential") || p.includes("iniciante") || p.includes("start")) return 49;
-  return 97;
+  if (p.includes("plus")) return 159;
+  if (p.includes("profissional") || p.includes("pro")) return 89;
+  if (p.includes("basico") || p.includes("básico") || p.includes("start") || p.includes("iniciante")) return 47;
+  return 89; // padrão: profissional
 }
 
 export function AffiliatesPanel() {
@@ -144,7 +145,7 @@ export function AffiliatesPanel() {
       // 4. Fetch commissions
       const { data: comms } = await supabase
         .from("affiliate_commissions")
-        .select("affiliate_id, commission_amount, status")
+        .select("affiliate_id, commission_amount_cents, status")
         .in("affiliate_id", affIds);
 
       const totalCommMap: Record<string, number> = {};
@@ -152,9 +153,9 @@ export function AffiliatesPanel() {
       const paidCommMap: Record<string, number> = {};
 
       (comms || []).forEach((c) => {
-        const val = Number(c.commission_amount) || 0;
+        const val = (Number(c.commission_amount_cents) || 0) / 100;
         totalCommMap[c.affiliate_id] = (totalCommMap[c.affiliate_id] || 0) + val;
-        if (c.status === "pending") {
+        if (c.status === "pending" || c.status === "available") {
           pendingCommMap[c.affiliate_id] = (pendingCommMap[c.affiliate_id] || 0) + val;
         } else if (c.status === "paid") {
           paidCommMap[c.affiliate_id] = (paidCommMap[c.affiliate_id] || 0) + val;
@@ -316,7 +317,7 @@ export function AffiliatesPanel() {
           paid_at: new Date().toISOString(),
         })
         .eq("affiliate_id", affiliateId)
-        .eq("status", "pending");
+        .in("status", ["pending", "available"]);
 
       if (error) throw error;
     },
@@ -980,24 +981,34 @@ export function AffiliatesPanel() {
                         <div>
                           <p className="font-medium text-sm text-foreground">{comm.store_name}</p>
                           <p className="text-muted-foreground">
-                            Pagamento: R$ {Number(comm.payment_amount).toFixed(2)} ({comm.commission_rate_pct}% rate) · {new Date(comm.created_at).toLocaleDateString("pt-BR")}
+                            Pagamento: R$ {((Number(comm.payment_amount_cents) || 0) / 100).toFixed(2)} ({comm.commission_rate}% rate) · {new Date(comm.created_at).toLocaleDateString("pt-BR")}
                           </p>
                         </div>
                         <div className="text-right space-y-1">
                           <span className="font-bold text-sm text-emerald-600 dark:text-emerald-400 block">
-                            + R$ {Number(comm.commission_amount).toFixed(2)}
+                            + R$ {((Number(comm.commission_amount_cents) || 0) / 100).toFixed(2)}
                           </span>
                           <Badge
                             variant="outline"
                             className={
                               comm.status === "paid"
                                 ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 text-[10px]"
-                                : comm.status === "pending"
+                                : comm.status === "available" || comm.status === "pending"
                                 ? "bg-amber-50 text-amber-700 dark:bg-amber-950/20 text-[10px]"
+                                : comm.status === "reverted"
+                                ? "bg-purple-50 text-purple-700 dark:bg-purple-950/20 text-[10px]"
                                 : "bg-red-50 text-red-700 text-[10px]"
                             }
                           >
-                            {comm.status === "paid" ? `Pago (${comm.paid_at ? new Date(comm.paid_at).toLocaleDateString("pt-BR") : ""})` : comm.status === "pending" ? "Pendente" : "Cancelado"}
+                            {comm.status === "paid"
+                              ? `Pago (${comm.paid_at ? new Date(comm.paid_at).toLocaleDateString("pt-BR") : ""})`
+                              : comm.status === "available"
+                              ? "Disponível"
+                              : comm.status === "pending"
+                              ? "Pendente"
+                              : comm.status === "reverted"
+                              ? "Revertido"
+                              : "Cancelado"}
                           </Badge>
                         </div>
                       </div>

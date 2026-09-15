@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Copy, CheckCheck, ExternalLink, Store, TrendingUp, Users,
   DollarSign, Clock, CheckCircle2, XCircle, ArrowLeft, Link2,
-  Tag, Banknote, BarChart3, AlertCircle, ArrowUpRight, Pencil, Loader2
+  Tag, Banknote, BarChart3, AlertCircle, ArrowUpRight, Pencil, Loader2, Sparkles, Percent, RotateCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +33,7 @@ const COMMISSION_STATUS_CONFIG: Record<string, { label: string; className: strin
   paid:      { label: "Pago",       className: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",           icon: Banknote },
   pending:   { label: "Pendente",   className: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",       icon: Clock },
   cancelled: { label: "Cancelado",  className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",               icon: XCircle },
+  reverted:  { label: "Revertido",  className: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",  icon: RotateCcw },
 };
 
 const PLAN_LABELS: Record<string, string> = {
@@ -106,12 +107,23 @@ export default function AffiliateDashboard() {
   const activeReferrals = referredStores.filter((s) => s.status === "active").length;
   const trialReferrals = referredStores.filter((s) => s.status === "trial").length;
 
+  const getTierInfo = (activeCount: number) => {
+    if (activeCount >= 50) return { rate: 30.0, nextTarget: null, nextRate: null, name: "Nível 5 — VIP (30%)" };
+    if (activeCount >= 30) return { rate: 27.5, nextTarget: 50, nextRate: 30.0, name: "Nível 4 — Elite (27,5%)" };
+    if (activeCount >= 15) return { rate: 25.0, nextTarget: 30, nextRate: 27.5, name: "Nível 3 — Avançado (25%)" };
+    if (activeCount >= 5)  return { rate: 22.5, nextTarget: 15, nextRate: 25.0, name: "Nível 2 — Pro (22,5%)" };
+    return { rate: 20.0, nextTarget: 5, nextRate: 22.5, name: "Nível 1 — Inicial (20%)" };
+  };
+
+  const currentTier = getTierInfo(activeReferrals);
+  const effectiveCommissionRate = Math.max(currentTier.rate, affiliateProfile.commission_rate || 20);
+
   // Estimated monthly recurring commission from current active stores
   const estimatedMonthlyCommissionCents = referredStores
     .filter((s) => s.status === "active")
     .reduce((sum, s) => {
       const planPrice = PLAN_PRICES_CENTS[s.plan] ?? 8900;
-      const comm = Math.round(planPrice * (affiliateProfile.commission_rate / 100));
+      const comm = Math.round(planPrice * (effectiveCommissionRate / 100));
       return sum + comm;
     }, 0);
 
@@ -168,7 +180,7 @@ export default function AffiliateDashboard() {
             <div className="h-4 w-px bg-border" />
             <div>
               <div className="text-sm font-semibold text-foreground leading-none">Painel do Parceiro</div>
-              <div className="text-xs text-muted-foreground mt-0.5">Programa de Indicação</div>
+              <div className="text-xs text-muted-foreground mt-0.5">Programa de Indicação V1</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -202,7 +214,7 @@ export default function AffiliateDashboard() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Meu Painel de Parceiro</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Comissão recorrente de <span className="font-bold text-primary">{affiliateProfile.commission_rate}%</span> por cada assinatura ativa que você indicar.
+              Sua taxa atual é de <span className="font-bold text-primary">{effectiveCommissionRate}%</span> em comissão recorrente durante os primeiros 12 meses de cada loja indicada.
             </p>
           </div>
           <Badge
@@ -215,6 +227,41 @@ export default function AffiliateDashboard() {
           >
             {affiliateProfile.status === "active" ? "✓ Parceiro Ativo" : "Parceria Suspensa"}
           </Badge>
+        </div>
+
+        {/* ── Tier Progression Banner ── */}
+        <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Badge className="bg-primary text-primary-foreground font-semibold text-xs">
+                {currentTier.name}
+              </Badge>
+              <span className="text-xs text-muted-foreground font-medium">
+                {activeReferrals} {activeReferrals === 1 ? "loja ativa" : "lojas ativas"} no programa
+              </span>
+            </div>
+            <p className="text-sm font-medium text-foreground">
+              {currentTier.nextTarget ? (
+                <>Faltam <strong className="text-primary">{currentTier.nextTarget - activeReferrals}</strong> {currentTier.nextTarget - activeReferrals === 1 ? "loja ativa" : "lojas ativas"} para você alcançar a faixa de <strong className="text-primary">{currentTier.nextRate}%</strong> de comissão!</>
+              ) : (
+                <>Você alcançou a faixa máxima de <strong className="text-primary">30%</strong> de comissão recorrente!</>
+              )}
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => navigate("/programa-afiliados")} className="gap-1.5 text-xs shrink-0">
+            Ver Regras do Programa
+            <ExternalLink className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+
+        {/* ── Banner: Customer Discount Benefit ── */}
+        <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20 p-4 flex items-center justify-between gap-3 text-xs text-emerald-900 dark:text-emerald-300">
+          <div className="flex items-center gap-2">
+            <Percent className="h-4 w-4 text-emerald-600 shrink-0" />
+            <span>
+              <strong>Benefício para seus indicados:</strong> Lojistas que assinarem usando <strong>seu cupom</strong> ganham <strong>10% de desconto</strong> no primeiro mês. Quem entrar pelo link sem cupom paga o valor normal, mas ainda gera sua comissão.
+            </span>
+          </div>
         </div>
 
         {/* ── Divulgação: Link & Cupom ── */}

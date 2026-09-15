@@ -1,5 +1,12 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
+// Original plan prices in cents BEFORE any coupon discount
+const ORIGINAL_PLAN_PRICES_CENTS: Record<string, number> = {
+  basico: 4700,
+  profissional: 8900,
+  plus: 15900,
+};
+
 Deno.serve(async (req) => {
   // Always return 200 quickly to avoid MP retries
   if (req.method !== "POST") return new Response("ok", { status: 200 });
@@ -34,6 +41,135 @@ Deno.serve(async (req) => {
     if (!order_id) return new Response(JSON.stringify({ error: "Missing order_id" }), { status: 400 });
     const result = await processOrderPaymentStatus(supabase, null, order_id, simStatus);
     return new Response(JSON.stringify({ ok: true, result }), { headers: { "Content-Type": "application/json" } });
+  }
+
+  if (body.action === "simulate_subscription") {
+    const secret = req.headers.get("x-simulate-secret");
+    if (!secret) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { "Content-Type": "application/json" },
+      });
+    }
+    const { subscription_payment_id, store_id } = body;
+    let targetSubPayment = null;
+    if (subscription_payment_id) {
+      const { data } = await supabase.from("subscription_payments").select("*").eq("id", subscription_payment_id).maybeSingle();
+      targetSubPayment = data;
+    } else if (store_id) {
+      const { data } = await supabase.from("subscription_payments").select("*").eq("store_id", store_id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      targetSubPayment = data;
+    }
+
+    if (!targetSubPayment) {
+      return new Response(JSON.stringify({ error: "Subscription payment record not found" }), { status: 400 });
+    }
+
+    // Mark subscription payment as paid
+    await supabase.from("subscription_payments").update({ status: "paid" }).eq("id", targetSubPayment.id);
+
+    // Activate store
+    const targetStoreId = targetSubPayment.store_id;
+    if (targetStoreId) {
+      await supabase.from("stores").update({ status: "active" }).eq("id", targetStoreId);
+    }
+
+    // Generate affiliate commission if applicable (using original plan price BEFORE discount)
+    const affiliateId = targetSubPayment.affiliate_id;
+    let commissionCreated = false;
+    if (affiliateId && targetStoreId) {
+      const { data: aff } = await supabase.from("affiliates").select("id, commission_rate, status").eq("id", affiliateId).maybeSingle();
+      if (aff && aff.status === "active") {
+        const planId = targetSubPayment.plan_id || "profissional";
+        const originalPlanPriceCents = ORIGINAL_PLAN_PRICES_CENTS[planId] || 8900;
+
+        // Dynamic Tier rate calculation based on active store count
+        const { count: activeCount } = await supabase
+          .from("stores")
+          .select("id", { count: "exact", head: true })
+          .eq("affiliate_id", affiliateId)
+          .eq("status", "active");
+
+        const nActive = activeCount ?? 0;
+        let commRate = 20.0;
+        if (nActive >= 50) commRate = 30.0;
+        else if (nActive >= 30) commRate = 27.5;
+        else if (nActive >= 15) commRate = 25.0;
+        else if (nActive >= 5) commRate = 22.5;
+        else commRate = Math.max(20.0, Number(aff.commission_rate) || 20.0);
+
+        const commCents = Math.floor(originalPlanPriceCents * commRate / 100);
+
+        const { error: commErr } = await supabase.from("affiliate_commissions").insert({
+          affiliate_id: affiliateId,
+          store_id: targetStoreId,
+          payment_id: targetSubPayment.id,
+          plan_id: planId,
+          payment_amount_cents: originalPlanPriceCents,
+          commission_rate: commRate,
+          commission_amount_cents: commCents,
+          status: "available",
+        });
+        if (!commErr) commissionCreated = true;
+      }
+    }
+
+    return new Response(JSON.stringify({
+      ok: true,
+      subscription_payment_id: targetSubPayment.id,
+      store_id: targetStoreId,
+      store_activated: true,
+      commission_created: commissionCreated,
+    }), { headers: { "Content-Type": "application/json" } });
+  }
+
+  if (body.action === "simulate_cancellation" || body.action === "simulate_refund") {
+    const secret = req.headers.get("x-simulate-secret");
+    if (!secret) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { "Content-Type": "application/json" },
+      });
+    }
+    const { subscription_payment_id, store_id } = body;
+    let targetSubPayment = null;
+    if (subscription_payment_id) {
+      const { data } = await supabase.from("subscription_payments").select("*").eq("id", subscription_payment_id).maybeSingle();
+      targetSubPayment = data;
+    } else if (store_id) {
+      const { data } = await supabase.from("subscription_payments").select("*").eq("store_id", store_id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      targetSubPayment = data;
+    }
+
+    if (!targetSubPayment) {
+      return new Response(JSON.stringify({ error: "Subscription payment record not found" }), { status: 400 });
+    }
+
+    const newPaymentStatus = body.action === "simulate_refund" ? "failed" : "cancelled";
+    await supabase.from("subscription_payments").update({
+      status: newPaymentStatus,
+      mp_status: body.action === "simulate_refund" ? "refunded" : "cancelled",
+    }).eq("id", targetSubPayment.id);
+
+    const targetStoreId = targetSubPayment.store_id;
+    if (targetStoreId) {
+      await supabase.from("stores").update({ status: "suspended" }).eq("id", targetStoreId);
+    }
+
+    const { error: revertErr, data: revertedRows } = await supabase
+      .from("affiliate_commissions")
+      .update({ status: "reverted" })
+      .eq("payment_id", targetSubPayment.id)
+      .in("status", ["available", "pending"])
+      .select("id");
+
+    return new Response(JSON.stringify({
+      ok: true,
+      action: body.action,
+      subscription_payment_id: targetSubPayment.id,
+      store_id: targetStoreId,
+      store_suspended: true,
+      reverted_commissions_count: revertedRows?.length ?? 0,
+      reverted: true,
+    }), { headers: { "Content-Type": "application/json" } });
   }
 
   // ── Extract payment ID from URL query param (MP standard) ───────────────────
@@ -209,7 +345,7 @@ Deno.serve(async (req) => {
   // Determinar novo status
   let newStatus: string | null = null;
   if (mpPlatformStatus === "approved") newStatus = "paid";
-  else if (mpPlatformStatus === "rejected" || mpPlatformStatus === "cancelled") newStatus = "failed";
+  else if (mpPlatformStatus === "rejected" || mpPlatformStatus === "cancelled" || mpPlatformStatus === "refunded" || mpPlatformStatus === "charged_back") newStatus = "failed";
   else if (mpPlatformStatus === "pending" || mpPlatformStatus === "in_process") newStatus = "pending";
 
   if (subPaymentId && newStatus) {
@@ -237,46 +373,103 @@ Deno.serve(async (req) => {
           .eq("id", targetStoreId);
         console.log(`🚀 [webhook] Loja ${targetStoreId} ativada com sucesso!`);
 
-        // ── Gerar comissão de afiliado (idempotente) ───────────────────────
+        // ── Gerar comissão de afiliado (idempotente com faixas e limite de 12 meses) ──
         const affiliateId = subPaymentData?.affiliate_id || metadata.affiliate_id;
         if (affiliateId) {
-          // Buscar taxa de comissão do afiliado
-          const { data: affiliateRow } = await supabase
-            .from("affiliates")
-            .select("id, commission_rate, status")
-            .eq("id", affiliateId)
+          // 1. Verificar idade da loja (limite de 12 meses para recorrência)
+          const { data: storeRow } = await supabase
+            .from("stores")
+            .select("created_at")
+            .eq("id", targetStoreId)
             .maybeSingle();
 
-          if (affiliateRow && affiliateRow.status === "active") {
-            const paymentAmountCents = subPaymentData?.plan_price_cents
-              ?? Math.round((mpPlatformPayment.transaction_amount ?? 0) * 100);
-            const commissionRate = Number(affiliateRow.commission_rate);
-            const commissionAmountCents = Math.floor(paymentAmountCents * commissionRate / 100);
-
-            const { error: commErr } = await supabase
-              .from("affiliate_commissions")
-              .insert({
-                affiliate_id: affiliateId,
-                store_id: targetStoreId,
-                payment_id: subPaymentId,
-                plan_id: subPaymentData?.plan_id ?? metadata.plan_id ?? "profissional",
-                payment_amount_cents: paymentAmountCents,
-                commission_rate: commissionRate,
-                commission_amount_cents: commissionAmountCents,
-                status: "available",
-              });
-
-            if (commErr) {
-              // Unique constraint violation = já gerou comissão (idempotência)
-              if (commErr.code === "23505") {
-                console.log("[webhook] Comissão já gerada para este pagamento, ignorando.");
-              } else {
-                console.error("[webhook] Erro ao gerar comissão de afiliado:", commErr.message);
-              }
-            } else {
-              console.log(`💜 [webhook] Comissão R$ ${(commissionAmountCents / 100).toFixed(2)} gerada para afiliado ${affiliateId}`);
+          let isWithin12Months = true;
+          if (storeRow?.created_at) {
+            const storeCreatedAt = new Date(storeRow.created_at).getTime();
+            const daysAge = (Date.now() - storeCreatedAt) / (1000 * 60 * 60 * 24);
+            if (daysAge > 365) {
+              isWithin12Months = false;
+              console.log(`[webhook] Loja ${targetStoreId} possui ${Math.round(daysAge)} dias (> 365 dias). Comissão encerrada.`);
             }
           }
+
+          if (isWithin12Months) {
+            // 2. Buscar dados do afiliado
+            const { data: affiliateRow } = await supabase
+              .from("affiliates")
+              .select("id, commission_rate, status")
+              .eq("id", affiliateId)
+              .maybeSingle();
+
+            if (affiliateRow && affiliateRow.status === "active") {
+              // 3. Contar número de lojas ativas indicadas por este afiliado para definir a faixa
+              const { count: activeCount } = await supabase
+                .from("stores")
+                .select("id", { count: "exact", head: true })
+                .eq("affiliate_id", affiliateId)
+                .eq("status", "active");
+
+              // Faixas: 1-4: 20%, 5-14: 22.5%, 15-29: 25%, 30-49: 27.5%, 50+: 30%
+              const nActive = activeCount ?? 0;
+              let effectiveRate = 20.0;
+              if (nActive >= 50) effectiveRate = 30.0;
+              else if (nActive >= 30) effectiveRate = 27.5;
+              else if (nActive >= 15) effectiveRate = 25.0;
+              else if (nActive >= 5) effectiveRate = 22.5;
+              else effectiveRate = Math.max(20.0, Number(affiliateRow.commission_rate) || 20.0);
+
+              const planId = subPaymentData?.plan_id ?? metadata.plan_id ?? "profissional";
+              const originalPlanPriceCents = ORIGINAL_PLAN_PRICES_CENTS[planId] || 8900;
+              const commissionAmountCents = Math.floor(originalPlanPriceCents * effectiveRate / 100);
+
+              const { error: commErr } = await supabase
+                .from("affiliate_commissions")
+                .insert({
+                  affiliate_id: affiliateId,
+                  store_id: targetStoreId,
+                  payment_id: subPaymentId,
+                  plan_id: planId,
+                  payment_amount_cents: originalPlanPriceCents,
+                  commission_rate: effectiveRate,
+                  commission_amount_cents: commissionAmountCents,
+                  status: "available",
+                });
+
+              if (commErr) {
+                if (commErr.code === "23505") {
+                  console.log("[webhook] Comissão já gerada para este pagamento, ignorando.");
+                } else {
+                  console.error("[webhook] Erro ao gerar comissão de afiliado:", commErr.message);
+                }
+              } else {
+                console.log(`💜 [webhook] Comissão R$ ${(commissionAmountCents / 100).toFixed(2)} (${effectiveRate}% faixa ${nActive} lojas) gerada para afiliado ${affiliateId}`);
+              }
+            }
+          }
+        }
+      }
+
+      // ── Reverter comissão se pagamento foi cancelado/rejeitado/estornado ───────────────
+      if (newStatus === "failed" || newStatus === "refunded") {
+        console.log(`[webhook] Pagamento ${subPaymentId} ${newStatus}. Revertendo comissões...`);
+        const { error: revertErr } = await supabase
+          .from("affiliate_commissions")
+          .update({ status: "reverted" })
+          .eq("payment_id", subPaymentId)
+          .in("status", ["available", "pending"]);
+
+        if (revertErr) {
+          console.error("[webhook] Erro ao reverter comissões:", revertErr.message);
+        } else {
+          console.log(`↩️ [webhook] Comissões revertidas para payment_id=${subPaymentId}`);
+        }
+
+        if (targetStoreId) {
+          await supabase
+            .from("stores")
+            .update({ status: "suspended" })
+            .eq("id", targetStoreId);
+          console.log(`🔒 [webhook] Loja ${targetStoreId} suspensa devido a ${newStatus}.`);
         }
       }
     }

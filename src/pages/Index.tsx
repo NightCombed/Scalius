@@ -257,6 +257,8 @@ const Index = () => {
       const utmContent = sessionStorage.getItem('utm_content');
       const fbclid = sessionStorage.getItem('fbclid');
 
+      const linkRef = sessionStorage.getItem('scalius_link_ref') || localStorage.getItem('scalius_link_ref') || sessionStorage.getItem('scalius_ref') || localStorage.getItem('scalius_ref');
+
       const res = await supabase.functions.invoke('create-subscription-checkout', {
         body: {
           plan_id: selectedPlan.planId,
@@ -267,7 +269,8 @@ const Index = () => {
           store_name: storeName.trim(),
           slug: storeSlug.trim().toLowerCase(),
           password: password,
-          affiliate_code: affiliateCode.trim() || undefined,
+          coupon_code: affiliateCode.trim() || undefined,
+          referral_code: linkRef ? linkRef.trim() : undefined,
           utm_source: utmSource,
           utm_medium: utmMedium,
           utm_campaign: utmCampaign,
@@ -334,15 +337,21 @@ const Index = () => {
       if (uContent) sessionStorage.setItem('utm_content', uContent);
       if (fclid) sessionStorage.setItem('fbclid', fclid);
 
-      const refParam = searchParams.get('ref') || searchParams.get('affiliate') || searchParams.get('cupom');
-      if (refParam) {
-        sessionStorage.setItem('scalius_ref', refParam);
-        localStorage.setItem('scalius_ref', refParam);
-        setAffiliateCode(refParam.toUpperCase());
+      const linkParam = searchParams.get('ref') || searchParams.get('affiliate');
+      const cupomParam = searchParams.get('cupom');
+
+      if (linkParam) {
+        sessionStorage.setItem('scalius_link_ref', linkParam);
+        localStorage.setItem('scalius_link_ref', linkParam);
+      }
+      if (cupomParam) {
+        sessionStorage.setItem('scalius_cupom', cupomParam);
+        localStorage.setItem('scalius_cupom', cupomParam);
+        setAffiliateCode(cupomParam.toUpperCase());
       } else {
-        const savedRef = sessionStorage.getItem('scalius_ref') || localStorage.getItem('scalius_ref');
-        if (savedRef) {
-          setAffiliateCode(savedRef.toUpperCase());
+        const savedCupom = sessionStorage.getItem('scalius_cupom') || localStorage.getItem('scalius_cupom');
+        if (savedCupom) {
+          setAffiliateCode(savedCupom.toUpperCase());
         }
       }
     } catch (e) {

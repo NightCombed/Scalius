@@ -42,25 +42,14 @@ Deno.serve(async (req) => {
       utm_content,
       fbclid,
       referral_code,
+      affiliate_code,
+      coupon_code,
+      cupom,
+      ref,
     } = body;
 
-    // Resolve affiliate_id from referral_code (link/cupom)
-    let resolvedAffiliateId: string | null = null;
-    if (referral_code) {
-      const cleanCode = String(referral_code).toUpperCase().trim();
-      const { data: affiliateRow } = await supabase
-        .from("affiliates")
-        .select("id")
-        .eq("code", cleanCode)
-        .eq("status", "active")
-        .maybeSingle();
-      if (affiliateRow) {
-        resolvedAffiliateId = affiliateRow.id;
-        console.log("[checkout] Afiliado resolvido:", cleanCode, "→", resolvedAffiliateId);
-      } else {
-        console.log("[checkout] Código de afiliado inválido ou inativo:", cleanCode);
-      }
-    }
+    const couponInput = coupon_code || cupom;
+    const linkInput = referral_code || affiliate_code || ref;
 
     // Validar plan_id
     const planInfo = PLAN_PRICES[plan_id];
@@ -135,8 +124,76 @@ Deno.serve(async (req) => {
       }
 
       createdUserId = authUser.id;
+    }
 
-      // 3. Criar a Loja (status 'pending' até a confirmação do pagamento pelo webhook)
+    // Resolve affiliate_id & discount according to Link vs Cupom rules:
+    // - Cupom (coupon_code): Grants 10% discount on 1st payment AND attributes store to affiliate
+    // - Link (referral_code): Attributes store to affiliate WITHOUT discount (full price)
+    // - Link + Cupom (same affiliate): Single attribution, 10% discount applied once
+    let resolvedAffiliateId: string | null = null;
+    let finalPlanPriceCents = planInfo.price_cents;
+    let hasDiscount = false;
+
+    const subscriberEmail = (email || "").trim().toLowerCase();
+
+    // 1. Check Coupon first (grants 10% discount)
+    if (couponInput) {
+      const cleanCoupon = String(couponInput).toUpperCase().trim();
+      const { data: couponAffiliate } = await supabase
+        .from("affiliates")
+        .select("id, user_id, email")
+        .or(`coupon_code.eq.${cleanCoupon},code.eq.${cleanCoupon}`)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (couponAffiliate) {
+        const affiliateEmail = (couponAffiliate.email || "").trim().toLowerCase();
+        if (
+          (subscriberEmail && affiliateEmail && subscriberEmail === affiliateEmail) ||
+          (createdUserId && createdUserId === couponAffiliate.user_id)
+        ) {
+          console.warn("[checkout] Auto-indicação via cupom bloqueada para:", subscriberEmail);
+        } else {
+          resolvedAffiliateId = couponAffiliate.id;
+          hasDiscount = true;
+          finalPlanPriceCents = Math.round(planInfo.price_cents * 0.90);
+          console.log("[checkout] Cupom válido aplicado:", cleanCoupon, "→ Afiliado:", resolvedAffiliateId, "Preço com 10% OFF:", finalPlanPriceCents);
+        }
+      } else {
+        console.log("[checkout] Cupom inválido ou inativo:", cleanCoupon);
+      }
+    }
+
+    // 2. If NO valid coupon discount applied, check Link attribution (no discount)
+    if (!hasDiscount && linkInput) {
+      const cleanLink = String(linkInput).toUpperCase().trim();
+      const { data: linkAffiliate } = await supabase
+        .from("affiliates")
+        .select("id, user_id, email")
+        .or(`code.eq.${cleanLink},coupon_code.eq.${cleanLink}`)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (linkAffiliate) {
+        const affiliateEmail = (linkAffiliate.email || "").trim().toLowerCase();
+        if (
+          (subscriberEmail && affiliateEmail && subscriberEmail === affiliateEmail) ||
+          (createdUserId && createdUserId === linkAffiliate.user_id)
+        ) {
+          console.warn("[checkout] Auto-indicação via link bloqueada para:", subscriberEmail);
+        } else {
+          resolvedAffiliateId = linkAffiliate.id;
+          // Discount remains false! Customer pays full plan price.
+          console.log("[checkout] Link de indicação resolvido:", cleanLink, "→ Afiliado:", resolvedAffiliateId, "Valor normal (Sem Desconto):", finalPlanPriceCents);
+        }
+      } else {
+        console.log("[checkout] Link de indicação inválido ou inativo:", cleanLink);
+      }
+    }
+
+    // Criar a Loja (se dados foram fornecidos) com status 'pending' e affiliate_id
+    if (store_name && slug && createdUserId) {
+      const cleanSlug = slug.toLowerCase().trim().replace(/[^a-z0-9-]/g, "");
       const storeInsertData: any = {
         name: store_name.trim(),
         slug: cleanSlug,
@@ -144,7 +201,6 @@ Deno.serve(async (req) => {
         plan: plan_id,
         trial_started_at: new Date().toISOString(),
       };
-      // Atribuição única de afiliado: gravar somente se válido
       if (resolvedAffiliateId) storeInsertData.affiliate_id = resolvedAffiliateId;
 
       const { data: newStore, error: createStoreErr } = await supabase
@@ -163,7 +219,7 @@ Deno.serve(async (req) => {
 
       createdStoreId = newStore.id;
 
-      // 4. Vincular o usuário como dono da loja em store_members
+      // Vincular o usuário como dono da loja em store_members
       const { error: memberErr } = await supabase
         .from("store_members")
         .insert({
@@ -190,7 +246,6 @@ Deno.serve(async (req) => {
     // Montar URL de retorno (success/failure/pending)
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const baseUrl = "https://scalius.com.br";
-
     const payerEmail = email && email.trim() ? email.trim() : `cliente.${whatsapp.replace(/\D/g, "")}@scalius.com.br`;
 
     // Criar preferência de pagamento no Mercado Pago Checkout Pro
@@ -198,11 +253,11 @@ Deno.serve(async (req) => {
       items: [
         {
           id: plan_id,
-          title: planInfo.label,
-          description: `Assinatura mensal do ${planInfo.label}`,
+          title: planInfo.label + (hasDiscount ? " (10% OFF Indicação)" : ""),
+          description: `Assinatura mensal do ${planInfo.label}` + (hasDiscount ? " com 10% de desconto no 1º mês" : ""),
           quantity: 1,
           currency_id: "BRL",
-          unit_price: planInfo.price_cents / 100,
+          unit_price: finalPlanPriceCents / 100,
         },
       ],
       payer: {
@@ -225,7 +280,7 @@ Deno.serve(async (req) => {
         store_id: createdStoreId,
         user_id: createdUserId,
         ...(resolvedAffiliateId ? { affiliate_id: resolvedAffiliateId } : {}),
-        ...(referral_code ? { referral_code: String(referral_code).toUpperCase().trim() } : {}),
+        ...(linkInput || couponInput ? { referral_code: String(linkInput || couponInput).toUpperCase().trim() } : {}),
         ...(utm_source ? { utm_source } : {}),
         ...(utm_medium ? { utm_medium } : {}),
         ...(utm_campaign ? { utm_campaign } : {}),
@@ -236,7 +291,7 @@ Deno.serve(async (req) => {
       expires: false,
     };
 
-    console.log("[checkout] Criando preferência MP para plano:", plan_id, "valor:", planInfo.price_cents / 100);
+    console.log("[checkout] Criando preferência MP para plano:", plan_id, "valor final:", finalPlanPriceCents / 100);
 
     const mpRes = await fetch("https://api.mercadopago.com/checkout/preferences", {
       method: "POST",
@@ -262,14 +317,14 @@ Deno.serve(async (req) => {
     const checkoutUrl: string = mpData.init_point;
     const preferenceId: string = mpData.id;
 
-    // Salvar registro em subscription_payments (com affiliate_id e store_id se disponíveis)
+    // Salvar registro em subscription_payments
     const paymentInsertData: any = {
       lead_id: lead_id ?? null,
       name: name.trim(),
       whatsapp,
       email: email?.trim() ?? null,
       plan_id,
-      plan_price_cents: planInfo.price_cents,
+      plan_price_cents: finalPlanPriceCents,
       mp_preference_id: preferenceId,
       checkout_url: checkoutUrl,
       utm_source: utm_source ?? null,
@@ -281,7 +336,8 @@ Deno.serve(async (req) => {
     };
     if (resolvedAffiliateId) paymentInsertData.affiliate_id = resolvedAffiliateId;
     if (createdStoreId) paymentInsertData.store_id = createdStoreId;
-    if (referral_code) paymentInsertData.affiliate_code = String(referral_code).toUpperCase().trim();
+    const usedCode = linkInput || couponInput;
+    if (usedCode) paymentInsertData.affiliate_code = String(usedCode).toUpperCase().trim();
 
     const { data: payment, error: insertErr } = await supabase
       .from("subscription_payments")
