@@ -35,7 +35,7 @@ export default function Login() {
 
   if (!authLoading && user) {
     const target = (location.state as { from?: string } | null)?.from
-      ?? (isSuperAdmin ? "/super-admin" : isAffiliate ? "/affiliate" : "/admin");
+      ?? (isSuperAdmin ? "/super-admin" : "/admin");
     return <Navigate to={target} replace />;
   }
 
