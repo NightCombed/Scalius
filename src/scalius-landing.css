@@ -2246,6 +2246,8 @@
   justify-content: center;
   padding: 20px;
   animation: modalFadeIn 0.3s ease forwards;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .scalius-landing-wrapper .lead-modal-container {
@@ -2254,10 +2256,30 @@
   border-radius: 16px;
   width: 100%;
   max-width: 600px;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
   padding: 40px 32px 32px 32px;
   position: relative;
   box-shadow: var(--shadow-lg);
   animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  margin: auto;
+}
+
+.scalius-landing-wrapper .lead-modal-container::-webkit-scrollbar {
+  width: 6px;
+}
+.scalius-landing-wrapper .lead-modal-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scalius-landing-wrapper .lead-modal-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+.scalius-landing-wrapper .lead-modal-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .scalius-landing-wrapper .lead-modal-close {
@@ -2436,8 +2458,13 @@
 }
 
 @media (max-width: 480px) {
+  .scalius-landing-wrapper .lead-modal-overlay {
+    padding: 12px;
+  }
   .scalius-landing-wrapper .lead-modal-container {
-    padding: 32px 20px 24px 20px;
+    padding: 28px 18px 24px 18px;
+    max-height: calc(100dvh - 24px);
+    border-radius: 14px;
   }
 }
 
