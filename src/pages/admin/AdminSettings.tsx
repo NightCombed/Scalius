@@ -111,7 +111,7 @@ const schema = z.object({
   category_style: z.enum(["pill", "compact"]).default("pill"),
   show_category_images: z.boolean().default(false),
   show_revenue_to_staff: z.boolean().default(true),
-  store_font: z.enum(["fraunces", "inter", "reddit-sans", "poppins", "lato", "playfair", "open-sans"]).default("fraunces"),
+  store_font: z.enum(["fraunces", "inter", "reddit-sans", "poppins", "lato", "playfair", "open-sans"]).default("poppins"),
 }).superRefine((data, ctx) => {
   if (data.national_shipping_enabled) {
     if (!data.melhorenvio_token || data.melhorenvio_token.length === 0) {
@@ -214,7 +214,7 @@ export default function AdminSettings() {
       category_style: "pill" as const,
       show_category_images: false,
       show_revenue_to_staff: true,
-      store_font: "fraunces" as const,
+      store_font: "poppins" as const,
     },
   });
 
@@ -310,7 +310,7 @@ export default function AdminSettings() {
       category_style: (settings.category_style as "pill" | "compact") ?? "pill",
       show_category_images: settings.show_category_images ?? false,
       show_revenue_to_staff: settings.show_revenue_to_staff ?? true,
-      store_font: (settings.store_font as "fraunces" | "inter" | "reddit-sans" | "poppins" | "lato" | "playfair" | "open-sans") ?? "fraunces",
+      store_font: (settings.store_font as "fraunces" | "inter" | "reddit-sans" | "poppins" | "lato" | "playfair" | "open-sans") ?? "poppins",
     });
   }, [settings, form]);
 

@@ -196,8 +196,8 @@ export default function AdminLayout() {
       'inter':       '"Inter", sans-serif',
       'open-sans':   '"Open Sans", -apple-system, BlinkMacSystemFont, sans-serif',
     };
-    const fontKey = settings?.store_font || 'fraunces';
-    const fontFamily = fontMap[fontKey] ?? '"Fraunces", Georgia, serif';
+    const fontKey = settings?.store_font || 'poppins';
+    const fontFamily = fontMap[fontKey] ?? '"Poppins", sans-serif';
     root.style.setProperty('--store-font-family', fontFamily);
     root.setAttribute('data-store-font', fontKey);
     return () => {
@@ -308,7 +308,7 @@ export default function AdminLayout() {
   }, [activeStore?.id, settings]);
 
   return (
-    <div className="store-admin min-h-screen flex w-full bg-background text-foreground" data-store-font={settings?.store_font || 'fraunces'}>
+    <div className="store-admin min-h-screen flex w-full bg-background text-foreground" data-store-font={settings?.store_font || 'poppins'}>
       {/* ── Desktop Sidebar (hidden on mobile) ── */}
       <div className="hidden md:block">
         <SidebarProvider>

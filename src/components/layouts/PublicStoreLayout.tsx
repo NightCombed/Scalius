@@ -56,8 +56,8 @@ function PublicStoreShell() {
       'inter':       '"Inter", sans-serif',
       'open-sans':   '"Open Sans", -apple-system, BlinkMacSystemFont, sans-serif',
     };
-    const fontKey = settings?.store_font || 'fraunces';
-    const fontFamily = fontMap[fontKey] ?? '"Fraunces", Georgia, serif';
+    const fontKey = settings?.store_font || 'poppins';
+    const fontFamily = fontMap[fontKey] ?? '"Poppins", sans-serif';
     root.style.setProperty('--store-font-family', fontFamily);
     root.setAttribute('data-store-font', fontKey);
     return () => {
@@ -108,7 +108,7 @@ function PublicStoreShell() {
     `Olá, ${settings?.display_name ?? store.name}! Gostaria de fazer um pedido.`;
 
   return (
-    <div className="store-public min-h-screen flex flex-col bg-gradient-soft" data-store-font={settings?.store_font || 'fraunces'}>
+    <div className="store-public min-h-screen flex flex-col bg-gradient-soft" data-store-font={settings?.store_font || 'poppins'}>
       <header className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-30">
         <div className="container flex h-16 items-center justify-between gap-3">
           <Link to={getStoreLink("", store.slug)} className="flex items-center gap-2 min-w-0 md:flex-1 md:justify-start">
