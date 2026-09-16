@@ -148,8 +148,8 @@ const Index = () => {
     try {
       const { data } = await supabase
         .from('affiliates')
-        .select('id, coupon_code')
-        .eq('coupon_code', clean)
+        .select('id, coupon_code, code')
+        .or(`coupon_code.eq.${clean},code.eq.${clean}`)
         .eq('status', 'active')
         .maybeSingle();
 
@@ -374,26 +374,11 @@ const Index = () => {
       if (uContent) sessionStorage.setItem('utm_content', uContent);
       if (fclid) sessionStorage.setItem('fbclid', fclid);
 
-      const linkParam = searchParams.get('ref') || searchParams.get('affiliate');
-      const cupomParam = searchParams.get('cupom');
+      const linkParam = searchParams.get('ref') || searchParams.get('affiliate') || searchParams.get('cupom');
 
       if (linkParam) {
         sessionStorage.setItem('scalius_link_ref', linkParam);
         localStorage.setItem('scalius_link_ref', linkParam);
-      }
-      if (cupomParam) {
-        sessionStorage.setItem('scalius_cupom', cupomParam);
-        localStorage.setItem('scalius_cupom', cupomParam);
-        const codeClean = cupomParam.toUpperCase().trim();
-        setAffiliateCode(codeClean);
-        checkCouponValidity(codeClean);
-      } else {
-        const savedCupom = sessionStorage.getItem('scalius_cupom') || localStorage.getItem('scalius_cupom');
-        if (savedCupom) {
-          const codeClean = savedCupom.toUpperCase().trim();
-          setAffiliateCode(codeClean);
-          checkCouponValidity(codeClean);
-        }
       }
     } catch (e) {
       console.error('Erro ao extrair parâmetros UTM, fbclid e ref:', e);
