@@ -140,7 +140,7 @@ export interface StoreSettings {
   timezone: string;            // "America/Sao_Paulo"
   category_style?: "pill" | "compact";
   show_category_images?: boolean;
-  store_font?: "inter" | "reddit-sans" | "poppins" | "lato" | "playfair" | null;
+  store_font?: "fraunces" | "inter" | "reddit-sans" | "poppins" | "lato" | "playfair" | "open-sans" | null;
 
   // National Shipping (Melhor Envio)
   national_shipping_enabled?: boolean;

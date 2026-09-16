@@ -111,7 +111,7 @@ const schema = z.object({
   category_style: z.enum(["pill", "compact"]).default("pill"),
   show_category_images: z.boolean().default(false),
   show_revenue_to_staff: z.boolean().default(true),
-  store_font: z.enum(["fraunces", "inter", "reddit-sans", "poppins", "lato", "playfair"]).default("fraunces"),
+  store_font: z.enum(["fraunces", "inter", "reddit-sans", "poppins", "lato", "playfair", "open-sans"]).default("fraunces"),
 }).superRefine((data, ctx) => {
   if (data.national_shipping_enabled) {
     if (!data.melhorenvio_token || data.melhorenvio_token.length === 0) {
@@ -310,7 +310,7 @@ export default function AdminSettings() {
       category_style: (settings.category_style as "pill" | "compact") ?? "pill",
       show_category_images: settings.show_category_images ?? false,
       show_revenue_to_staff: settings.show_revenue_to_staff ?? true,
-      store_font: (settings.store_font as "fraunces" | "inter" | "reddit-sans" | "poppins" | "lato" | "playfair") ?? "fraunces",
+      store_font: (settings.store_font as "fraunces" | "inter" | "reddit-sans" | "poppins" | "lato" | "playfair" | "open-sans") ?? "fraunces",
     });
   }, [settings, form]);
 
@@ -699,10 +699,11 @@ export default function AdminSettings() {
                   style={{
                     fontFamily:
                       watched.store_font === 'fraunces'    ? '"Fraunces", Georgia, serif' :
-                      watched.store_font === 'reddit-sans' ? '"Reddit Sans", sans-serif' :
+                      watched.store_font === 'reddit-sans' ? '"Reddit Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' :
                       watched.store_font === 'poppins'     ? '"Poppins", sans-serif' :
                       watched.store_font === 'lato'        ? '"Lato", sans-serif' :
                       watched.store_font === 'playfair'    ? '"Playfair Display", serif' :
+                      watched.store_font === 'open-sans'   ? '"Open Sans", -apple-system, BlinkMacSystemFont, sans-serif' :
                       '"Inter", sans-serif'
                   }}
                 >{watched.display_name || store.name}</span>
@@ -738,6 +739,7 @@ export default function AdminSettings() {
                       <SelectItem value="poppins">Poppins — Geométrica e versátil</SelectItem>
                       <SelectItem value="lato">Lato — Humanista e legível</SelectItem>
                       <SelectItem value="playfair">Playfair Display — Elegante e editorial</SelectItem>
+                      <SelectItem value="open-sans">Open Sans — Legível e equilibrada</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormDescription>
@@ -753,10 +755,11 @@ export default function AdminSettings() {
                       style={{
                         fontFamily:
                           field.value === 'fraunces'    ? '"Fraunces", Georgia, serif' :
-                          field.value === 'reddit-sans' ? '"Reddit Sans", sans-serif' :
+                          field.value === 'reddit-sans' ? '"Reddit Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' :
                           field.value === 'poppins'     ? '"Poppins", sans-serif' :
                           field.value === 'lato'        ? '"Lato", sans-serif' :
                           field.value === 'playfair'    ? '"Playfair Display", serif' :
+                          field.value === 'open-sans'   ? '"Open Sans", -apple-system, BlinkMacSystemFont, sans-serif' :
                           '"Inter", sans-serif'
                       }}
                     >
@@ -767,10 +770,11 @@ export default function AdminSettings() {
                       style={{
                         fontFamily:
                           field.value === 'fraunces'    ? '"Fraunces", Georgia, serif' :
-                          field.value === 'reddit-sans' ? '"Reddit Sans", sans-serif' :
+                          field.value === 'reddit-sans' ? '"Reddit Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' :
                           field.value === 'poppins'     ? '"Poppins", sans-serif' :
                           field.value === 'lato'        ? '"Lato", sans-serif' :
                           field.value === 'playfair'    ? '"Playfair Display", serif' :
+                          field.value === 'open-sans'   ? '"Open Sans", -apple-system, BlinkMacSystemFont, sans-serif' :
                           '"Inter", sans-serif'
                       }}
                     >

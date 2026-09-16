@@ -101,19 +101,46 @@
   }
 }
 
-/* ── Vitrine pública e Admin: headings respeitam a fonte escolhida pela loja ── */
-.store-public h1,
-.store-public h2,
-.store-public h3,
-.store-public h4,
-.store-public h5,
-.store-admin h1,
-.store-admin h2,
-.store-admin h3,
-.store-admin h4,
-.store-admin h5 {
+/* ── Vitrine pública e Admin: Regras Dinâmicas de Fontes ── */
+
+/* 1. Quando Fraunces (ou padrão) estiver ativa: Mantém estilo híbrido (Fraunces nos títulos h1..h5, sans neutro no restante) */
+.store-public[data-store-font="fraunces"] h1,
+.store-public[data-store-font="fraunces"] h2,
+.store-public[data-store-font="fraunces"] h3,
+.store-public[data-store-font="fraunces"] h4,
+.store-public[data-store-font="fraunces"] h5,
+.store-admin[data-store-font="fraunces"] h1,
+.store-admin[data-store-font="fraunces"] h2,
+.store-admin[data-store-font="fraunces"] h3,
+.store-admin[data-store-font="fraunces"] h4,
+.store-admin[data-store-font="fraunces"] h5,
+.store-public:not([data-store-font]) h1,
+.store-public:not([data-store-font]) h2,
+.store-public:not([data-store-font]) h3,
+.store-public:not([data-store-font]) h4,
+.store-public:not([data-store-font]) h5,
+.store-admin:not([data-store-font]) h1,
+.store-admin:not([data-store-font]) h2,
+.store-admin:not([data-store-font]) h3,
+.store-admin:not([data-store-font]) h4,
+.store-admin:not([data-store-font]) h5 {
   font-family: var(--store-font-family, 'Fraunces', Georgia, serif);
   letter-spacing: -0.025em;
+}
+
+/* 2. Quando QUALQUER outra fonte estiver ativa (Inter, Reddit Sans, Poppins, Lato, Playfair, Open Sans): Aplica a fonte GLOBALMENTE em todos os elementos */
+.store-public:not([data-store-font="fraunces"]),
+.store-public:not([data-store-font="fraunces"]) *:not(svg):not(path):not(code),
+.store-admin:not([data-store-font="fraunces"]),
+.store-admin:not([data-store-font="fraunces"]) *:not(svg):not(path):not(code) {
+  font-family: var(--store-font-family) !important;
+}
+
+/* 3. Fidelidade total da fonte Reddit Sans (Antialiasing idêntico à Landing Page) */
+[data-store-font="reddit-sans"],
+[data-store-font="reddit-sans"] * {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 @layer utilities {

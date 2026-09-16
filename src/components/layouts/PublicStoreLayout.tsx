@@ -49,21 +49,23 @@ function PublicStoreShell() {
     // Store font: map value to CSS font-family string, default Fraunces
     const fontMap: Record<string, string> = {
       'fraunces':    '"Fraunces", Georgia, serif',
-      'reddit-sans': '"Reddit Sans", sans-serif',
+      'reddit-sans': '"Reddit Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       'poppins':     '"Poppins", sans-serif',
       'lato':        '"Lato", sans-serif',
       'playfair':    '"Playfair Display", serif',
       'inter':       '"Inter", sans-serif',
+      'open-sans':   '"Open Sans", -apple-system, BlinkMacSystemFont, sans-serif',
     };
-    const fontFamily = settings?.store_font
-      ? (fontMap[settings.store_font] ?? '"Fraunces", Georgia, serif')
-      : '"Fraunces", Georgia, serif';
+    const fontKey = settings?.store_font || 'fraunces';
+    const fontFamily = fontMap[fontKey] ?? '"Fraunces", Georgia, serif';
     root.style.setProperty('--store-font-family', fontFamily);
+    root.setAttribute('data-store-font', fontKey);
     return () => {
       root.style.removeProperty('--primary');
       root.style.removeProperty('--ring');
       root.style.removeProperty('--accent');
       root.style.removeProperty('--store-font-family');
+      root.removeAttribute('data-store-font');
     };
   }, [settings?.brand_color, settings?.secondary_color, settings?.store_font]);
 
@@ -106,7 +108,7 @@ function PublicStoreShell() {
     `Olá, ${settings?.display_name ?? store.name}! Gostaria de fazer um pedido.`;
 
   return (
-    <div className="store-public min-h-screen flex flex-col bg-gradient-soft">
+    <div className="store-public min-h-screen flex flex-col bg-gradient-soft" data-store-font={settings?.store_font || 'fraunces'}>
       <header className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-30">
         <div className="container flex h-16 items-center justify-between gap-3">
           <Link to={getStoreLink("", store.slug)} className="flex items-center gap-2 min-w-0 md:flex-1 md:justify-start">

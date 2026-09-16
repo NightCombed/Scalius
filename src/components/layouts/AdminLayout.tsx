@@ -181,18 +181,20 @@ export default function AdminLayout() {
     }
     const fontMap: Record<string, string> = {
       'fraunces':    '"Fraunces", Georgia, serif',
-      'reddit-sans': '"Reddit Sans", sans-serif',
+      'reddit-sans': '"Reddit Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       'poppins':     '"Poppins", sans-serif',
       'lato':        '"Lato", sans-serif',
       'playfair':    '"Playfair Display", serif',
       'inter':       '"Inter", sans-serif',
+      'open-sans':   '"Open Sans", -apple-system, BlinkMacSystemFont, sans-serif',
     };
-    const fontFamily = settings?.store_font
-      ? (fontMap[settings.store_font] ?? '"Fraunces", Georgia, serif')
-      : '"Fraunces", Georgia, serif';
+    const fontKey = settings?.store_font || 'fraunces';
+    const fontFamily = fontMap[fontKey] ?? '"Fraunces", Georgia, serif';
     root.style.setProperty('--store-font-family', fontFamily);
+    root.setAttribute('data-store-font', fontKey);
     return () => {
       root.style.removeProperty('--store-font-family');
+      root.removeAttribute('data-store-font');
     };
   }, [settings]);
 
@@ -298,7 +300,7 @@ export default function AdminLayout() {
   }, [activeStore?.id, settings]);
 
   return (
-    <div className="store-admin min-h-screen flex w-full bg-background text-foreground">
+    <div className="store-admin min-h-screen flex w-full bg-background text-foreground" data-store-font={settings?.store_font || 'fraunces'}>
       {/* ── Desktop Sidebar (hidden on mobile) ── */}
       <div className="hidden md:block">
         <SidebarProvider>
