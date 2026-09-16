@@ -308,7 +308,7 @@ export default function AdminLayout() {
   }, [activeStore?.id, settings]);
 
   return (
-    <div className="store-admin min-h-screen flex w-full bg-background text-foreground" data-store-font={settings?.store_font || 'poppins'}>
+    <div className="store-admin min-h-screen flex w-full bg-background text-foreground" data-store-font={settings?.store_font || 'fraunces'}>
       {/* ── Desktop Sidebar (hidden on mobile) ── */}
       <div className="hidden md:block">
         <SidebarProvider>
