@@ -141,8 +141,8 @@ Deno.serve(async (req) => {
       const cleanCoupon = String(couponInput).toUpperCase().trim();
       const { data: couponAffiliate } = await supabase
         .from("affiliates")
-        .select("id, user_id, email")
-        .or(`coupon_code.eq.${cleanCoupon},code.eq.${cleanCoupon}`)
+        .select("id, user_id, email, coupon_code")
+        .eq("coupon_code", cleanCoupon)
         .eq("status", "active")
         .maybeSingle();
 

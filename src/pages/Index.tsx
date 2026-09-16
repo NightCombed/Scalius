@@ -66,6 +66,8 @@ const Index = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [affiliateCode, setAffiliateCode] = useState('');
+  const [couponValid, setCouponValid] = useState<boolean | null>(null);
+  const [isCheckingCoupon, setIsCheckingCoupon] = useState(false);
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [savedLeadId, setSavedLeadId] = useState<string | null>(null);
@@ -132,6 +134,41 @@ const Index = () => {
       checkSlugAvailability(clean);
     } else {
       setSlugAvailable(null);
+    }
+  };
+
+  const checkCouponValidity = async (codeToCheck: string) => {
+    const clean = codeToCheck.trim().toUpperCase();
+    if (!clean || clean.length < 2) {
+      setCouponValid(null);
+      setIsCheckingCoupon(false);
+      return;
+    }
+    setIsCheckingCoupon(true);
+    try {
+      const { data } = await supabase
+        .from('affiliates')
+        .select('id, coupon_code')
+        .eq('coupon_code', clean)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      setCouponValid(!!data);
+    } catch (err) {
+      console.error('Erro ao verificar cupom:', err);
+      setCouponValid(null);
+    } finally {
+      setIsCheckingCoupon(false);
+    }
+  };
+
+  const handleCouponChange = (val: string) => {
+    const clean = val.toUpperCase().trim();
+    setAffiliateCode(clean);
+    if (clean.length >= 2) {
+      checkCouponValidity(clean);
+    } else {
+      setCouponValid(null);
     }
   };
 
@@ -347,11 +384,15 @@ const Index = () => {
       if (cupomParam) {
         sessionStorage.setItem('scalius_cupom', cupomParam);
         localStorage.setItem('scalius_cupom', cupomParam);
-        setAffiliateCode(cupomParam.toUpperCase());
+        const codeClean = cupomParam.toUpperCase().trim();
+        setAffiliateCode(codeClean);
+        checkCouponValidity(codeClean);
       } else {
         const savedCupom = sessionStorage.getItem('scalius_cupom') || localStorage.getItem('scalius_cupom');
         if (savedCupom) {
-          setAffiliateCode(savedCupom.toUpperCase());
+          const codeClean = savedCupom.toUpperCase().trim();
+          setAffiliateCode(codeClean);
+          checkCouponValidity(codeClean);
         }
       }
     } catch (e) {
@@ -1419,10 +1460,30 @@ const Index = () => {
                       type="text"
                       id="affiliate-code"
                       value={affiliateCode}
-                      onChange={(e) => setAffiliateCode(e.target.value.toUpperCase())}
+                      onChange={(e) => handleCouponChange(e.target.value)}
                       placeholder="Ex: SILVA10"
-                      style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}
+                      className={couponValid === true ? 'input-success' : couponValid === false ? 'input-error' : ''}
+                      style={{
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        borderColor: couponValid === true ? '#10B981' : couponValid === false ? '#EF4444' : undefined,
+                      }}
                     />
+
+                    {/* Status da checagem do cupom */}
+                    {isCheckingCoupon && (
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>Verificando cupom...</span>
+                    )}
+                    {!isCheckingCoupon && couponValid === true && affiliateCode.trim().length >= 2 && (
+                      <span style={{ fontSize: '11px', color: '#10B981', fontWeight: 600, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        ✓ Cupom válido! 10% de desconto aplicado no 1º pagamento.
+                      </span>
+                    )}
+                    {!isCheckingCoupon && couponValid === false && affiliateCode.trim().length >= 2 && (
+                      <span style={{ fontSize: '11px', color: '#EF4444', fontWeight: 600, marginTop: '2px' }}>
+                        ✕ Cupom não encontrado ou inválido.
+                      </span>
+                    )}
                   </div>
 
                   {/* Lembrete de Acesso Compacto Debaixo das Senhas */}
@@ -1457,6 +1518,18 @@ const Index = () => {
                   <h2>Sua loja <strong>{storeName}</strong> está pronta para ser ativada!</h2>
                   <p>Endereço: <code>{storeSlug}.scalius.com.br</code></p>
                 </div>
+
+                {couponValid === true && (
+                  <div style={{ background: '#ECFDF5', border: '1px solid #6EE7B7', color: '#065F46', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '16px' }}>🎟️</span>
+                    <div>
+                      Cupom <strong>{affiliateCode.trim().toUpperCase()}</strong> ativado!
+                      <span style={{ display: 'block', fontSize: '11.5px', fontWeight: 400, color: '#047857' }}>
+                        10% de desconto garantido no seu primeiro pagamento.
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {formErrors.general && (
                   <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', color: '#991B1B', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '12px' }}>
