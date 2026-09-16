@@ -153,6 +153,54 @@ serve(async (req) => {
       );
     }
 
+    if (body.action === "delete_affiliate") {
+      const affiliateId = (body as any).affiliate_id;
+      if (!affiliateId) {
+        return new Response(
+          JSON.stringify({ error: "ID do parceiro não foi informado." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // 1. Unlink stores (set affiliate_id = NULL)
+      const { error: unlinkErr } = await adminClient
+        .from("stores")
+        .update({ affiliate_id: null })
+        .eq("affiliate_id", affiliateId);
+
+      if (unlinkErr) {
+        console.error("Erro ao desvincular lojas do afiliado:", unlinkErr);
+      }
+
+      // 2. Delete affiliate commissions
+      const { error: commErr } = await adminClient
+        .from("affiliate_commissions")
+        .delete()
+        .eq("affiliate_id", affiliateId);
+
+      if (commErr) {
+        console.error("Erro ao excluir comissões do afiliado:", commErr);
+      }
+
+      // 3. Delete affiliate record
+      const { error: deleteErr } = await adminClient
+        .from("affiliates")
+        .delete()
+        .eq("id", affiliateId);
+
+      if (deleteErr) {
+        return new Response(
+          JSON.stringify({ error: `Erro ao excluir parceiro: ${deleteErr.message}` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ ok: true, message: "Parceiro excluído com sucesso!" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
       JSON.stringify({ error: "Ação não suportada" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }

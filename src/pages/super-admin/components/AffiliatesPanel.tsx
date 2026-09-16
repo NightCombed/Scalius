@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Users, DollarSign, Award, CheckCircle2, Pencil, Plus,
   Search, ExternalLink, Copy, Check, Loader2, Store as StoreIcon,
-  CreditCard, Phone, Mail, Calendar, MessageSquare, TrendingUp
+  CreditCard, Phone, Mail, Calendar, MessageSquare, TrendingUp, Trash2
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -78,6 +78,8 @@ export function AffiliatesPanel() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editAffiliate, setEditAffiliate] = useState<AffiliateRow | null>(null);
   const [selectedAffiliate, setSelectedAffiliate] = useState<AffiliateRow | null>(null);
+  const [affiliateToDelete, setAffiliateToDelete] = useState<AffiliateRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Form states for creation
   const [userEmail, setUserEmail] = useState("");
@@ -328,6 +330,61 @@ export function AffiliatesPanel() {
     },
     onError: (err: any) => toast.error("Erro ao dar baixa em comissão: " + err.message),
   });
+
+  // ── Delete Affiliate Handler ──────────────────────────────────────────────
+  async function handleDeleteAffiliate() {
+    if (!affiliateToDelete) return;
+    setDeleting(true);
+    try {
+      const res = await supabase.functions.invoke("manage-affiliates", {
+        body: {
+          action: "delete_affiliate",
+          affiliate_id: affiliateToDelete.id,
+        },
+      });
+
+      if (res.error || !res.data?.ok) {
+        // Fallback: direct delete from client
+        const { error: unlinkErr } = await supabase
+          .from("stores")
+          .update({ affiliate_id: null })
+          .eq("affiliate_id", affiliateToDelete.id);
+
+        if (unlinkErr) console.warn("Aviso ao desvincular lojas:", unlinkErr);
+
+        const { error: commErr } = await supabase
+          .from("affiliate_commissions")
+          .delete()
+          .eq("affiliate_id", affiliateToDelete.id);
+
+        if (commErr) console.warn("Aviso ao remover comissões:", commErr);
+
+        const { error: deleteErr } = await supabase
+          .from("affiliates")
+          .delete()
+          .eq("id", affiliateToDelete.id);
+
+        if (deleteErr) {
+          throw new Error(deleteErr.message);
+        }
+      }
+
+      toast.success(`Parceiro ${affiliateToDelete.code} excluído com sucesso!`);
+      const deletedId = affiliateToDelete.id;
+      setAffiliateToDelete(null);
+      if (selectedAffiliate?.id === deletedId) {
+        setSelectedAffiliate(null);
+      }
+      if (editAffiliate?.id === deletedId) {
+        setEditAffiliate(null);
+      }
+      queryClient.invalidateQueries({ queryKey: ["super-admin-affiliates"] });
+    } catch (err: any) {
+      toast.error("Erro ao excluir parceiro: " + (err.message || "Erro desconhecido"));
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   // ── Copy Link Helper ──────────────────────────────────────────────────────
   const handleCopy = (text: string) => {
@@ -603,6 +660,15 @@ export function AffiliatesPanel() {
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => setAffiliateToDelete(aff)}
+                      title="Excluir parceiro"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 </div>
               );
@@ -836,21 +902,37 @@ export function AffiliatesPanel() {
                 />
               </div>
 
-              <DialogFooter className="pt-2">
-                <Button type="button" variant="outline" onClick={() => setEditAffiliate(null)}>
-                  Cancelar
-                </Button>
+              <DialogFooter className="pt-2 flex items-center justify-between gap-2">
                 <Button
-                  onClick={() => updateAffiliate.mutate({
-                    ...editAffiliate,
-                    full_name_edit: editAffiliate.profile?.full_name || ""
-                  })}
-                  disabled={updateAffiliate.isPending}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium shadow-sm"
+                  type="button"
+                  variant="destructive"
+                  onClick={() => {
+                    const aff = editAffiliate;
+                    setEditAffiliate(null);
+                    setAffiliateToDelete(aff);
+                  }}
+                  className="gap-1.5"
                 >
-                  {updateAffiliate.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                  Salvar Alterações
+                  <Trash2 className="h-4 w-4" />
+                  Excluir Parceiro
                 </Button>
+
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="outline" onClick={() => setEditAffiliate(null)}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={() => updateAffiliate.mutate({
+                      ...editAffiliate,
+                      full_name_edit: editAffiliate.profile?.full_name || ""
+                    })}
+                    disabled={updateAffiliate.isPending}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium shadow-sm"
+                  >
+                    {updateAffiliate.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                    Salvar Alterações
+                  </Button>
+                </div>
               </DialogFooter>
             </div>
           </DialogContent>
@@ -1017,6 +1099,61 @@ export function AffiliatesPanel() {
                 )}
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* ── Dialog: Confirmar Exclusão de Parceiro ──────────────────────── */}
+      {affiliateToDelete && (
+        <Dialog open={!!affiliateToDelete} onOpenChange={(open) => { if (!open && !deleting) setAffiliateToDelete(null); }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-serif text-xl text-destructive flex items-center gap-2">
+                <Trash2 className="h-5 w-5" /> Excluir Parceiro?
+              </DialogTitle>
+              <DialogDescription className="pt-2 text-sm text-foreground">
+                Tem certeza que deseja excluir o parceiro{" "}
+                <strong className="text-primary font-mono">{affiliateToDelete.code}</strong>
+                {affiliateToDelete.email ? ` (${affiliateToDelete.email})` : ""}?
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 p-3 text-xs text-amber-800 dark:text-amber-300 space-y-1 my-2">
+              <p className="font-semibold">⚠️ O que acontecerá ao excluir:</p>
+              <ul className="list-disc list-inside space-y-0.5 opacity-90">
+                <li>O registro do afiliado e o cupom serão removidos permanentemente.</li>
+                <li>Lojas indicadas continuarão ativas, mas perderão a vinculação com este afiliado.</li>
+                <li>Histórico de comissões não pagas deste parceiro será cancelado.</li>
+              </ul>
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setAffiliateToDelete(null)}
+                disabled={deleting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleDeleteAffiliate}
+                disabled={deleting}
+                className="gap-1.5"
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Excluindo...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4" /> Confirmar Exclusão
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
