@@ -681,12 +681,26 @@ export default function AdminLayout() {
 
       {/* ── Modal de Escolha para Contas Afiliadas ao Entrar no Admin ── */}
       <Dialog open={showAffiliateChoiceModal} onOpenChange={setShowAffiliateChoiceModal}>
-        <DialogContent className="sm:max-w-xl p-5 sm:p-6 border border-border/80 shadow-2xl rounded-2xl max-h-[92vh] overflow-y-auto">
+        <DialogContent className="affiliate-choice-modal sm:max-w-xl p-5 sm:p-6 border border-border/80 shadow-2xl rounded-2xl max-h-[92vh] overflow-y-auto">
+          <style>{`
+            .affiliate-choice-modal,
+            .affiliate-choice-modal *,
+            .affiliate-choice-modal h1,
+            .affiliate-choice-modal h2,
+            .affiliate-choice-modal h3,
+            .affiliate-choice-modal h4,
+            .affiliate-choice-modal p,
+            .affiliate-choice-modal span,
+            .affiliate-choice-modal button,
+            .affiliate-choice-modal div {
+              font-family: "Reddit Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+            }
+          `}</style>
           <DialogHeader className="text-center sm:text-center space-y-2 pb-1">
             <div className="mx-auto w-12 h-12 rounded-2xl bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 flex items-center justify-center mb-1 shadow-xs">
               <Handshake className="w-6 h-6" />
             </div>
-            <DialogTitle className="text-xl sm:text-2xl font-bold tracking-tight text-center">
+            <DialogTitle className="text-xl sm:text-2xl font-bold tracking-tight text-center font-sans">
               Onde você deseja entrar?
             </DialogTitle>
             <DialogDescription className="text-xs sm:text-sm text-muted-foreground text-center max-w-md mx-auto">
