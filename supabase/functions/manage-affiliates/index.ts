@@ -147,6 +147,25 @@ serve(async (req) => {
         );
       }
 
+      // Ensure affiliate has access to the 3 demo stores for video creation and demonstrations
+      try {
+        const { data: demoStores } = await adminClient
+          .from("stores")
+          .select("id")
+          .in("slug", ["auroramoda", "floricultura-das-flores", "elena-cosmeticos"]);
+
+        if (demoStores && demoStores.length > 0) {
+          const memberRows = demoStores.map((s) => ({
+            store_id: s.id,
+            user_id: targetUser.id,
+            role: "admin",
+          }));
+          await adminClient.from("store_members").upsert(memberRows, { onConflict: "store_id,user_id" });
+        }
+      } catch (demoErr) {
+        console.warn("Aviso ao vincular lojas demo para novo afiliado:", demoErr);
+      }
+
       return new Response(
         JSON.stringify({ ok: true, affiliate: affiliateData, message: `Parceiro ${cleanCode} cadastrado com sucesso!` }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

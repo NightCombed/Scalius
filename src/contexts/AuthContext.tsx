@@ -115,14 +115,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(toPlatformUser(authUser, (profileRes.data as ProfileRow | null) ?? null));
 
     // Set affiliate profile if this user is a partner
-    setAffiliateProfile((affiliateRes.data as Affiliate | null) ?? null);
+    const currentAffiliate = (affiliateRes.data as Affiliate | null) ?? null;
+    setAffiliateProfile(currentAffiliate);
 
     const rows = (membersRes.data ?? []) as Array<{
       role: string;
       store: { id: string; slug: string; name: string; status: string; plan: string; created_at: string } | null;
     }>;
     
-    const storeMemberships = rows
+    let storeMemberships = rows
       .filter((r) => r.store)
       .map((r) => ({
         store: {
@@ -135,6 +136,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
         role: r.role as StoreRole,
       }));
+
+    // Se o usuário for parceiro afiliado ativo, garante acesso automático aos 3 modelos demo
+    if (currentAffiliate && currentAffiliate.status === "active") {
+      const demoSlugs = ["auroramoda", "floricultura-das-flores", "elena-cosmeticos"];
+      const missingDemo = demoSlugs.some(slug => !storeMemberships.some(m => m.store.slug === slug));
+
+      if (missingDemo) {
+        try {
+          await supabase.rpc("ensure_affiliate_demo_stores");
+          const { data: refreshedMembers } = await supabase
+            .from("store_members")
+            .select("role, store:stores(id, slug, name, status, plan, created_at)")
+            .eq("user_id", authUser.id);
+
+          if (refreshedMembers && refreshedMembers.length > 0) {
+            storeMemberships = (refreshedMembers as any[])
+              .filter((r) => r.store)
+              .map((r) => ({
+                store: {
+                  id: r.store.id,
+                  slug: r.store.slug,
+                  name: r.store.name,
+                  status: r.store.status as Store["status"],
+                  plan: (r.store.plan ?? "profissional") as Store["plan"],
+                  created_at: r.store.created_at,
+                },
+                role: r.role as StoreRole,
+              }));
+          }
+        } catch (err) {
+          console.warn("[AuthContext] auto-grant demo stores warning:", err);
+        }
+      }
+    }
 
     storeMemberships.sort((a, b) => {
       if (a.role === "owner" && b.role !== "owner") return -1;
