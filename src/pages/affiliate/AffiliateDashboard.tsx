@@ -5,8 +5,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Copy, CheckCheck, ExternalLink, Store, TrendingUp, Users,
-  DollarSign, Clock, CheckCircle2, XCircle, ArrowLeft, Link2,
-  Tag, Banknote, BarChart3, AlertCircle, ArrowUpRight, Pencil, Loader2, Sparkles, Percent, RotateCcw
+  DollarSign, Clock, CheckCircle2, XCircle, ArrowLeft, ArrowRight, Link2,
+  Tag, Banknote, BarChart3, AlertCircle, ArrowUpRight, Pencil, Loader2, Sparkles, Percent, RotateCcw,
+  BookOpen, Lightbulb, Compass, HelpCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -184,6 +185,15 @@ export default function AffiliateDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/central-afiliados")}
+              className="gap-2 text-xs border-primary/30 text-primary hover:bg-primary/10 font-semibold"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Central de Divulgação
+            </Button>
             {demoStoreSlug && (
               <Button
                 variant="outline"
@@ -227,6 +237,34 @@ export default function AffiliateDashboard() {
           >
             {affiliateProfile.status === "active" ? "✓ Parceiro Ativo" : "Parceria Suspensa"}
           </Badge>
+        </div>
+
+        {/* ── Banner Especial: Central de Divulgação & Como Começar ── */}
+        <div className="rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-card p-5 sm:p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="space-y-1.5 max-w-2xl">
+            <div className="flex items-center gap-2">
+              <span className="p-1 rounded-md bg-primary text-primary-foreground font-bold text-xs">
+                NOVO
+              </span>
+              <h3 className="font-bold text-base sm:text-lg text-foreground flex items-center gap-1.5">
+                <Lightbulb className="h-4.5 w-4.5 text-primary" />
+                Como começar a divulgar o Scalius?
+              </h3>
+            </div>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Acesse a <strong>Central de Divulgação</strong> com ideias de vídeos para gravar hoje, roteiros que não exigem aparecer, 3 lojas demo reais para demonstração e materiais oficiais para download.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+            <Button
+              onClick={() => navigate("/central-afiliados")}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs gap-2 flex-1 sm:flex-initial shadow-xs"
+            >
+              <BookOpen className="h-4 w-4" />
+              Acessar Central de Ajuda & Divulgação
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
         </div>
 
         {/* ── Tier Progression Banner ── */}
@@ -280,7 +318,16 @@ export default function AffiliateDashboard() {
                 {copiedLink ? "Copiado!" : "Copiar"}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">Envie este link para seus contatos. Clientes que chegarem por ele serão automaticamente atribuídos a você.</p>
+            <div className="flex items-center justify-between text-xs pt-1">
+              <span className="text-muted-foreground">Envie para seus contatos e redes.</span>
+              <button
+                type="button"
+                onClick={() => navigate("/central-afiliados#biblioteca-ideias")}
+                className="text-primary font-semibold hover:underline cursor-pointer bg-transparent border-0 p-0 text-xs inline-flex items-center gap-1"
+              >
+                Ver ideias de divulgação →
+              </button>
+            </div>
           </div>
 
           <div className="rounded-xl border bg-card p-5 space-y-3">
@@ -297,7 +344,16 @@ export default function AffiliateDashboard() {
                 {copiedCode ? "Copiado!" : "Copiar"}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">Seu cliente também pode digitar este cupom manualmente no momento da contratação.</p>
+            <div className="flex items-center justify-between text-xs pt-1">
+              <span className="text-muted-foreground">Dá 10% OFF no 1º mês do cliente.</span>
+              <button
+                type="button"
+                onClick={() => navigate("/central-afiliados#ctas-sugestoes")}
+                className="text-primary font-semibold hover:underline cursor-pointer bg-transparent border-0 p-0 text-xs inline-flex items-center gap-1"
+              >
+                Ver chamadas de cupom →
+              </button>
+            </div>
           </div>
         </div>
 

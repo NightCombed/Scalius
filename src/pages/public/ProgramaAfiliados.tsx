@@ -77,6 +77,7 @@ export default function ProgramaAfiliados() {
             <a href="#comissoes" className="hover:text-[#FF5E00] transition-colors">Comissões & Faixas</a>
             <a href="#calculadora" className="hover:text-[#FF5E00] transition-colors">Calculadora</a>
             <a href="#faq" className="hover:text-[#FF5E00] transition-colors">Perguntas Frequentes</a>
+            <Link to="/central-afiliados" className="text-[#FF5E00] font-semibold hover:underline">Central de Divulgação</Link>
           </nav>
 
           <div className="flex items-center gap-3">
@@ -485,6 +486,7 @@ export default function ProgramaAfiliados() {
           <div className="flex items-center gap-5">
             <Link to="/politica-de-privacidade" className="hover:text-[#FF5E00] transition-colors">Privacidade</Link>
             <Link to="/termos-de-servico" className="hover:text-[#FF5E00] transition-colors">Termos de Serviço</Link>
+            <Link to="/central-afiliados" className="hover:text-[#FF5E00] text-[#FF5E00] font-semibold transition-colors">Central de Divulgação</Link>
             <Link to="/affiliate" className="hover:text-[#FF5E00] text-[#FF5E00] font-semibold transition-colors">Painel do Parceiro</Link>
           </div>
         </div>

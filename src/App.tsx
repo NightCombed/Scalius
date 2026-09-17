@@ -42,6 +42,7 @@ import { PlaceholderPage } from "@/components/PlaceholderPage";
 import SuperAdminLayout from "@/components/layouts/SuperAdminLayout";
 import SuperAdminDashboard from "@/pages/super-admin/SuperAdminDashboard";
 import AffiliateDashboard from "@/pages/affiliate/AffiliateDashboard";
+import AffiliateHub from "@/pages/affiliate/AffiliateHub";
 import ProgramaAfiliados from "@/pages/public/ProgramaAfiliados";
 import { resolveTenantSlug } from "@/lib/tenant";
 
@@ -116,6 +117,18 @@ const App = () => {
                       }
                     />
                     <Route
+                      path="/affiliates"
+                      element={
+                        <ProtectedRoute>
+                          <AffiliateDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route path="/central-afiliados" element={<AffiliateHub />} />
+                    <Route path="/affiliates/central" element={<AffiliateHub />} />
+                    <Route path="/affiliate/central" element={<AffiliateHub />} />
+                    <Route path="/affiliates/guia" element={<AffiliateHub />} />
+                    <Route
                       path="/admin"
                       element={
                         <ProtectedRoute>
@@ -162,6 +175,10 @@ const App = () => {
                         </ProtectedRoute>
                       }
                     />
+                    <Route path="/central-afiliados" element={<AffiliateHub />} />
+                    <Route path="/affiliates/central" element={<AffiliateHub />} />
+                    <Route path="/affiliate/central" element={<AffiliateHub />} />
+                    <Route path="/affiliates/guia" element={<AffiliateHub />} />
                     <Route
                       path="/loja/:slug"
                       element={
