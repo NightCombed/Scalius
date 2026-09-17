@@ -475,20 +475,27 @@ export default function AdminLayout() {
       {/* ── Main content area ── */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         {/* ── Top Header ── */}
-        <header className="h-14 bg-background/80 backdrop-blur sticky top-0 z-30 flex items-center justify-between gap-3 px-4 border-b border-border/50 relative">
-          {/* Mobile: hamburger */}
-          <button
-            className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors -ml-1 min-w-[44px] min-h-[44px] flex items-center justify-center z-10"
-            onClick={() => setDrawerOpen(true)}
-            aria-label="Abrir menu"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-
-          {/* Logo — mobile only, PERFECT TRUE CENTER */}
-          <div className="md:hidden absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
-            <img src="/scalius-logo-dark.png" alt="Scalius" className="h-7 object-contain dark:brightness-0 dark:invert" />
+        <header className="h-14 bg-background/80 backdrop-blur sticky top-0 z-30 flex items-center justify-between gap-2 px-3 sm:px-4 border-b border-border/50 relative">
+          {/* Mobile left side: hamburger icon + logo if affiliate */}
+          <div className="flex items-center gap-1.5 md:hidden z-10">
+            <button
+              className="p-2 rounded-lg hover:bg-muted transition-colors -ml-1 min-w-[40px] min-h-[40px] flex items-center justify-center"
+              onClick={() => setDrawerOpen(true)}
+              aria-label="Abrir menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            {isAffiliate && (
+              <img src="/scalius-logo-dark.png" alt="Scalius" className="h-6 object-contain dark:brightness-0 dark:invert" />
+            )}
           </div>
+
+          {/* Logo — mobile only (when NOT affiliate), PERFECT TRUE CENTER */}
+          {!isAffiliate && (
+            <div className="md:hidden absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+              <img src="/scalius-logo-dark.png" alt="Scalius" className="h-7 object-contain dark:brightness-0 dark:invert" />
+            </div>
+          )}
 
           {/* Desktop: store name */}
           <div className="hidden md:flex flex-1 min-w-0 flex-col">
@@ -496,7 +503,7 @@ export default function AdminLayout() {
           </div>
 
           {/* Right actions */}
-          <div className="flex items-center gap-1 ml-auto z-10">
+          <div className="flex items-center gap-1 sm:gap-1.5 ml-auto z-10">
             {activeStore && (
               <Button asChild variant="ghost" size="sm" className="hidden sm:flex gap-1.5">
                 <Link to={`/loja/${activeStore.slug}`} target="_blank">
@@ -515,10 +522,10 @@ export default function AdminLayout() {
                 variant="outline"
                 size="sm"
                 onClick={() => navigate("/affiliate")}
-                className="hidden sm:flex items-center gap-1.5 border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-900/20 text-xs px-2.5 sm:px-3 h-8 sm:h-9"
+                className="flex items-center gap-1.5 border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-900/20 text-xs px-2.5 h-8 sm:h-9 font-medium"
               >
                 <Handshake className="h-4 w-4 shrink-0" />
-                <span>Painel de Afiliado</span>
+                <span className="text-xs">Painel Afiliado</span>
               </Button>
             )}
             <span className="hidden lg:block text-sm text-muted-foreground px-2">{user?.full_name}</span>
@@ -527,11 +534,17 @@ export default function AdminLayout() {
               size="icon"
               onClick={toggleTheme}
               aria-label={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
-              className="min-w-[44px] min-h-[44px]"
+              className="min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px]"
             >
               {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => void signOut()} aria-label="Sair" className="min-w-[44px] min-h-[44px]">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => void signOut()}
+              aria-label="Sair"
+              className="min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px]"
+            >
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
