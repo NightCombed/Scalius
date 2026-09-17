@@ -291,7 +291,7 @@ export function ProductFormDialog({ open, onOpenChange, storeId, product, catego
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-2xl sm:rounded-xl">
         <DialogHeader>
           <DialogTitle>{product ? "Editar produto" : "Novo produto"}</DialogTitle>
           <DialogDescription>Preencha os dados do produto da sua loja.</DialogDescription>
@@ -320,7 +320,7 @@ export function ProductFormDialog({ open, onOpenChange, storeId, product, catego
             {!hasVariants && (
               <div className="space-y-2">
                 <Label htmlFor="p-stock">Estoque</Label>
-                <Input id="p-stock" type="number" min={0} placeholder="—" value={stock} onChange={(e) => setStock(e.target.value)} />
+                <Input id="p-stock" type="number" inputMode="numeric" pattern="[0-9]*" min={0} placeholder="—" value={stock} onChange={(e) => setStock(e.target.value)} />
               </div>
             )}
             {hasVariants && (
@@ -337,19 +337,19 @@ export function ProductFormDialog({ open, onOpenChange, storeId, product, catego
           <div className="grid grid-cols-4 gap-2 py-2 border-y border-border/50">
             <div className="space-y-2 col-span-1">
               <Label htmlFor="p-weight" className="text-[10px] uppercase text-muted-foreground">Peso (kg)</Label>
-              <Input id="p-weight" placeholder="0.3" value={weight} onChange={(e) => setWeight(e.target.value)} className="h-8 text-xs" />
+              <Input id="p-weight" inputMode="decimal" placeholder="0.3" value={weight} onChange={(e) => setWeight(e.target.value)} className="h-8 text-xs" />
             </div>
             <div className="space-y-2 col-span-1">
               <Label htmlFor="p-width" className="text-[10px] uppercase text-muted-foreground">Larg. (cm)</Label>
-              <Input id="p-width" type="number" placeholder="11" value={width} onChange={(e) => setWidth(e.target.value)} className="h-8 text-xs" />
+              <Input id="p-width" type="number" inputMode="numeric" pattern="[0-9]*" placeholder="11" value={width} onChange={(e) => setWidth(e.target.value)} className="h-8 text-xs" />
             </div>
             <div className="space-y-2 col-span-1">
               <Label htmlFor="p-height" className="text-[10px] uppercase text-muted-foreground">Alt. (cm)</Label>
-              <Input id="p-height" type="number" placeholder="2" value={height} onChange={(e) => setHeight(e.target.value)} className="h-8 text-xs" />
+              <Input id="p-height" type="number" inputMode="numeric" pattern="[0-9]*" placeholder="2" value={height} onChange={(e) => setHeight(e.target.value)} className="h-8 text-xs" />
             </div>
             <div className="space-y-2 col-span-1">
               <Label htmlFor="p-length" className="text-[10px] uppercase text-muted-foreground">Comp. (cm)</Label>
-              <Input id="p-length" type="number" placeholder="16" value={length} onChange={(e) => setLength(e.target.value)} className="h-8 text-xs" />
+              <Input id="p-length" type="number" inputMode="numeric" pattern="[0-9]*" placeholder="16" value={length} onChange={(e) => setLength(e.target.value)} className="h-8 text-xs" />
             </div>
             <p className="col-span-4 text-[10px] text-muted-foreground italic">Se vazio, usa os valores padrão da loja.</p>
           </div>
@@ -405,7 +405,7 @@ export function ProductFormDialog({ open, onOpenChange, storeId, product, catego
                   </Button>
                 </div>
               ))}
-              <Button type="button" variant="outline" size="sm" onClick={() => setImageUrls([...imageUrls, ""])} className="w-full border-dashed">
+              <Button type="button" variant="outline" size="sm" onClick={() => setImageUrls([...imageUrls, ""])} className="w-full border-dashed min-h-[44px] sm:min-h-[36px]">
                 + Adicionar imagem
               </Button>
             </div>
@@ -424,7 +424,7 @@ export function ProductFormDialog({ open, onOpenChange, storeId, product, catego
                 )}
               </div>
               {!addingGroup && (
-                <Button type="button" variant="ghost" size="sm" className="gap-1 h-7 text-xs" onClick={() => { setAddingGroup(true); setTimeout(() => newGroupInputRef.current?.focus(), 50); }}>
+                <Button type="button" variant="ghost" size="sm" className="gap-1 h-8 text-xs min-h-[36px]" onClick={() => { setAddingGroup(true); setTimeout(() => newGroupInputRef.current?.focus(), 50); }}>
                   <Plus className="h-3.5 w-3.5" /> Adicionar grupo
                 </Button>
               )}
@@ -444,8 +444,8 @@ export function ProductFormDialog({ open, onOpenChange, storeId, product, catego
                     if (e.key === "Escape") { setAddingGroup(false); setNewGroupName(""); }
                   }}
                 />
-                <Button type="button" size="sm" className="h-8" onClick={addGroup}>OK</Button>
-                <Button type="button" size="sm" variant="ghost" className="h-8" onClick={() => { setAddingGroup(false); setNewGroupName(""); }}>
+                <Button type="button" size="sm" className="h-8 min-h-[36px]" onClick={addGroup}>OK</Button>
+                <Button type="button" size="sm" variant="ghost" className="h-8 min-h-[36px]" onClick={() => { setAddingGroup(false); setNewGroupName(""); }}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -467,13 +467,13 @@ export function ProductFormDialog({ open, onOpenChange, storeId, product, catego
                     <Input
                       value={group.group_name}
                       onChange={(e) => updateGroupName(gi, e.target.value)}
-                      className="h-7 text-sm font-medium flex-1"
+                      className="h-8 text-sm font-medium flex-1"
                       placeholder="Nome do grupo"
                     />
                     <button
                       type="button"
                       onClick={() => removeGroup(gi)}
-                      className="text-muted-foreground hover:text-destructive transition-colors"
+                      className="text-muted-foreground hover:text-destructive transition-colors p-2 min-w-[36px] min-h-[36px] flex items-center justify-center"
                       title="Remover grupo"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -495,11 +495,13 @@ export function ProductFormDialog({ open, onOpenChange, storeId, product, catego
                         <div className="flex items-center gap-1.5 flex-1">
                           <Input
                             type="number"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             min={0}
                             placeholder="Estoque (vazio = ilimitado)"
                             value={opt.stock_qty}
                             onChange={(e) => updateOptionStock(gi, oi, e.target.value)}
-                            className="h-7 text-xs"
+                            className="h-8 text-xs"
                           />
                         </div>
                       </div>
@@ -513,7 +515,7 @@ export function ProductFormDialog({ open, onOpenChange, storeId, product, catego
                           setNewOptionInput((prev) => ({ ...prev, [inputKey]: e.target.value }))
                         }
                         placeholder='Digitar opção (ex: "M") e pressionar Enter'
-                        className="h-7 text-xs flex-1"
+                        className="h-8 text-xs flex-1"
                         onKeyDown={(e) => {
                           if (e.key === "Enter") { e.preventDefault(); addOption(gi); }
                         }}
@@ -522,7 +524,7 @@ export function ProductFormDialog({ open, onOpenChange, storeId, product, catego
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-7 text-xs px-2"
+                        className="h-8 text-xs px-2.5 min-h-[36px]"
                         onClick={() => addOption(gi)}
                       >
                         <Plus className="h-3.5 w-3.5" />
@@ -547,9 +549,9 @@ export function ProductFormDialog({ open, onOpenChange, storeId, product, catego
             <Switch id="p-active" checked={active} onCheckedChange={setActive} />
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit" disabled={saving}>{saving ? "Salvando…" : (product ? "Salvar" : "Criar")}</Button>
+          <DialogFooter className="sticky bottom-0 bg-background/95 backdrop-blur pt-3 pb-1 border-t border-border mt-4 z-10 sm:static sm:bg-transparent sm:border-0 sm:pt-0">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="min-h-[44px] sm:min-h-[36px]">Cancelar</Button>
+            <Button type="submit" disabled={saving} className="min-h-[44px] sm:min-h-[36px]">{saving ? "Salvando…" : (product ? "Salvar" : "Criar")}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

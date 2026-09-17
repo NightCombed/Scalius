@@ -6,8 +6,16 @@ import { useActiveStore } from "@/hooks/useActiveStore";
 import { formatBRL, ORDER_STATUS_LABEL } from "@/lib/mockData";
 import type { Order } from "@/types/database";
 import { Input } from "@/components/ui/input";
-import { Search, ChevronRight, Package } from "lucide-react";
+import { Search, ChevronRight, Package, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const getWhatsAppUrl = (phone?: string | null) => {
+  if (!phone) return null;
+  const digits = phone.replace(/\D/g, "");
+  if (!digits) return null;
+  const fullPhone = digits.startsWith("55") ? digits : `55${digits}`;
+  return `https://wa.me/${fullPhone}`;
+};
 
 const FILTERS = [
   "all", "pending", "preparing", "ready", "out_for_delivery", "delivered", "picked_up", "cancelled",
@@ -172,18 +180,23 @@ export default function AdminOrders() {
                   )}
                 >
                   {/* Mobile layout */}
-                  <div className="md:hidden space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold truncate max-w-[180px]">
-                        {order.customer_name ?? "Cliente"}
-                      </span>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="font-semibold">{formatBRL(order.total_cents)}</span>
+                  <div className="md:hidden space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <span className="font-semibold text-sm truncate block">
+                          {order.customer_name ?? "Cliente"}
+                        </span>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                          #{order.order_number || order.id.slice(-6).toUpperCase()} · {new Date(order.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className="font-semibold text-sm">{formatBRL(order.total_cents)}</span>
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                       <span className={cn("text-xs px-2 py-0.5 rounded-full", PAYMENT_BADGE[order.payment_status ?? "pending"])}>
                         {getPaymentLabel(order.payment_status ?? "pending")}
                       </span>
@@ -195,11 +208,21 @@ export default function AdminOrders() {
                       </span>
                     </div>
 
-                    <div className="text-xs text-muted-foreground">
-                      #{order.order_number || order.id.slice(-6).toUpperCase()}
-                      {order.customer_phone && <span> · {order.customer_phone}</span>}
-                      <span> · {new Date(order.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
-                    </div>
+                    {order.customer_phone && getWhatsAppUrl(order.customer_phone) && (
+                      <div className="pt-2 border-t border-border/40 flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground truncate">{order.customer_phone}</span>
+                        <a
+                          href={getWhatsAppUrl(order.customer_phone)!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/60 hover:bg-emerald-200/80 px-2.5 py-1 rounded-lg transition-colors min-h-[36px]"
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" />
+                          <span>WhatsApp</span>
+                        </a>
+                      </div>
+                    )}
                   </div>
 
                   {/* Desktop layout */}

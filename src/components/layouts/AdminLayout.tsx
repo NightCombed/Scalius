@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { AdminSidebar } from "./AdminSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -101,6 +102,21 @@ export default function AdminLayout() {
   const { can, roleLabel, roleBadgeClasses } = useStoreRole();
   const { isPro } = usePlan();
   const { theme, toggleTheme } = useTheme();
+
+  const { data: pendingCount = 0 } = useQuery({
+    queryKey: ["admin-layout-pending-orders", activeStore?.id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("store_id", activeStore!.id)
+        .eq("status", "pending");
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!activeStore?.id,
+    refetchInterval: 15000,
+  });
 
   useEffect(() => {
     if (isAffiliate) {
@@ -357,7 +373,7 @@ export default function AdminLayout() {
             { title: "Visão geral", url: "/admin", icon: LayoutDashboard, end: true },
             { title: "Produtos", url: "/admin/produtos", icon: Package },
             { title: "Categorias", url: "/admin/categorias", icon: Tag },
-            { title: "Pedidos", url: "/admin/pedidos", icon: ShoppingBag },
+            { title: "Pedidos", url: "/admin/pedidos", icon: ShoppingBag, badge: pendingCount },
             { title: "Entregas e frete", url: "/admin/entregas", icon: Truck },
             { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
           ].map((item) => (
@@ -365,11 +381,18 @@ export default function AdminLayout() {
               key={item.url}
               to={item.url}
               end={item.end}
-              className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors min-h-[44px]"
+              className="flex items-center justify-between px-3 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all active:scale-[0.98] min-h-[44px]"
               activeClassName="bg-primary/10 text-primary"
             >
-              <item.icon className="h-5 w-5 shrink-0" />
-              <span>{item.title}</span>
+              <div className="flex items-center gap-3">
+                <item.icon className="h-5 w-5 shrink-0" />
+                <span>{item.title}</span>
+              </div>
+              {item.badge != null && item.badge > 0 && (
+                <span className="bg-amber-500/15 text-amber-700 dark:bg-amber-500/25 dark:text-amber-300 text-xs font-semibold px-2 py-0.5 rounded-full">
+                  {item.badge}
+                </span>
+              )}
             </NavLink>
           ))}
 
@@ -452,18 +475,18 @@ export default function AdminLayout() {
       {/* ── Main content area ── */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         {/* ── Top Header ── */}
-        <header className="h-14 bg-background/80 backdrop-blur sticky top-0 z-30 flex items-center gap-3 px-4 border-b border-border/50">
+        <header className="h-14 bg-background/80 backdrop-blur sticky top-0 z-30 flex items-center justify-between gap-3 px-4 border-b border-border/50 relative">
           {/* Mobile: hamburger */}
           <button
-            className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors -ml-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors -ml-1 min-w-[44px] min-h-[44px] flex items-center justify-center z-10"
             onClick={() => setDrawerOpen(true)}
             aria-label="Abrir menu"
           >
             <Menu className="h-5 w-5" />
           </button>
 
-          {/* Logo — mobile only, centered */}
-          <div className="md:hidden flex-1 flex justify-center">
+          {/* Logo — mobile only, PERFECT TRUE CENTER */}
+          <div className="md:hidden absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
             <img src="/scalius-logo-dark.png" alt="Scalius" className="h-7 object-contain dark:brightness-0 dark:invert" />
           </div>
 
@@ -473,7 +496,7 @@ export default function AdminLayout() {
           </div>
 
           {/* Right actions */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 ml-auto z-10">
             {activeStore && (
               <Button asChild variant="ghost" size="sm" className="hidden sm:flex gap-1.5">
                 <Link to={`/loja/${activeStore.slug}`} target="_blank">
@@ -492,11 +515,10 @@ export default function AdminLayout() {
                 variant="outline"
                 size="sm"
                 onClick={() => navigate("/affiliate")}
-                className="flex items-center gap-1.5 border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-900/20 text-xs px-2.5 sm:px-3 h-8 sm:h-9"
+                className="hidden sm:flex items-center gap-1.5 border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-900/20 text-xs px-2.5 sm:px-3 h-8 sm:h-9"
               >
                 <Handshake className="h-4 w-4 shrink-0" />
-                <span className="hidden lg:inline">Painel de Afiliado</span>
-                <span className="lg:hidden text-[11px] font-medium">Afiliado</span>
+                <span>Painel de Afiliado</span>
               </Button>
             )}
             <span className="hidden lg:block text-sm text-muted-foreground px-2">{user?.full_name}</span>
@@ -516,22 +538,29 @@ export default function AdminLayout() {
         </header>
 
         {/* ── Page content ── */}
-        <main className="flex-1 p-4 md:p-6 animate-fade-in pb-20 md:pb-6">
+        <main className="flex-1 p-4 md:p-6 animate-fade-in pb-24 md:pb-6">
           <Outlet />
         </main>
 
         {/* ── Mobile Bottom Navigation ── */}
-        <nav className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur border-t border-border md:hidden">
-          <div className="flex items-stretch h-16">
+        <nav className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur border-t border-border md:hidden pb-[calc(0.4rem+env(safe-area-inset-bottom))] pt-1 px-1 shadow-lg">
+          <div className="flex items-stretch h-14">
             {NAV_ITEMS.map((item) => (
               <NavLink
                 key={item.url}
                 to={item.url}
                 end={item.end}
-                className="flex-1 flex flex-col items-center justify-center gap-0.5 text-muted-foreground hover:text-foreground transition-colors min-h-[44px] px-1"
+                className="flex-1 flex flex-col items-center justify-center gap-0.5 text-muted-foreground hover:text-foreground transition-all active:scale-95 min-h-[44px] px-1 relative"
                 activeClassName="text-primary"
               >
-                <item.icon className="h-5 w-5 shrink-0" />
+                <div className="relative">
+                  <item.icon className="h-5 w-5 shrink-0" />
+                  {item.url === "/admin/pedidos" && pendingCount > 0 && (
+                    <span className="absolute -top-1.5 -right-2 bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center leading-none shadow-sm animate-pulse">
+                      {pendingCount > 99 ? "99+" : pendingCount}
+                    </span>
+                  )}
+                </div>
                 <span className="text-[10px] font-medium leading-tight">{item.title}</span>
               </NavLink>
             ))}

@@ -115,117 +115,121 @@ function SortableProductRow({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "p-3 md:p-4 flex items-start gap-3 bg-card transition-shadow",
+        "p-3 md:p-4 bg-card transition-shadow",
         isDragging && "shadow-2xl ring-2 ring-primary rounded-xl z-50 opacity-90"
       )}
     >
-      {/* Drag handle */}
-      {isDragMode ? (
-        <button
-          {...attributes}
-          {...listeners}
-          className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground transition-colors p-2 rounded min-w-[44px] min-h-[44px] flex items-center justify-center mt-0.5"
-          title="Arrastar para reordenar"
-        >
-          <GripVertical className="h-5 w-5" />
-        </button>
-      ) : (
-        <div className="h-11 w-11 md:h-12 md:w-12 rounded-md bg-muted shrink-0 overflow-hidden mt-0.5">
-          {getProductImage(p.image_url) && (
-            <img
-              src={getProductImage(p.image_url)!}
-              alt={p.name}
-              className="h-full w-full object-cover"
-            />
+      {/* ── Mobile Layout (< 768px) ── */}
+      <div className="md:hidden flex flex-col gap-2.5 w-full">
+        {/* Row 1: Drag handle / Thumbnail + Title & Badges + Price */}
+        <div className="flex items-start gap-3">
+          {isDragMode ? (
+            <button
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground transition-colors p-2 rounded min-w-[44px] min-h-[44px] flex items-center justify-center shrink-0 mt-0.5"
+              title="Arrastar para reordenar"
+            >
+              <GripVertical className="h-5 w-5" />
+            </button>
+          ) : (
+            <div className="h-12 w-12 rounded-md bg-muted shrink-0 overflow-hidden mt-0.5 border border-border/50">
+              {getProductImage(p.image_url) && (
+                <img
+                  src={getProductImage(p.image_url)!}
+                  alt={p.name}
+                  className="h-full w-full object-cover"
+                />
+              )}
+            </div>
           )}
-        </div>
-      )}
 
-      {/* Thumbnail alongside grip in sort mode */}
-      {isDragMode && (
-        <div className="h-10 w-10 rounded-md bg-muted shrink-0 overflow-hidden mt-0.5">
-          {getProductImage(p.image_url) && (
-            <img
-              src={getProductImage(p.image_url)!}
-              alt={p.name}
-              className="h-full w-full object-cover"
-            />
+          {isDragMode && (
+            <div className="h-10 w-10 rounded-md bg-muted shrink-0 overflow-hidden mt-0.5 border border-border/50">
+              {getProductImage(p.image_url) && (
+                <img
+                  src={getProductImage(p.image_url)!}
+                  alt={p.name}
+                  className="h-full w-full object-cover"
+                />
+              )}
+            </div>
           )}
-        </div>
-      )}
 
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5 flex-wrap pt-0.5 md:pt-1">
-          <span className="font-medium truncate">{p.name}</span>
-          {!p.active && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Inativo</Badge>}
-          {p.featured && (
-            <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-400 border-0 text-[10px] px-1.5 py-0.5 gap-1 font-medium flex items-center">
-              <Star className="h-2.5 w-2.5 fill-current" />
-              Destaque
-            </Badge>
-          )}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+              <span className="font-medium truncate text-sm">{p.name}</span>
+              {!p.active && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Inativo</Badge>}
+              {p.featured && (
+                <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-400 border-0 text-[10px] px-1.5 py-0.5 gap-1 font-medium flex items-center">
+                  <Star className="h-2.5 w-2.5 fill-current" />
+                  Destaque
+                </Badge>
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              {categoryName(p.category_id)}
+            </div>
+          </div>
+
+          <div className="font-medium shrink-0 text-sm text-right pt-0.5">
+            {formatBRL(p.price_cents)}
+          </div>
         </div>
-        <div className="text-xs text-muted-foreground mt-1 flex flex-col gap-1.5">
+
+        {/* Row 2: Variant stock info */}
+        <div className="text-xs text-muted-foreground">
           {filteredGroups.length > 0 ? (
-            <>
-              <div className="flex items-center gap-1.5">
-                <span className="truncate hidden sm:inline">{categoryName(p.category_id)}</span>
-                <span className="opacity-40 hidden sm:inline">·</span>
-                <span>Estoque:</span>
-              </div>
-              <div className="flex flex-col gap-1.5 pt-0.5">
-                {filteredGroups.map((group, gIdx) => {
-                  const opts = group.options;
-                  const isLastGroup = gIdx === filteredGroups.length - 1;
-                  return (
-                    <div key={group.id} className="flex flex-col gap-1.5">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-semibold text-foreground/90 shrink-0">{group.group_name}:</span>
-                        {opts.map((opt) => {
-                          const isOut = opt.stock_qty === 0;
-                          const isLow = opt.stock_qty !== null && opt.stock_qty > 0 && opt.stock_qty < 5;
-                          return (
-                            <span
-                              key={opt.id}
-                              className={cn(
-                                "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px]",
-                                isOut
-                                  ? "border-destructive/30 bg-destructive/5"
-                                  : isLow
-                                  ? "border-amber-500/40 bg-amber-500/5"
-                                  : "border-border/60 bg-muted/30"
-                              )}
-                            >
-                              <span className="text-foreground/70">{opt.value}:</span>
-                              <span className={cn(
-                                "font-medium",
-                                isOut ? "text-destructive" : isLow ? "text-amber-600 dark:text-amber-400" : "text-foreground"
-                              )}>
-                                {opt.stock_qty ?? "∞"}
-                              </span>
-                              {isOut && (
-                                <Badge variant="destructive" className="h-3.5 px-1 text-[9px] font-normal leading-none shrink-0">Esgotado</Badge>
-                              )}
-                              {isLow && (
-                                <Badge className="h-3.5 px-1 text-[9px] font-normal bg-amber-500 hover:bg-amber-600 leading-none shrink-0 gap-1 flex items-center">
-                                  <AlertTriangle className="h-2.5 w-2.5" />
-                                  Baixo
-                                </Badge>
-                              )}
+            <div className="flex flex-col gap-1.5 pt-0.5">
+              {filteredGroups.map((group, gIdx) => {
+                const opts = group.options;
+                const isLastGroup = gIdx === filteredGroups.length - 1;
+                return (
+                  <div key={group.id} className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-semibold text-foreground/90 shrink-0">{group.group_name}:</span>
+                      {opts.map((opt) => {
+                        const isOut = opt.stock_qty === 0;
+                        const isLow = opt.stock_qty !== null && opt.stock_qty > 0 && opt.stock_qty < 5;
+                        return (
+                          <span
+                            key={opt.id}
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px]",
+                              isOut
+                                ? "border-destructive/30 bg-destructive/5"
+                                : isLow
+                                ? "border-amber-500/40 bg-amber-500/5"
+                                : "border-border/60 bg-muted/30"
+                            )}
+                          >
+                            <span className="text-foreground/70">{opt.value}:</span>
+                            <span className={cn(
+                              "font-medium",
+                              isOut ? "text-destructive" : isLow ? "text-amber-600 dark:text-amber-400" : "text-foreground"
+                            )}>
+                              {opt.stock_qty ?? "∞"}
                             </span>
-                          );
-                        })}
-                      </div>
-                      {!isLastGroup && <hr className="border-border my-1 w-full" />}
+                            {isOut && (
+                              <Badge variant="destructive" className="h-3.5 px-1 text-[9px] font-normal leading-none shrink-0">Esgotado</Badge>
+                            )}
+                            {isLow && (
+                              <Badge className="h-3.5 px-1 text-[9px] font-normal bg-amber-500 hover:bg-amber-600 leading-none shrink-0 gap-1 flex items-center">
+                                <AlertTriangle className="h-2.5 w-2.5" />
+                                Baixo
+                              </Badge>
+                            )}
+                          </span>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
-            </>
+                    {!isLastGroup && <hr className="border-border my-1 w-full" />}
+                  </div>
+                );
+              })}
+            </div>
           ) : (
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="truncate hidden sm:inline">{categoryName(p.category_id)}</span>
-              <span className="opacity-40 hidden sm:inline">·</span>
               <span>Estoque:</span>
               <span className={cn(
                 "text-foreground",
@@ -245,36 +249,195 @@ function SortableProductRow({
             </div>
           )}
         </div>
+
+        {/* Row 3: Mobile Action Bar */}
+        {!isDragMode && (
+          <div className="flex items-center justify-between pt-1 border-t border-border/40 text-xs">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">{p.active ? "Ativo" : "Inativo"}</span>
+                <Switch checked={p.active} onCheckedChange={onToggleActive} />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground flex items-center gap-1">
+                  <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
+                  Destaque
+                </span>
+                <Switch checked={!!p.featured} onCheckedChange={onToggleFeatured} />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <Button size="icon" variant="ghost" onClick={onEdit} className="min-w-[44px] min-h-[44px]">
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button size="icon" variant="ghost" onClick={onDelete} className="min-w-[44px] min-h-[44px]">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="font-medium shrink-0 text-sm md:w-24 md:text-right pt-2 md:pt-2.5">
-        {formatBRL(p.price_cents)}
-      </div>
+      {/* ── Desktop Layout (>= 768px) ── */}
+      <div className="hidden md:flex md:items-start md:gap-3 md:w-full">
+        {/* Drag handle */}
+        {isDragMode ? (
+          <button
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground transition-colors p-2 rounded min-w-[44px] min-h-[44px] flex items-center justify-center mt-0.5"
+            title="Arrastar para reordenar"
+          >
+            <GripVertical className="h-5 w-5" />
+          </button>
+        ) : (
+          <div className="h-11 w-11 md:h-12 md:w-12 rounded-md bg-muted shrink-0 overflow-hidden mt-0.5">
+            {getProductImage(p.image_url) && (
+              <img
+                src={getProductImage(p.image_url)!}
+                alt={p.name}
+                className="h-full w-full object-cover"
+              />
+            )}
+          </div>
+        )}
 
-      {!isDragMode && (
-        <div className="flex items-center gap-1.5 shrink-0 pt-1 md:pt-1.5">
-          <div className="hidden md:flex items-center gap-1.5 mr-1" title="Em destaque">
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
-              Destaque
-            </span>
-            <Switch
-              checked={!!p.featured}
-              onCheckedChange={onToggleFeatured}
-            />
+        {/* Thumbnail alongside grip in sort mode */}
+        {isDragMode && (
+          <div className="h-10 w-10 rounded-md bg-muted shrink-0 overflow-hidden mt-0.5">
+            {getProductImage(p.image_url) && (
+              <img
+                src={getProductImage(p.image_url)!}
+                alt={p.name}
+                className="h-full w-full object-cover"
+              />
+            )}
           </div>
-          <div className="flex items-center gap-1" title="Ativo/Inativo">
-            <span className="text-xs text-muted-foreground hidden md:inline">{p.active ? "Ativo" : "Inativo"}</span>
-            <Switch checked={p.active} onCheckedChange={onToggleActive} />
+        )}
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 flex-wrap pt-0.5 md:pt-1">
+            <span className="font-medium truncate">{p.name}</span>
+            {!p.active && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Inativo</Badge>}
+            {p.featured && (
+              <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-400 border-0 text-[10px] px-1.5 py-0.5 gap-1 font-medium flex items-center">
+                <Star className="h-2.5 w-2.5 fill-current" />
+                Destaque
+              </Badge>
+            )}
           </div>
-          <Button size="icon" variant="ghost" onClick={onEdit} className="min-w-[40px] min-h-[40px]">
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button size="icon" variant="ghost" onClick={onDelete} className="min-w-[40px] min-h-[40px]">
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <div className="text-xs text-muted-foreground mt-1 flex flex-col gap-1.5">
+            {filteredGroups.length > 0 ? (
+              <>
+                <div className="flex items-center gap-1.5">
+                  <span className="truncate hidden sm:inline">{categoryName(p.category_id)}</span>
+                  <span className="opacity-40 hidden sm:inline">·</span>
+                  <span>Estoque:</span>
+                </div>
+                <div className="flex flex-col gap-1.5 pt-0.5">
+                  {filteredGroups.map((group, gIdx) => {
+                    const opts = group.options;
+                    const isLastGroup = gIdx === filteredGroups.length - 1;
+                    return (
+                      <div key={group.id} className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold text-foreground/90 shrink-0">{group.group_name}:</span>
+                          {opts.map((opt) => {
+                            const isOut = opt.stock_qty === 0;
+                            const isLow = opt.stock_qty !== null && opt.stock_qty > 0 && opt.stock_qty < 5;
+                            return (
+                              <span
+                                key={opt.id}
+                                className={cn(
+                                  "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px]",
+                                  isOut
+                                    ? "border-destructive/30 bg-destructive/5"
+                                    : isLow
+                                    ? "border-amber-500/40 bg-amber-500/5"
+                                    : "border-border/60 bg-muted/30"
+                                )}
+                              >
+                                <span className="text-foreground/70">{opt.value}:</span>
+                                <span className={cn(
+                                  "font-medium",
+                                  isOut ? "text-destructive" : isLow ? "text-amber-600 dark:text-amber-400" : "text-foreground"
+                                )}>
+                                  {opt.stock_qty ?? "∞"}
+                                </span>
+                                {isOut && (
+                                  <Badge variant="destructive" className="h-3.5 px-1 text-[9px] font-normal leading-none shrink-0">Esgotado</Badge>
+                                )}
+                                {isLow && (
+                                  <Badge className="h-3.5 px-1 text-[9px] font-normal bg-amber-500 hover:bg-amber-600 leading-none shrink-0 gap-1 flex items-center">
+                                    <AlertTriangle className="h-2.5 w-2.5" />
+                                    Baixo
+                                  </Badge>
+                                )}
+                              </span>
+                            );
+                          })}
+                        </div>
+                        {!isLastGroup && <hr className="border-border my-1 w-full" />}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="truncate hidden sm:inline">{categoryName(p.category_id)}</span>
+                <span className="opacity-40 hidden sm:inline">·</span>
+                <span>Estoque:</span>
+                <span className={cn(
+                  "text-foreground",
+                  p.stock === 0 ? "text-destructive font-semibold" : p.stock !== null && p.stock > 0 && p.stock < 5 ? "text-amber-600 dark:text-amber-400 font-semibold" : ""
+                )}>
+                  {p.stock ?? "—"}
+                </span>
+                {p.stock === 0 && (
+                  <Badge variant="destructive" className="h-4 px-1 text-[10px]">Esgotado</Badge>
+                )}
+                {p.stock !== null && p.stock > 0 && p.stock < 5 && (
+                  <Badge className="h-4 px-1.5 text-[10px] bg-amber-500 hover:bg-amber-600 gap-1 flex items-center">
+                    <AlertTriangle className="h-3 w-3" />
+                    Baixo
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      )}
+
+        <div className="font-medium shrink-0 text-sm md:w-24 md:text-right pt-2 md:pt-2.5">
+          {formatBRL(p.price_cents)}
+        </div>
+
+        {!isDragMode && (
+          <div className="flex items-center gap-1.5 shrink-0 pt-1 md:pt-1.5">
+            <div className="hidden md:flex items-center gap-1.5 mr-1" title="Em destaque">
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
+                Destaque
+              </span>
+              <Switch
+                checked={!!p.featured}
+                onCheckedChange={onToggleFeatured}
+              />
+            </div>
+            <div className="flex items-center gap-1" title="Ativo/Inativo">
+              <span className="text-xs text-muted-foreground hidden md:inline">{p.active ? "Ativo" : "Inativo"}</span>
+              <Switch checked={p.active} onCheckedChange={onToggleActive} />
+            </div>
+            <Button size="icon" variant="ghost" onClick={onEdit} className="min-w-[40px] min-h-[40px]">
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button size="icon" variant="ghost" onClick={onDelete} className="min-w-[40px] min-h-[40px]">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

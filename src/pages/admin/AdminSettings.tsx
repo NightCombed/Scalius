@@ -456,30 +456,28 @@ export default function AdminSettings() {
             </div>
 
             <Tabs defaultValue="appearance" className="w-full space-y-6">
-              <div className="overflow-x-auto pb-1 scrollbar-none">
-                <TabsList className="inline-flex h-11 items-center justify-start rounded-xl bg-muted/70 p-1.5 text-muted-foreground border border-border/50 min-w-max sm:w-full sm:grid sm:grid-cols-5">
-                  <TabsTrigger value="appearance" className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                    <Palette className="w-4 h-4 text-primary" />
-                    <span>Aparência</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="store_info" className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                    <Store className="w-4 h-4 text-primary" />
-                    <span>Dados da Loja</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="payments" className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                    <CreditCard className="w-4 h-4 text-primary" />
-                    <span>Pagamentos</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="notifications" className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                    <Bell className="w-4 h-4 text-primary" />
-                    <span>Notificações</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="security" className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                    <ShieldCheck className="w-4 h-4 text-primary" />
-                    <span>Equipe & Segurança</span>
-                  </TabsTrigger>
-                </TabsList>
-              </div>
+              <TabsList className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 p-1.5 bg-muted/70 text-muted-foreground border border-border/50 rounded-xl h-auto w-full">
+                <TabsTrigger value="appearance" className="flex items-center justify-center gap-2 px-2.5 sm:px-3 py-2 text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm min-h-[40px]">
+                  <Palette className="w-4 h-4 text-primary shrink-0" />
+                  <span className="truncate">Aparência</span>
+                </TabsTrigger>
+                <TabsTrigger value="store_info" className="flex items-center justify-center gap-2 px-2.5 sm:px-3 py-2 text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm min-h-[40px]">
+                  <Store className="w-4 h-4 text-primary shrink-0" />
+                  <span className="truncate">Dados da Loja</span>
+                </TabsTrigger>
+                <TabsTrigger value="payments" className="flex items-center justify-center gap-2 px-2.5 sm:px-3 py-2 text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm min-h-[40px]">
+                  <CreditCard className="w-4 h-4 text-primary shrink-0" />
+                  <span className="truncate">Pagamentos</span>
+                </TabsTrigger>
+                <TabsTrigger value="notifications" className="flex items-center justify-center gap-2 px-2.5 sm:px-3 py-2 text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm min-h-[40px]">
+                  <Bell className="w-4 h-4 text-primary shrink-0" />
+                  <span className="truncate">Notificações</span>
+                </TabsTrigger>
+                <TabsTrigger value="security" className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2 px-2.5 sm:px-3 py-2 text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm min-h-[40px]">
+                  <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
+                  <span className="truncate">Equipe & Segurança</span>
+                </TabsTrigger>
+              </TabsList>
 
               {/* ABA 1: APARÊNCIA */}
               <TabsContent value="appearance" className="space-y-6">

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveStore } from "@/hooks/useActiveStore";
 import { formatBRL, ORDER_STATUS_LABEL } from "@/lib/mockData";
-import { Clock, Package, ShoppingBag, Truck, CheckCircle2, TrendingUp, ArrowRight, AlertTriangle, XCircle } from "lucide-react";
+import { Clock, Package, ShoppingBag, Truck, CheckCircle2, TrendingUp, ArrowRight, AlertTriangle, XCircle, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useStoreRole } from "@/hooks/useStoreRole";
@@ -200,18 +200,20 @@ export default function AdminDashboard() {
         </Button>
       </header>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {kpis.map((s) => (
-          <div key={s.label} className="rounded-xl border border-border bg-card p-4 shadow-soft">
-            <div className="flex items-center justify-between mb-2">
+          <div key={s.label} className="rounded-xl border border-border bg-card p-3.5 sm:p-4 shadow-soft active:scale-[0.98] transition-all duration-150">
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs text-muted-foreground">{s.label}</span>
-              <s.icon className={`h-4 w-4 ${s.accent}`} />
+              <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
+                <s.icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${s.accent}`} />
+              </div>
             </div>
-            <div className="font-serif text-xl">{s.value}</div>
+            <div className="font-serif text-lg sm:text-xl">{s.value}</div>
             {s.comparison && (
-              <div className={`text-[10px] mt-1 flex items-center gap-0.5 ${
-                s.comparison.trend === "up" ? "text-emerald-600" : 
-                s.comparison.trend === "down" ? "text-red-600" : 
+              <div className={`text-[10px] sm:text-xs mt-1 flex items-center gap-0.5 ${
+                s.comparison.trend === "up" ? "text-emerald-600 dark:text-emerald-400" : 
+                s.comparison.trend === "down" ? "text-red-600 dark:text-red-400" : 
                 "text-muted-foreground"
               }`}>
                 {s.comparison.value} {s.comparison.trend === "up" ? "↑" : s.comparison.trend === "down" ? "↓" : ""}
@@ -222,31 +224,33 @@ export default function AdminDashboard() {
       </div>
 
       {stockKpis.some(s => s.value > 0) && (
-        <div className={`grid gap-4 ${stockKpis.filter(s => s.value > 0).length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+        <div className={`grid gap-3 sm:gap-4 ${stockKpis.filter(s => s.value > 0).length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
           {stockKpis.filter(s => s.value > 0).map((s) => (
             <Link 
               key={s.label} 
               to={`/admin/produtos?filter=${s.filter}`}
-              className="rounded-xl border border-border bg-card p-5 shadow-soft hover:shadow-elegant transition-all flex items-center gap-4 group"
+              className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-soft hover:shadow-elegant active:scale-[0.98] transition-all flex items-center gap-3.5 group min-h-[44px]"
             >
-              <div className={`p-3 rounded-full bg-muted group-hover:scale-110 transition-transform`}>
-                <s.icon className={`h-6 w-6 ${s.accent}`} />
+              <div className={`p-2.5 sm:p-3 rounded-full bg-muted group-hover:scale-105 transition-transform shrink-0`}>
+                <s.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${s.accent}`} />
               </div>
               <div>
-                <div className="text-sm text-muted-foreground">{s.label}</div>
-                <div className="font-serif text-2xl">{s.value}</div>
+                <div className="text-xs sm:text-sm text-muted-foreground">{s.label}</div>
+                <div className="font-serif text-xl sm:text-2xl">{s.value}</div>
               </div>
-              <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground opacity-60 group-hover:opacity-100 transition-opacity" />
             </Link>
           ))}
         </div>
       )}
 
       <div className="grid lg:grid-cols-3 gap-6">
-        <section className="rounded-xl border border-border bg-card lg:col-span-2">
-          <header className="p-5 border-b border-border flex items-center justify-between">
-            <h2 className="font-serif text-xl">Pedidos recentes</h2>
-            <Link to="/admin/pedidos" className="text-sm text-primary hover:underline">Ver todos</Link>
+        <section className="rounded-xl border border-border bg-card lg:col-span-2 overflow-hidden">
+          <header className="p-4 sm:p-5 border-b border-border flex items-center justify-between">
+            <h2 className="font-serif text-lg sm:text-xl">Pedidos recentes</h2>
+            <Link to="/admin/pedidos" className="text-xs sm:text-sm text-primary hover:underline flex items-center gap-1">
+              Ver todos <ChevronRight className="h-3.5 w-3.5" />
+            </Link>
           </header>
           <div className="divide-y divide-border">
             {recent.length === 0 && (
@@ -257,26 +261,57 @@ export default function AdminDashboard() {
                 <Link
                   key={o.id}
                   to={`/admin/pedidos/${o.id}`}
-                  className="p-4 flex items-center justify-between hover:bg-muted/40 transition-colors"
+                  className="p-3.5 sm:p-4 block hover:bg-muted/40 active:bg-muted/60 transition-colors"
                 >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="font-medium truncate">{o.customer_name ?? "Cliente"}</span>
-                      <span className={cn("text-[11px] px-2 py-0.5 rounded-full font-normal shrink-0", PAYMENT_BADGE[o.payment_status ?? "pending"])}>
+                  {/* Mobile layout (< 768px) */}
+                  <div className="md:hidden space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-sm truncate">{o.customer_name ?? "Cliente"}</span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className="font-medium text-sm text-foreground">{formatBRL(o.total_cents)}</span>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className={cn("text-[10px] px-2 py-0.5 rounded-full font-normal shrink-0", PAYMENT_BADGE[o.payment_status ?? "pending"])}>
                         {getPaymentLabel(o.payment_status ?? "pending")}
                       </span>
-                      <span className={cn("text-[11px] px-2 py-0.5 rounded-full font-normal shrink-0", STATUS_BADGE[o.status])}>
+                      <span className={cn("text-[10px] px-2 py-0.5 rounded-full font-normal shrink-0", STATUS_BADGE[o.status])}>
                         {getStatusLabel(o.status)}
                       </span>
-                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-normal shrink-0">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-normal shrink-0">
                         {o.delivery_type === "pickup" ? "Retirada" : "Entrega"}
                       </span>
                     </div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      #{o.order_number || o.id.slice(-6).toUpperCase()} · {new Date(o.created_at).toLocaleString("pt-BR")}
+
+                    <div className="text-[11px] text-muted-foreground flex items-center justify-between pt-0.5">
+                      <span>#{o.order_number || o.id.slice(-6).toUpperCase()}</span>
+                      <span>{new Date(o.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
                     </div>
                   </div>
-                  <div className="font-medium shrink-0 ml-4">{formatBRL(o.total_cents)}</div>
+
+                  {/* Desktop layout (>= 768px) */}
+                  <div className="hidden md:flex md:items-center md:justify-between md:gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="font-medium truncate">{o.customer_name ?? "Cliente"}</span>
+                        <span className={cn("text-[11px] px-2 py-0.5 rounded-full font-normal shrink-0", PAYMENT_BADGE[o.payment_status ?? "pending"])}>
+                          {getPaymentLabel(o.payment_status ?? "pending")}
+                        </span>
+                        <span className={cn("text-[11px] px-2 py-0.5 rounded-full font-normal shrink-0", STATUS_BADGE[o.status])}>
+                          {getStatusLabel(o.status)}
+                        </span>
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-normal shrink-0">
+                          {o.delivery_type === "pickup" ? "Retirada" : "Entrega"}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        #{o.order_number || o.id.slice(-6).toUpperCase()} · {new Date(o.created_at).toLocaleString("pt-BR")}
+                      </div>
+                    </div>
+                    <div className="font-medium shrink-0 ml-4">{formatBRL(o.total_cents)}</div>
+                  </div>
                 </Link>
               );
             })}
