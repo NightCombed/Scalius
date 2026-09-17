@@ -6,12 +6,42 @@ import { useActiveStore } from "@/hooks/useActiveStore";
 import { formatBRL, ORDER_STATUS_LABEL, ORDER_STATUS_FLOW } from "@/lib/mockData";
 import type { Order } from "@/types/database";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Phone, MapPin, Copy, MessageCircle, Truck, Store as StoreIcon, Package, Check, ExternalLink, ShoppingCart, Loader2, Bell, X, CheckCircle2, Clock, PartyPopper, Car } from "lucide-react";
+import { ArrowLeft, Phone, MapPin, Copy, MessageCircle, Truck, Store as StoreIcon, Package, Check, ExternalLink, ShoppingCart, Loader2, Bell, X, CheckCircle2, Clock, PartyPopper, Car, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { ProGate } from "@/components/ui/ProGate";
 import { usePlan } from "@/hooks/usePlan";
+
+function formatDocument(doc?: string | null): string {
+  if (!doc) return "—";
+  const clean = doc.replace(/\D/g, "");
+  if (clean.length === 11) {
+    return clean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+  }
+  if (clean.length === 14) {
+    return clean.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+  }
+  return doc;
+}
+
+function maskDocument(doc?: string | null): string {
+  if (!doc) return "—";
+  const clean = doc.replace(/\D/g, "");
+  if (clean.length === 14) {
+    return "••.•••.•••/••••-••";
+  }
+  return "•••.•••.•••-••";
+}
+
+function formatCep(cep?: string | null): string {
+  if (!cep) return "";
+  const clean = cep.replace(/\D/g, "");
+  if (clean.length === 8) {
+    return clean.replace(/(\d{5})(\d{3})/, "$1-$2");
+  }
+  return cep;
+}
 
 const STATUS_BADGE: Record<string, string> = {
   pending:          "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
@@ -34,6 +64,8 @@ export default function AdminOrderDetail() {
   const [trackingCode, setTrackingCode] = useState("");
   const [invoiceKey, setInvoiceKey]     = useState("");
   const [invoiceMode, setInvoiceMode]   = useState<"dce" | "nfe">("dce");
+  const [showDocument, setShowDocument] = useState(false);
+  const [showCep, setShowCep]           = useState(false);
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["admin-order", store?.id, orderId],
@@ -242,13 +274,18 @@ export default function AdminOrderDetail() {
 
   const items = order.order_items || [];
   const note = order.notes;
+  const addressParts = [
+    [order.address_street, order.address_number].filter(Boolean).join(", "),
+    order.address_neighborhood,
+    order.address_complement,
+    [order.address_city, order.address_state].filter(Boolean).join(" - "),
+  ].filter(Boolean);
+
   const address = order.delivery_type === "pickup"
     ? "Retirada na loja"
     : [
-      [order.address_street, order.address_number].filter(Boolean).join(", "),
-      order.address_neighborhood,
-      order.address_complement,
-      order.national_shipping_cep ? `CEP: ${order.national_shipping_cep}` : null
+      ...addressParts,
+      order.national_shipping_cep ? `CEP: ${formatCep(order.national_shipping_cep)}` : null
     ].filter(Boolean).join(" — ") || "Sem endereço cadastrado";
 
   const isNationalShipping = !!order.shipping_company || !!order.shipping_service_name;
@@ -687,6 +724,38 @@ export default function AdminOrderDetail() {
                 <div className="font-medium">{order.pix_name}</div>
               </div>
             )}
+            {order.customer_document && (
+              <div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">CPF / Documento</div>
+                <div className="flex items-center justify-between gap-2 text-sm bg-muted/30 px-3 py-2 rounded-md">
+                  <span className="font-mono text-xs sm:text-sm font-medium select-all">
+                    {showDocument ? formatDocument(order.customer_document) : maskDocument(order.customer_document)}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowDocument(!showDocument)}
+                      title={showDocument ? "Ocultar documento" : "Revelar documento"}
+                    >
+                      {showDocument ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                      onClick={() => copyToClipboard(order.customer_document ?? "", "Documento")}
+                      title="Copiar Documento"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
             {order.customer_phone && (
               <div>
                 <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Telefone</div>
@@ -748,11 +817,12 @@ export default function AdminOrderDetail() {
                 <><Truck className="h-4 w-4" /> Entrega</>
               )}
             </h2>
-            {order.delivery_type === "delivery" && (
+            {(order.delivery_type === "delivery" || order.delivery_type === "national_shipping") && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => copyToClipboard(address, "Endereço")}
+                title="Copiar endereço completo"
               >
                 <Copy className="h-4 w-4" />
               </Button>
@@ -760,10 +830,42 @@ export default function AdminOrderDetail() {
           </div>
           {(order.delivery_type === "delivery" || order.delivery_type === "national_shipping") ? (
             <>
-              <p className="text-sm flex items-start gap-2">
+              <div className="text-sm flex items-start gap-2.5">
                 <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                <span>{address}</span>
-              </p>
+                <div className="space-y-1.5 flex-1 min-w-0">
+                  <p className="text-foreground leading-snug">
+                    {addressParts.join(" — ") || "Sem endereço cadastrado"}
+                  </p>
+                  {order.national_shipping_cep && (
+                    <div className="flex items-center gap-1.5 text-xs pt-0.5">
+                      <span className="text-muted-foreground font-medium">CEP:</span>
+                      <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-muted/60 text-foreground border border-border/50 select-all">
+                        {showCep ? formatCep(order.national_shipping_cep) : "•••••-•••"}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowCep(!showCep)}
+                        title={showCep ? "Ocultar CEP" : "Revelar CEP"}
+                      >
+                        {showCep ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                        onClick={() => copyToClipboard(order.national_shipping_cep ?? "", "CEP")}
+                        title="Copiar CEP"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
               {order.shipping_region_name && !isNationalShipping && (
                 <div className="text-xs text-muted-foreground">
                   Região: <span className="font-medium text-foreground">{order.shipping_region_name}</span>

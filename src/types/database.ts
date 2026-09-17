@@ -338,6 +338,8 @@ export interface Order {
   shipping_delivery_time_days?: number | null;
   tracking_code?: string | null;
   melhorenvio_order_id?: string | null;
+  national_shipping_cep?: string | null;
+  customer_document?: string | null;
   /**
    * Chave de acesso da NF-e (44 dígitos, sem espaços).
    * NULL = DC-e automática via Melhor Envio (non_commercial: true).

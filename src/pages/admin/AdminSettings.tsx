@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Save, Store, MapPin, Loader2, Users, AlertTriangle, Package, Lightbulb, Palette, CreditCard, Bell, ShieldCheck } from "lucide-react";
+import { Save, Store, MapPin, Loader2, Users, AlertTriangle, Package, Lightbulb, Palette, CreditCard, Bell, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useActiveStore } from "@/hooks/useActiveStore";
 import { useMockData } from "@/hooks/useMockData";
@@ -135,6 +135,8 @@ export default function AdminSettings() {
   const snapshot = useMockData();
   const [saving, setSaving] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
+  const [showSenderDoc, setShowSenderDoc] = useState(false);
+  const [showSenderCep, setShowSenderCep] = useState(false);
   const queryClient = useQueryClient();
   const { isOwner, isManager } = useStoreRole();
 
@@ -1040,7 +1042,22 @@ export default function AdminSettings() {
                         <FormItem>
                           <FormLabel>CPF ou CNPJ do Remetente *</FormLabel>
                           <FormControl>
-                            <Input placeholder="000.000.000-00" {...field} />
+                            <div className="relative">
+                              <Input
+                                type={showSenderDoc ? "text" : "password"}
+                                placeholder="000.000.000-00"
+                                {...field}
+                                className="pr-10 font-mono"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowSenderDoc(!showSenderDoc)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 transition-colors"
+                                title={showSenderDoc ? "Ocultar documento" : "Mostrar documento"}
+                              >
+                                {showSenderDoc ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              </button>
+                            </div>
                           </FormControl>
                           <FormDescription>Necessário para etiquetas</FormDescription>
                           <FormMessage />
@@ -1071,6 +1088,7 @@ export default function AdminSettings() {
                         <FormControl>
                           <div className="relative">
                             <Input 
+                              type={showSenderCep ? "text" : "password"}
                               placeholder="00000-000" 
                               maxLength={9}
                               onChange={(e) => {
@@ -1082,7 +1100,16 @@ export default function AdminSettings() {
                               onBlur={field.onBlur}
                               name={field.name}
                               ref={field.ref}
+                              className="pr-10 font-mono"
                             />
+                            <button
+                              type="button"
+                              onClick={() => setShowSenderCep(!showSenderCep)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 transition-colors"
+                              title={showSenderCep ? "Ocultar CEP" : "Mostrar CEP"}
+                            >
+                              {showSenderCep ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
                           </div>
                         </FormControl>
                         <FormDescription>
