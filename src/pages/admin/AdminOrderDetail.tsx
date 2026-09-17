@@ -66,6 +66,7 @@ export default function AdminOrderDetail() {
   const [invoiceMode, setInvoiceMode]   = useState<"dce" | "nfe">("dce");
   const [showDocument, setShowDocument] = useState(false);
   const [showCep, setShowCep]           = useState(false);
+  const [showExactAddress, setShowExactAddress] = useState(false);
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["admin-order", store?.id, orderId],
@@ -274,17 +275,14 @@ export default function AdminOrderDetail() {
 
   const items = order.order_items || [];
   const note = order.notes;
-  const addressParts = [
-    [order.address_street, order.address_number].filter(Boolean).join(", "),
-    order.address_neighborhood,
-    order.address_complement,
-    [order.address_city, order.address_state].filter(Boolean).join(" - "),
-  ].filter(Boolean);
+  const exactStreet = [order.address_street, order.address_number, order.address_complement].filter(Boolean).join(", ");
+  const generalLocation = [order.address_neighborhood, [order.address_city, order.address_state].filter(Boolean).join(" - ")].filter(Boolean).join(" — ");
 
   const address = order.delivery_type === "pickup"
     ? "Retirada na loja"
     : [
-      ...addressParts,
+      exactStreet,
+      generalLocation,
       order.national_shipping_cep ? `CEP: ${formatCep(order.national_shipping_cep)}` : null
     ].filter(Boolean).join(" — ") || "Sem endereço cadastrado";
 
@@ -833,9 +831,28 @@ export default function AdminOrderDetail() {
               <div className="text-sm flex items-start gap-2.5">
                 <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                 <div className="space-y-1.5 flex-1 min-w-0">
-                  <p className="text-foreground leading-snug">
-                    {addressParts.join(" — ") || "Sem endereço cadastrado"}
-                  </p>
+                  {exactStreet ? (
+                    <div className="flex items-center gap-1.5 text-sm leading-snug">
+                      <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-muted/60 text-foreground border border-border/50 select-all">
+                        {showExactAddress ? exactStreet : "••••••••••••••••••••••••"}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground hover:text-foreground shrink-0"
+                        onClick={() => setShowExactAddress(!showExactAddress)}
+                        title={showExactAddress ? "Ocultar logradouro exato" : "Revelar logradouro exato"}
+                      >
+                        {showExactAddress ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </Button>
+                    </div>
+                  ) : null}
+                  {generalLocation ? (
+                    <p className="text-xs text-muted-foreground font-medium">
+                      {generalLocation}
+                    </p>
+                  ) : null}
                   {order.national_shipping_cep && (
                     <div className="flex items-center gap-1.5 text-xs pt-0.5">
                       <span className="text-muted-foreground font-medium">CEP:</span>

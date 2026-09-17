@@ -137,6 +137,8 @@ export default function AdminSettings() {
   const [geocoding, setGeocoding] = useState(false);
   const [showSenderDoc, setShowSenderDoc] = useState(false);
   const [showSenderCep, setShowSenderCep] = useState(false);
+  const [showDispatchAddress, setShowDispatchAddress] = useState(false);
+  const [showStoreAddress, setShowStoreAddress] = useState(false);
   const queryClient = useQueryClient();
   const { isOwner, isManager } = useStoreRole();
 
@@ -1177,7 +1179,22 @@ export default function AdminSettings() {
                             <FormItem>
                               <FormLabel>Logradouro</FormLabel>
                               <FormControl>
-                                <Input placeholder="Rua, Avenida, Travessa..." {...field} />
+                                <div className="relative">
+                                  <Input
+                                    type={showDispatchAddress ? "text" : "password"}
+                                    placeholder="Rua, Avenida, Travessa..."
+                                    {...field}
+                                    className="pr-10 font-mono"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowDispatchAddress(!showDispatchAddress)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 transition-colors"
+                                    title={showDispatchAddress ? "Ocultar logradouro" : "Mostrar logradouro"}
+                                  >
+                                    {showDispatchAddress ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                  </button>
+                                </div>
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -1191,7 +1208,22 @@ export default function AdminSettings() {
                           <FormItem>
                             <FormLabel>Número</FormLabel>
                             <FormControl>
-                              <Input placeholder="123" {...field} />
+                              <div className="relative">
+                                <Input
+                                  type={showDispatchAddress ? "text" : "password"}
+                                  placeholder="123"
+                                  {...field}
+                                  className="pr-10 font-mono"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowDispatchAddress(!showDispatchAddress)}
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 transition-colors"
+                                  title={showDispatchAddress ? "Ocultar número" : "Mostrar número"}
+                                >
+                                  {showDispatchAddress ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -1206,7 +1238,22 @@ export default function AdminSettings() {
                           <FormItem>
                             <FormLabel>Complemento</FormLabel>
                             <FormControl>
-                              <Input placeholder="Apto 12, Sala 3..." {...field} />
+                              <div className="relative">
+                                <Input
+                                  type={showDispatchAddress ? "text" : "password"}
+                                  placeholder="Apto 12, Sala 3..."
+                                  {...field}
+                                  className="pr-10 font-mono"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowDispatchAddress(!showDispatchAddress)}
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 transition-colors"
+                                  title={showDispatchAddress ? "Ocultar complemento" : "Mostrar complemento"}
+                                >
+                                  {showDispatchAddress ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -1556,7 +1603,22 @@ export default function AdminSettings() {
                 <FormItem>
                   <FormLabel>Endereço</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: Av. Paulista, 1000 - Bela Vista, São Paulo - SP" {...field} />
+                    <div className="relative">
+                      <Input
+                        type={showStoreAddress ? "text" : "password"}
+                        placeholder="Ex: Av. Paulista, 1000 - Bela Vista, São Paulo - SP"
+                        {...field}
+                        className="pr-10 font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowStoreAddress(!showStoreAddress)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 transition-colors"
+                        title={showStoreAddress ? "Ocultar endereço da loja" : "Mostrar endereço da loja"}
+                      >
+                        {showStoreAddress ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
