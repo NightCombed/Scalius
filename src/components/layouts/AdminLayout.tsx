@@ -1,18 +1,26 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminSidebar } from "./AdminSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, ExternalLink, LayoutDashboard, Package, ShoppingBag, Truck, Settings, Menu, X, Tag, Users, Flower2, BarChart3, Lock, Sun, Moon, Handshake } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  LogOut, ExternalLink, LayoutDashboard, Package, ShoppingBag, Truck,
+  Settings, Menu, X, Tag, Users, Flower2, BarChart3, Lock, Sun, Moon,
+  Handshake, Store, ChevronDown, ArrowRight, Video, Sparkles, Check
+} from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { useActiveStore } from "@/hooks/useActiveStore";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { NavLink } from "@/components/NavLink";
 import { useStoreRole } from "@/hooks/useStoreRole";
 import { usePlan } from "@/hooks/usePlan";
 import { useTheme } from "@/contexts/ThemeContext";
+import { toast } from "sonner";
 
 const NAV_ITEMS = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, end: true },
@@ -91,15 +99,64 @@ function isCurrentTimeInSilentHours(start: string, end: string): boolean {
 
 
 
+const DEMO_STORE_SLUGS = ["auroramoda", "floricultura-das-flores", "elena-cosmeticos"];
+
+const DEMO_METADATA: Record<string, { label: string; badge: string; desc: string; icon: string }> = {
+  "auroramoda": {
+    label: "Aurora Moda",
+    badge: "Moda & Vestuário",
+    desc: "10 produtos · Variações P, M, G, GG e fotos reais",
+    icon: "👗",
+  },
+  "floricultura-das-flores": {
+    label: "Floricultura das Flores",
+    badge: "Flores & Presentes",
+    desc: "9 produtos · Arranjos, buquês e frete de entrega local",
+    icon: "🌸",
+  },
+  "elena-cosmeticos": {
+    label: "Elena Cosméticos",
+    badge: "Cosméticos & Beleza",
+    desc: "6 produtos · Skincare, carrinho e produtos em destaque",
+    icon: "✨",
+  },
+};
+
 export default function AdminLayout() {
-  const { user, memberships, signOut, isSuperAdmin, isAffiliate } = useAuth();
+  const { user, memberships, signOut, isSuperAdmin, isAffiliate, setActiveStoreId } = useAuth();
   const navigate = useNavigate();
-  const activeStore = memberships[0]?.store;
+  const queryClient = useQueryClient();
+  const activeStore = useActiveStore();
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [showAffiliateChoiceModal, setShowAffiliateChoiceModal] = useState<boolean>(false);
   const { can, roleLabel, roleBadgeClasses } = useStoreRole();
   const { isPro } = usePlan();
   const { theme, toggleTheme } = useTheme();
+
+  const ownStore = useMemo(() => {
+    return memberships.find((m) => !DEMO_STORE_SLUGS.includes(m.store.slug));
+  }, [memberships]);
+
+  const demoMemberships = useMemo(() => {
+    return memberships.filter((m) => DEMO_STORE_SLUGS.includes(m.store.slug));
+  }, [memberships]);
+
+  const demoStoresList = useMemo(() => {
+    return DEMO_STORE_SLUGS.map((slug) => {
+      const member = demoMemberships.find((m) => m.store.slug === slug);
+      const meta = DEMO_METADATA[slug];
+      return {
+        slug,
+        name: member?.store.name ?? meta.label,
+        storeId: member?.store.id ?? null,
+        badge: meta.badge,
+        desc: meta.desc,
+        icon: meta.icon,
+        isMember: !!member,
+      };
+    });
+  }, [demoMemberships]);
 
   const { data: pendingCount = 0 } = useQuery({
     queryKey: ["admin-layout-pending-orders", activeStore?.id],
@@ -115,6 +172,12 @@ export default function AdminLayout() {
     enabled: !!activeStore?.id,
     refetchInterval: 15000,
   });
+
+  useEffect(() => {
+    if (isAffiliate) {
+      setShowAffiliateChoiceModal(true);
+    }
+  }, [isAffiliate]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -489,13 +552,56 @@ export default function AdminLayout() {
             </div>
           )}
 
-          {/* Desktop: store name */}
-          <div className="hidden md:flex flex-1 min-w-0 flex-col">
-            <div className="text-sm font-medium truncate">{activeStore?.name ?? "Painel"}</div>
+          {/* Desktop: store name or Switcher */}
+          <div className="hidden md:flex flex-1 min-w-0 items-center gap-2">
+            {isAffiliate || memberships.length > 1 ? (
+              <button
+                type="button"
+                onClick={() => setShowAffiliateChoiceModal(true)}
+                className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-border/70 hover:border-primary/50 bg-card hover:bg-accent text-left transition-all group shadow-xs cursor-pointer max-w-md"
+                title="Clique para alternar entre sua loja e os modelos de demonstração para gravação"
+              >
+                <Store className="h-4 w-4 text-primary shrink-0 group-hover:scale-105 transition-transform" />
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-sm font-semibold truncate max-w-[180px]">
+                    {activeStore?.name ?? "Selecionar Loja"}
+                  </span>
+                  {activeStore && DEMO_STORE_SLUGS.includes(activeStore.slug) ? (
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                      🎬 Modelo Demo
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-semibold text-muted-foreground">
+                      Sua Loja
+                    </Badge>
+                  )}
+                </div>
+                <div className="text-xs font-semibold text-primary ml-1 flex items-center gap-0.5 shrink-0 opacity-80 group-hover:opacity-100">
+                  <span>Trocar</span>
+                  <ChevronDown className="h-3 w-3" />
+                </div>
+              </button>
+            ) : (
+              <div className="text-sm font-medium truncate">{activeStore?.name ?? "Painel"}</div>
+            )}
           </div>
 
           {/* Right actions */}
           <div className="flex items-center gap-1 sm:gap-1.5 ml-auto z-10">
+            {/* Mobile Switcher Button */}
+            {(isAffiliate || memberships.length > 1) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAffiliateChoiceModal(true)}
+                className="flex items-center gap-1 border-border/80 text-foreground hover:bg-muted text-xs px-2 h-8 font-medium md:hidden"
+                title="Trocar Loja ou Modelo"
+              >
+                <Store className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[11px] font-semibold truncate max-w-[80px]">{activeStore?.name}</span>
+                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              </Button>
+            )}
             {activeStore && (
               <Button asChild variant="ghost" size="sm" className="hidden sm:flex gap-1.5">
                 <Link to={`/loja/${activeStore.slug}`} target="_blank">
@@ -572,6 +678,178 @@ export default function AdminLayout() {
           </div>
         </nav>
       </div>
+
+      {/* ── Modal de Escolha para Contas Afiliadas ao Entrar no Admin ── */}
+      <Dialog open={showAffiliateChoiceModal} onOpenChange={setShowAffiliateChoiceModal}>
+        <DialogContent className="sm:max-w-xl p-5 sm:p-6 border border-border/80 shadow-2xl rounded-2xl max-h-[92vh] overflow-y-auto">
+          <DialogHeader className="text-center sm:text-center space-y-2 pb-1">
+            <div className="mx-auto w-12 h-12 rounded-2xl bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 flex items-center justify-center mb-1 shadow-xs">
+              <Handshake className="w-6 h-6" />
+            </div>
+            <DialogTitle className="text-xl sm:text-2xl font-bold tracking-tight text-center">
+              Onde você deseja entrar?
+            </DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm text-muted-foreground text-center max-w-md mx-auto">
+              Sua conta de parceiro possui acesso ao Painel de Afiliado, à sua loja própria e aos 3 modelos de demonstração para gravação de vídeos.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-1">
+            {/* Opções Principais: Painel do Afiliado e Sua Loja */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Opção 1: Painel de Afiliado */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAffiliateChoiceModal(false);
+                  navigate("/affiliate");
+                }}
+                className="flex items-start gap-3.5 p-4 rounded-2xl border border-purple-200 dark:border-purple-900/50 hover:border-purple-500 bg-purple-50/50 dark:bg-purple-950/20 hover:bg-purple-100/60 dark:hover:bg-purple-900/40 transition-all text-left group cursor-pointer shadow-xs"
+              >
+                <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform mt-0.5 shadow-xs">
+                  <Handshake className="w-5 h-5" />
+                </div>
+                <div className="space-y-1 min-w-0">
+                  <div className="font-semibold text-sm text-purple-900 dark:text-purple-200 group-hover:text-purple-700 transition-colors">
+                    Painel do Afiliado
+                  </div>
+                  <div className="text-[11px] text-muted-foreground leading-relaxed">
+                    Comissões, saldo a receber, link de indicação e cupons.
+                  </div>
+                </div>
+              </button>
+
+              {/* Opção 2: Entrar na Sua Loja Principal */}
+              {ownStore ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveStoreId(ownStore.store.id);
+                    setShowAffiliateChoiceModal(false);
+                    queryClient.invalidateQueries();
+                    toast.success(`Abrindo sua loja: ${ownStore.store.name}`);
+                  }}
+                  className={cn(
+                    "flex items-start gap-3.5 p-4 rounded-2xl border text-left group cursor-pointer transition-all shadow-xs",
+                    activeStore?.id === ownStore.store.id
+                      ? "border-primary bg-primary/5 ring-1 ring-primary/40"
+                      : "border-border hover:border-primary bg-card hover:bg-primary/5"
+                  )}
+                >
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform mt-0.5 shadow-xs">
+                    <Store className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1 min-w-0">
+                    <div className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">
+                      <span className="truncate">{ownStore.store.name}</span>
+                      <Badge variant="outline" className="text-[9px] px-1 py-0 uppercase">Sua Loja</Badge>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground leading-relaxed">
+                      Gerenciar produtos e configurações do seu negócio.
+                    </div>
+                  </div>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowAffiliateChoiceModal(false)}
+                  className="flex items-start gap-3.5 p-4 rounded-2xl border border-border hover:border-primary bg-card hover:bg-primary/5 transition-all text-left group cursor-pointer shadow-xs"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform mt-0.5 shadow-xs">
+                    <Store className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1 min-w-0">
+                    <div className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">
+                      Entrar na Loja
+                    </div>
+                    <div className="text-[11px] text-muted-foreground leading-relaxed">
+                      Gerenciar produtos e configurações da loja atual.
+                    </div>
+                  </div>
+                </button>
+              )}
+            </div>
+
+            {/* Separador e Seção dos Modelos de Demonstração */}
+            <div className="pt-3 border-t border-border/70 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                  <Video className="w-3.5 h-3.5 text-[#FF5E00]" />
+                  Modelos de Loja para Gravação de Vídeo
+                </span>
+                <span className="text-[11px] text-[#FF5E00] font-bold bg-[#FFF4EE] dark:bg-[#FF5E00]/10 px-2.5 py-0.5 rounded-full border border-[#FF5E00]/30">
+                  Lojas Demo Oficiais
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Escolha um modelo pronto abaixo para entrar diretamente no painel administrativo dele com produtos reais cadastrados, ideal para você gravar tutoriais e demonstrações:
+              </p>
+
+              <div className="grid grid-cols-1 gap-2.5">
+                {demoStoresList.map((demo) => {
+                  const isSelected = activeStore?.slug === demo.slug;
+                  return (
+                    <button
+                      key={demo.slug}
+                      type="button"
+                      disabled={!demo.storeId}
+                      onClick={() => {
+                        if (!demo.storeId) return;
+                        setActiveStoreId(demo.storeId);
+                        setShowAffiliateChoiceModal(false);
+                        queryClient.invalidateQueries();
+                        toast.success(`Abrindo modelo: ${demo.name}`);
+                      }}
+                      className={cn(
+                        "flex items-center justify-between gap-3 p-3.5 rounded-2xl border text-left transition-all group shadow-xs",
+                        demo.storeId ? "cursor-pointer" : "opacity-60 cursor-not-allowed",
+                        isSelected
+                          ? "border-[#FF5E00] bg-[#FFF4EE]/70 dark:bg-[#FF5E00]/10 ring-1 ring-[#FF5E00]"
+                          : "border-border/80 hover:border-[#FF5E00]/60 bg-card hover:bg-[#FFF4EE]/20 dark:hover:bg-zinc-800/60"
+                      )}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-11 h-11 rounded-xl bg-background border border-border flex items-center justify-center text-2xl shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+                          {demo.icon}
+                        </div>
+                        <div className="space-y-0.5 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-sm text-foreground group-hover:text-[#FF5E00] transition-colors">
+                              {demo.name}
+                            </span>
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-semibold bg-muted">
+                              {demo.badge}
+                            </Badge>
+                            {isSelected && (
+                              <Badge className="text-[9px] px-1.5 py-0 bg-[#FF5E00] hover:bg-[#FF5E00] text-white font-bold border-0">
+                                Ativa no Painel
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {demo.desc}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 flex items-center gap-1.5 pl-2">
+                        <span className="text-xs font-bold text-[#FF5E00] group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+                          {isSelected ? "Em uso" : "Abrir Modelo"}
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <p className="text-[11px] text-muted-foreground/80 text-center pt-1">
+                💡 Você pode alternar entre seus modelos ou voltar para sua loja a qualquer momento clicando no botão de loja no topo do painel.
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

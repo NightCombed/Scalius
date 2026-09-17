@@ -31,6 +31,8 @@ interface AuthContextValue {
   isAffiliate: boolean;
   affiliateProfile: Affiliate | null;
   memberships: SessionStore[];
+  activeStoreId: string | null;
+  setActiveStoreId: (id: string) => void;
   signIn: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   signUp: (
     email: string,
@@ -64,8 +66,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<PlatformUser | null>(null);
   const [memberships, setMemberships] = useState<SessionStore[]>([]);
+  const [activeStoreId, setActiveStoreIdState] = useState<string | null>(() => {
+    return localStorage.getItem("scalius_active_store_id");
+  });
   const [affiliateProfile, setAffiliateProfile] = useState<Affiliate | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const setActiveStoreId = useCallback((id: string) => {
+    setActiveStoreIdState(id);
+    localStorage.setItem("scalius_active_store_id", id);
+  }, []);
 
   // Hidrata profile + memberships para um auth user.
   // Usa setTimeout(0) quando chamado de dentro do listener para evitar deadlocks.
@@ -126,10 +136,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: r.role as StoreRole,
       }));
 
+    storeMemberships.sort((a, b) => {
+      if (a.role === "owner" && b.role !== "owner") return -1;
+      if (b.role === "owner" && a.role !== "owner") return 1;
+      return a.store.name.localeCompare(b.store.name);
+    });
+
     setMemberships(storeMemberships);
 
+    const savedActiveId = localStorage.getItem("scalius_active_store_id");
+    if (savedActiveId && !storeMemberships.some(m => m.store.id === savedActiveId || m.store.slug === savedActiveId)) {
+      localStorage.removeItem("scalius_active_store_id");
+      setActiveStoreIdState(null);
+    }
+
     if (storeMemberships.length > 0 && accessToken) {
-      const activeStoreId = storeMemberships[0].store.id;
+      const activeStoreId = storeMemberships.find(m => m.store.id === savedActiveId)?.store.id || storeMemberships[0].store.id;
       try {
         // On token refresh, migrate the existing session row in-place instead of
         // creating a new one — this prevents the "2 devices" phantom duplicate bug.
@@ -250,6 +272,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    localStorage.removeItem("scalius_active_store_id");
     const sessionToken = localStorage.getItem("scalius_session_token");
     if (sessionToken) {
       try {
@@ -271,12 +294,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAffiliate: !!affiliateProfile && affiliateProfile.status === "active",
       affiliateProfile,
       memberships,
+      activeStoreId,
+      setActiveStoreId,
       signIn,
       signUp,
       signOut,
       loading,
     }),
-    [user, session, affiliateProfile, memberships, signIn, signUp, signOut, loading],
+    [user, session, affiliateProfile, memberships, activeStoreId, setActiveStoreId, signIn, signUp, signOut, loading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
