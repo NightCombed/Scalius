@@ -5,8 +5,7 @@ import { AdminSidebar } from "./AdminSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, ExternalLink, LayoutDashboard, Package, ShoppingBag, Truck, Settings, Menu, X, Tag, Users, Flower2, BarChart3, Lock, Sun, Moon, Handshake, Store } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { LogOut, ExternalLink, LayoutDashboard, Package, ShoppingBag, Truck, Settings, Menu, X, Tag, Users, Flower2, BarChart3, Lock, Sun, Moon, Handshake } from "lucide-react";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -98,7 +97,6 @@ export default function AdminLayout() {
   const activeStore = memberships[0]?.store;
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [showAffiliateChoiceModal, setShowAffiliateChoiceModal] = useState<boolean>(false);
   const { can, roleLabel, roleBadgeClasses } = useStoreRole();
   const { isPro } = usePlan();
   const { theme, toggleTheme } = useTheme();
@@ -117,12 +115,6 @@ export default function AdminLayout() {
     enabled: !!activeStore?.id,
     refetchInterval: 15000,
   });
-
-  useEffect(() => {
-    if (isAffiliate) {
-      setShowAffiliateChoiceModal(true);
-    }
-  }, [isAffiliate]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -580,66 +572,6 @@ export default function AdminLayout() {
           </div>
         </nav>
       </div>
-
-      {/* ── Modal de Escolha para Contas Afiliadas ao Entrar no Admin ── */}
-      <Dialog open={showAffiliateChoiceModal} onOpenChange={setShowAffiliateChoiceModal}>
-        <DialogContent className="sm:max-w-md p-6 border border-border/80 shadow-2xl rounded-2xl">
-          <DialogHeader className="text-center sm:text-center space-y-2">
-            <div className="mx-auto w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 flex items-center justify-center mb-1">
-              <Handshake className="w-6 h-6" />
-            </div>
-            <DialogTitle className="text-xl font-bold tracking-tight text-center">
-              Onde você deseja entrar?
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground text-center">
-              Sua conta possui acesso ao gerenciamento da loja e ao painel de parceiro afiliado.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid grid-cols-1 gap-3 pt-3">
-            {/* Opção 1: Entrar na Loja */}
-            <button
-              type="button"
-              onClick={() => setShowAffiliateChoiceModal(false)}
-              className="flex items-start gap-4 p-4 rounded-xl border border-border hover:border-primary bg-card hover:bg-primary/5 transition-all text-left group cursor-pointer"
-            >
-              <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform mt-0.5">
-                <Store className="w-5 h-5" />
-              </div>
-              <div className="space-y-1">
-                <div className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">
-                  Entrar na Loja
-                </div>
-                <div className="text-xs text-muted-foreground leading-relaxed">
-                  Gerenciar produtos, pedidos, entregas e configurações do seu negócio.
-                </div>
-              </div>
-            </button>
-
-            {/* Opção 2: Entrar no Painel de Afiliado */}
-            <button
-              type="button"
-              onClick={() => {
-                setShowAffiliateChoiceModal(false);
-                navigate("/affiliate");
-              }}
-              className="flex items-start gap-4 p-4 rounded-xl border border-purple-200 dark:border-purple-900/50 hover:border-purple-500 bg-purple-50/50 dark:bg-purple-950/20 hover:bg-purple-100/60 dark:hover:bg-purple-900/40 transition-all text-left group cursor-pointer"
-            >
-              <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform mt-0.5">
-                <Handshake className="w-5 h-5" />
-              </div>
-              <div className="space-y-1">
-                <div className="font-semibold text-sm text-purple-900 dark:text-purple-200 group-hover:text-purple-700 transition-colors">
-                  Painel de Afiliado
-                </div>
-                <div className="text-xs text-muted-foreground leading-relaxed">
-                  Acompanhar comissões, saldo a receber, link de indicação e cupons.
-                </div>
-              </div>
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
